@@ -334,3 +334,10 @@ textarea { resize: vertical; }
   .eyf-search-bar,
   .eyf-steps { grid-template-columns: 1fr; }
 }
+
+.roboto-mono {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: weight;
+  font-style: normal;
+} 
