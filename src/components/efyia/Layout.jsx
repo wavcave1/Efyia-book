@@ -1,19 +1,35 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Toast } from './ui';
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      type="button"
+      className="eyf-theme-toggle"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+    >
+      {theme === 'dark' ? '☀' : '☽'}
+    </button>
+  );
+}
 
 function Footer() {
   return (
     <footer className="eyf-footer">
       <div>
         <strong>Efyia Book</strong>
-        <p>The studio booking marketplace built for artists, engineers, and studio owners.</p>
+        <p>The studio booking marketplace for artists, engineers, and studio owners.</p>
       </div>
       <div className="eyf-footer__links">
-        <a href="#">Terms</a>
-        <a href="#">Privacy</a>
-        <a href="#">Support</a>
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+        <a href="mailto:support@efyia.com">Support</a>
       </div>
     </footer>
   );
@@ -25,9 +41,16 @@ export default function Layout() {
 
   useEffect(() => {
     if (!toast) return undefined;
-    const timeoutId = window.setTimeout(() => setToast(''), 3000);
-    return () => window.clearTimeout(timeoutId);
+    const id = window.setTimeout(() => setToast(''), 3500);
+    return () => window.clearTimeout(id);
   }, [setToast, toast]);
+
+  const dashboardPath =
+    currentUser?.role === 'ADMIN'
+      ? '/dashboard/admin'
+      : currentUser?.role === 'OWNER'
+        ? '/dashboard/studio'
+        : '/dashboard/client';
 
   return (
     <div className="eyf-shell">
@@ -39,24 +62,16 @@ export default function Layout() {
         <nav className="eyf-nav__links">
           <NavLink to="/discover">Find Studios</NavLink>
           <NavLink to="/map">Map View</NavLink>
-          <NavLink to="/about-mvp">Setup Guide</NavLink>
         </nav>
         <div className="eyf-nav__actions">
+          <ThemeToggle />
           {currentUser ? (
             <>
               <span className="eyf-muted">{currentUser.name}</span>
               <button
                 type="button"
                 className="eyf-button eyf-button--secondary"
-                onClick={() =>
-                  navigate(
-                    currentUser.role === 'admin'
-                      ? '/dashboard/admin'
-                      : currentUser.role === 'owner'
-                        ? '/dashboard/studio'
-                        : '/dashboard/client',
-                  )
-                }
+                onClick={() => navigate(dashboardPath)}
               >
                 Dashboard
               </button>
