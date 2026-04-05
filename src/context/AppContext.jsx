@@ -1,89 +1,122 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import { bookings as seedBookings, demoAccounts, reviews, studios, users } from '../data/efyiaData';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { authApi, favoritesApi } from '../lib/api';
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('efyia_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [toast, setToast] = useState('');
-  const [allBookings, setAllBookings] = useState(seedBookings);
-  const [favoriteStudioIds, setFavoriteStudioIds] = useState([1, 3]);
+  const [favoriteStudioIds, setFavoriteStudioIds] = useState([]);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
 
-  const login = (email) => {
-    const account = demoAccounts[email] || {
-      id: Date.now(),
-      name: email.split('@')[0],
-      email,
-      role: 'client',
-    };
-    setCurrentUser(account);
-    setToast(`Welcome back, ${account.name}!`);
-    return account;
-  };
+  // Persist user to localStorage on change
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('efyia_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('efyia_user');
+      localStorage.removeItem('efyia_token');
+      setFavoriteStudioIds([]);
+      setFavoritesLoaded(false);
+    }
+  }, [currentUser]);
 
-  const signup = ({ name, email, role }) => {
-    const account = {
-      id: Date.now(),
-      name: name || email.split('@')[0],
-      email,
-      role,
-    };
-    setCurrentUser(account);
-    setToast('Account created! Welcome to Efyia Book.');
-    return account;
-  };
+  // Verify token and reload user on mount (handles token expiry)
+  useEffect(() => {
+    const token = localStorage.getItem('efyia_token');
+    if (!token || !currentUser) return;
 
-  const logout = () => {
+    authApi.me().then((user) => {
+      setCurrentUser(user);
+    }).catch(() => {
+      // Token invalid or expired — clear session silently
+      setCurrentUser(null);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load favorites when user is authenticated
+  useEffect(() => {
+    if (!currentUser || favoritesLoaded) return;
+
+    favoritesApi.list().then((studios) => {
+      setFavoriteStudioIds(studios.map((s) => s.id));
+      setFavoritesLoaded(true);
+    }).catch(() => {
+      setFavoritesLoaded(true);
+    });
+  }, [currentUser, favoritesLoaded]);
+
+  const login = useCallback(async (email, password) => {
+    const { token, user } = await authApi.login({ email, password });
+    localStorage.setItem('efyia_token', token);
+    setCurrentUser(user);
+    setFavoritesLoaded(false);
+    setToast(`Welcome back, ${user.name}!`);
+    return user;
+  }, []);
+
+  const signup = useCallback(async ({ name, email, password, role }) => {
+    const { token, user } = await authApi.signup({ name, email, password, role });
+    localStorage.setItem('efyia_token', token);
+    setCurrentUser(user);
+    setFavoritesLoaded(false);
+    setToast('Account created. Welcome to Efyia Book.');
+    return user;
+  }, []);
+
+  const logout = useCallback(() => {
     setCurrentUser(null);
     setToast('Logged out successfully.');
-  };
+  }, []);
 
-  const toggleFavorite = (studioId) => {
+  const toggleFavorite = useCallback(async (studioId) => {
+    if (!currentUser) return;
+
+    const isFavorite = favoriteStudioIds.includes(studioId);
+
+    // Optimistic update
     setFavoriteStudioIds((current) =>
-      current.includes(studioId) ? current.filter((id) => id !== studioId) : [...current, studioId],
+      isFavorite ? current.filter((id) => id !== studioId) : [...current, studioId],
     );
-  };
 
-  const createBooking = ({ studioId, date, time, duration, sessionType }) => {
-    const studio = studios.find((item) => item.id === studioId);
-    const subtotal = studio.pricePerHour * duration;
-    const fee = Math.round(subtotal * 0.08);
-    const booking = {
-      id: allBookings.length + 1,
-      studioId,
-      studioName: studio.name,
-      userId: currentUser?.id || 11,
-      clientName: currentUser?.name || 'Guest Client',
-      date,
-      time,
-      duration,
-      sessionType,
-      status: 'confirmed',
-      total: subtotal + fee,
-    };
-    setAllBookings((current) => [booking, ...current]);
-    setToast('Booking confirmed! Check your dashboard.');
-    return booking;
-  };
+    try {
+      if (isFavorite) {
+        await favoritesApi.remove(studioId);
+      } else {
+        await favoritesApi.add(studioId);
+      }
+    } catch {
+      // Revert on failure
+      setFavoriteStudioIds((current) =>
+        isFavorite ? [...current, studioId] : current.filter((id) => id !== studioId),
+      );
+      setToast('Could not update saved studios. Please try again.');
+    }
+  }, [currentUser, favoriteStudioIds]);
+
+  const showToast = useCallback((message) => setToast(message), []);
 
   const value = useMemo(
     () => ({
       currentUser,
-      setCurrentUser,
       toast,
       setToast,
-      studios,
-      reviews,
-      users,
-      bookings: allBookings,
+      showToast,
       favoriteStudioIds,
       login,
       signup,
       logout,
       toggleFavorite,
-      createBooking,
     }),
-    [allBookings, currentUser, favoriteStudioIds, toast],
+    [currentUser, favoriteStudioIds, toast, showToast, login, signup, logout, toggleFavorite],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -91,8 +124,6 @@ export function AppProvider({ children }) {
 
 export function useAppContext() {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useAppContext must be used within AppProvider');
-  }
+  if (!context) throw new Error('useAppContext must be used within AppProvider');
   return context;
 }
