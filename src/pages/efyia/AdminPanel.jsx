@@ -245,6 +245,24 @@ export default function AdminPanel() {
   const totalPages = Math.max(1, Math.ceil(normalized.length / PAGE_SIZE));
   const pagedRows = normalized.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const ownerStudioMap = useMemo(() => {
+    const map = new Map();
+    studios.forEach((studio) => {
+      const ownerId = Number(studio.owner?.id || studio.ownerId);
+      if (ownerId) map.set(ownerId, studio);
+    });
+    return map;
+  }, [studios]);
+
+  const ownerProfileSet = useMemo(() => {
+    const set = new Set();
+    profiles.forEach((profile) => {
+      const accountId = Number(profile.accountId);
+      if (accountId) set.add(accountId);
+    });
+    return set;
+  }, [profiles]);
+
   useEffect(() => {
     setPage(1);
   }, [activeTab, search, statusFilter]);
@@ -409,6 +427,53 @@ export default function AdminPanel() {
     });
   };
 
+  const handleEnableOwnerProfile = (account) => {
+    const role = String(account.role || '').toLowerCase();
+    const accountId = Number(account.id);
+    const ownerReady = role === 'owner' && ownerStudioMap.has(accountId) && ownerProfileSet.has(accountId);
+
+    if (ownerReady) {
+      setToast('Owner profile is already enabled for this account.');
+      return;
+    }
+
+    setConfirmAction({
+      title: `Enable owner profile for ${account.name}?`,
+      description: 'This can upgrade the role to Owner, create a studio, and create an initial profile setup record.',
+      callback: async () => {
+        let updatedAccount = account;
+        if (role !== 'owner') {
+          updatedAccount = await adminApi.updateAccount(account.id, { role: 'owner' });
+          setAccounts((prev) => prev.map((item) => (item.id === account.id ? updatedAccount : item)));
+        }
+
+        let ownerStudio = ownerStudioMap.get(accountId);
+        if (!ownerStudio) {
+          ownerStudio = await adminApi.createStudio({
+            name: `${account.name || 'New'} Studio`,
+            ownerAccountId: account.id,
+            status: 'ACTIVE',
+          });
+          setStudios((prev) => [ownerStudio, ...prev]);
+        }
+
+        if (!ownerProfileSet.has(accountId)) {
+          const createdProfile = await adminApi.createProfile({
+            displayName: ownerStudio.name || `${account.name || 'New'} Studio`,
+            studioId: ownerStudio.id,
+            accountId: account.id,
+            status: 'ACTIVE',
+          });
+          setProfiles((prev) => [createdProfile, ...prev]);
+        }
+
+        const message = 'Owner profile enabled. They can now sign in and start profile setup.';
+        setToast(message);
+        showToast(message);
+      },
+    });
+  };
+
   const renderDashboard = () => (
     <>
       <div className="admin-grid-stats">
@@ -456,7 +521,12 @@ export default function AdminPanel() {
             </tr>
           </thead>
           <tbody>
-            {pagedRows.map((account) => (
+            {pagedRows.map((account) => {
+              const accountId = Number(account.id);
+              const role = String(account.role || '').toLowerCase();
+              const ownerReady = role === 'owner' && ownerStudioMap.has(accountId) && ownerProfileSet.has(accountId);
+
+              return (
               <tr key={account.id}>
                 <td>{account.name}<div className="admin-subtle">{account.role}</div></td>
                 <td>{account.email}<div className="admin-subtle">{account.phone || '—'}</div></td>
@@ -503,11 +573,21 @@ export default function AdminPanel() {
                     )}
                     <button type="button" className="admin-btn" onClick={() => handleAccountAction('reset', account)}>Reset pw</button>
                     <button type="button" className="admin-btn" onClick={() => handleAccountAction('revoke', account)}>Revoke sessions</button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-primary"
+                      onClick={() => handleEnableOwnerProfile(account)}
+                      disabled={ownerReady}
+                      title={ownerReady ? 'Owner profile already configured' : 'Enable owner role + profile setup'}
+                    >
+                      {ownerReady ? 'Profile ready' : 'Enable owner profile'}
+                    </button>
                     <button type="button" className="admin-btn admin-btn-danger" onClick={() => handleAccountAction('delete', account)}>Delete</button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {pagedRows.length === 0 ? <tr><td colSpan={7}>No accounts match this filter.</td></tr> : null}
           </tbody>
         </table>
