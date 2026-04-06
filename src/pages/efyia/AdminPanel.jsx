@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
+import '../../styles/admin.css';
 
 const TABS = ['Dashboard', 'Accounts', 'Studios', 'Profiles', 'Permissions'];
 const PAGE_SIZE = 8;
