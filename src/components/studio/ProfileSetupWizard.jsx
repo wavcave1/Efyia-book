@@ -81,10 +81,6 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
     });
   }, []);
 
-  const addGalleryRow = () => {
-    setForm((prev) => ({ ...prev, gallery: [...prev.gallery, { url: '', caption: '' }] }));
-  };
-
   const setGallery = (idx, field) => (e) => {
     setForm((prev) => {
       const updated = [...prev.gallery];
@@ -256,47 +252,54 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
                     Gallery photos{' '}
                     <span className="eyf-muted" style={{ fontWeight: 400 }}>(optional)</span>
                   </span>
-                  <button
-                    type="button"
-                    className="eyf-button eyf-button--ghost"
-                    style={{ minHeight: 'unset', padding: '0.3rem 0.75rem', fontSize: '0.82rem' }}
-                    onClick={addGalleryRow}
-                  >
-                    + Add photo
-                  </button>
                 </div>
+
+                <FileUpload
+                  value={form.gallery.map((photo) => photo.url).filter(Boolean)}
+                  onChange={(urls) => {
+                    setForm((prev) => {
+                      const existingCaptions = new Map(prev.gallery.map((item) => [item.url, item.caption || '']));
+                      const gallery = urls.map((url) => ({
+                        url,
+                        caption: existingCaptions.get(url) || '',
+                      }));
+                      return { ...prev, gallery };
+                    });
+                  }}
+                  type="image"
+                  multiple
+                  hint="Upload multiple gallery photos at once"
+                />
+
                 {form.gallery.length === 0 ? (
-                  <p className="eyf-muted" style={{ fontSize: '0.85rem' }}>
+                  <p className="eyf-muted" style={{ fontSize: '0.85rem', marginTop: '0.6rem' }}>
                     Control room, live room, equipment shots — give clients a feel for the space.
                   </p>
-                ) : null}
-                {form.gallery.map((photo, idx) => (
-                  <div
-                    key={idx}
-                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}
-                  >
-                    <input
-                      type="url"
-                      value={photo.url}
-                      onChange={setGallery(idx, 'url')}
-                      placeholder="Photo URL"
-                    />
-                    <input
-                      type="text"
-                      value={photo.caption}
-                      onChange={setGallery(idx, 'caption')}
-                      placeholder="Caption (optional)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeGallery(idx)}
-                      style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: '0.5rem', fontSize: '1.1rem' }}
-                      aria-label="Remove photo"
-                    >
-                      ×
-                    </button>
+                ) : (
+                  <div style={{ marginTop: '0.7rem' }}>
+                    {form.gallery.map((photo, idx) => (
+                      <div
+                        key={photo.url || idx}
+                        style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}
+                      >
+                        <input
+                          type="text"
+                          value={photo.caption}
+                          onChange={setGallery(idx, 'caption')}
+                          placeholder={`Caption for photo ${idx + 1} (optional)`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeGallery(idx)}
+                          style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: '0.5rem', fontSize: '1.1rem' }}
+                          aria-label="Remove photo"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             </div>
           ) : null}
