@@ -32,6 +32,8 @@ export default function FileUpload({
   label,
   hint,
   accept,
+  multiple = false,
+  maxFiles = 12,
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -40,76 +42,124 @@ export default function FileUpload({
 
   const resolvedAccept = accept || ACCEPT_MAP[type] || 'image/*';
 
-  const handleFile = useCallback(
-    async (file) => {
-      if (!file) return;
+  const values = multiple
+    ? (Array.isArray(value) ? value.filter(Boolean) : [])
+    : (value && value.trim ? value.trim() : '');
+
+  const handleFiles = useCallback(
+    async (incomingFiles) => {
+      const files = Array.from(incomingFiles || []).filter(Boolean);
+      if (!files.length) return;
+
       setError(null);
       setUploading(true);
       try {
-        const url = await uploadToServer(file);
-        onChange(url);
+        const uploadedUrls = await Promise.all(files.map((file) => uploadToServer(file)));
+        if (multiple) {
+          const next = [...values, ...uploadedUrls].slice(0, maxFiles);
+          onChange(next);
+        } else {
+          onChange(uploadedUrls[0] || '');
+        }
       } catch (err) {
         setError(err.message);
       } finally {
         setUploading(false);
       }
     },
-    [onChange],
+    [maxFiles, multiple, onChange, values],
   );
 
   const handleDrop = useCallback(
     (e) => {
       e.preventDefault();
       setDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      const files = multiple ? e.dataTransfer.files : [e.dataTransfer.files[0]];
+      handleFiles(files);
     },
-    [handleFile],
+    [handleFiles, multiple],
   );
 
-  const hasValue = value && value.trim();
+  const hasValue = multiple ? values.length > 0 : Boolean(values);
 
   return (
     <div className="eyf-upload">
       {label ? <p className="eyf-upload__label">{label}</p> : null}
 
       {hasValue ? (
-        <div className="eyf-upload__preview">
-          {type === 'audio' ? (
-            <audio
-              src={value}
-              controls
-              className="eyf-upload__audio"
-              aria-label="Audio preview"
-            />
-          ) : (
-            <img
-              src={value}
-              alt="Upload preview"
-              className="eyf-upload__img"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-          )}
-          <div className="eyf-upload__preview-actions">
-            <button
-              type="button"
-              className="eyf-upload__change"
-              onClick={() => inputRef.current?.click()}
-            >
-              Change
-            </button>
-            <button
-              type="button"
-              className="eyf-upload__remove"
-              onClick={() => onChange('')}
-              aria-label="Remove file"
-            >
-              Remove
-            </button>
+        multiple ? (
+          <div className="eyf-upload__preview">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: '0.5rem' }}>
+              {values.map((url, idx) => (
+                <div key={`${url}-${idx}`} style={{ position: 'relative', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                  <img src={url} alt={`Uploaded ${idx + 1}`} className="eyf-upload__img" style={{ aspectRatio: '1 / 1', objectFit: 'cover' }} />
+                  <button
+                    type="button"
+                    onClick={() => onChange(values.filter((_, itemIdx) => itemIdx !== idx))}
+                    style={{ position: 'absolute', top: 6, right: 6, border: 'none', borderRadius: '999px', width: 24, height: 24, background: 'rgba(17,24,39,0.75)', color: 'white', cursor: 'pointer' }}
+                    aria-label={`Remove image ${idx + 1}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="eyf-upload__preview-actions">
+              <button
+                type="button"
+                className="eyf-upload__change"
+                onClick={() => inputRef.current?.click()}
+              >
+                Add more
+              </button>
+              <button
+                type="button"
+                className="eyf-upload__remove"
+                onClick={() => onChange([])}
+                aria-label="Remove all files"
+              >
+                Remove all
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="eyf-upload__preview">
+            {type === 'audio' ? (
+              <audio
+                src={values}
+                controls
+                className="eyf-upload__audio"
+                aria-label="Audio preview"
+              />
+            ) : (
+              <img
+                src={values}
+                alt="Upload preview"
+                className="eyf-upload__img"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="eyf-upload__preview-actions">
+              <button
+                type="button"
+                className="eyf-upload__change"
+                onClick={() => inputRef.current?.click()}
+              >
+                Change
+              </button>
+              <button
+                type="button"
+                className="eyf-upload__remove"
+                onClick={() => onChange('')}
+                aria-label="Remove file"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        )
       ) : (
         <div
           className={`eyf-dropzone${dragging ? ' is-dragging' : ''}${uploading ? ' is-uploading' : ''}`}
@@ -128,7 +178,7 @@ export default function FileUpload({
               if (!uploading) inputRef.current?.click();
             }
           }}
-          aria-label={uploading ? 'Uploading…' : `Upload ${type} file`}
+          aria-label={uploading ? 'Uploading…' : `Upload ${type} file${multiple ? 's' : ''}`}
         >
           {uploading ? (
             <div className="eyf-dropzone__uploading">
@@ -141,7 +191,7 @@ export default function FileUpload({
                 {type === 'audio' ? '🎵' : '🖼'}
               </span>
               <span className="eyf-dropzone__text">
-                Drop {type === 'audio' ? 'audio' : 'image'} here or{' '}
+                Drop {type === 'audio' ? 'audio' : (multiple ? 'images' : 'image')} here or{' '}
                 <span className="eyf-dropzone__browse">browse</span>
               </span>
               {hint ? <span className="eyf-dropzone__hint">{hint}</span> : null}
@@ -160,9 +210,10 @@ export default function FileUpload({
         ref={inputRef}
         type="file"
         accept={resolvedAccept}
+        multiple={multiple}
         style={{ display: 'none' }}
         onChange={(e) => {
-          if (e.target.files[0]) handleFile(e.target.files[0]);
+          handleFiles(multiple ? e.target.files : [e.target.files[0]]);
           e.target.value = '';
         }}
       />
