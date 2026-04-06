@@ -70,6 +70,113 @@ function CreateModal({ open, title, fields, values, onChange, onCancel, onSubmit
   );
 }
 
+// ─── Edit Studio Modal ────────────────────────────────────────────────────────
+function EditStudioModal({ studio, accounts, onSave, onClose }) {
+  const [form, setForm] = useState({
+    name: studio.name || '',
+    pricePerHour: studio.pricePerHour || 75,
+    city: studio.city || '',
+    state: studio.state || '',
+    featured: !!studio.featured,
+    verified: !!studio.verified,
+    ownerAccountId: studio.owner?.id || studio.ownerId || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
+  const setCheck = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.checked }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await adminApi.updateStudio(studio.id, {
+        name: form.name,
+        pricePerHour: Number(form.pricePerHour),
+        city: form.city || undefined,
+        state: form.state || undefined,
+        featured: form.featured,
+        verified: form.verified,
+        ownerAccountId: form.ownerAccountId ? Number(form.ownerAccountId) : undefined,
+      });
+      onSave(updated);
+    } catch (err) {
+      setError(err.message || 'Save failed.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="admin-modal-backdrop" role="presentation">
+      <form className="admin-modal" onSubmit={handleSubmit} style={{ maxWidth: 580 }}>
+        <h3 style={{ marginTop: 0 }}>Edit Studio</h3>
+        <div className="admin-form-grid">
+          <label className="full">
+            <span className="admin-subtle">Studio name *</span>
+            <input value={form.name} onChange={set('name')} required />
+          </label>
+          <label>
+            <span className="admin-subtle">Price per hour ($)</span>
+            <input type="number" min="0" value={form.pricePerHour} onChange={set('pricePerHour')} />
+          </label>
+          <label>
+            <span className="admin-subtle">Owner account ID</span>
+            <input
+              value={form.ownerAccountId}
+              onChange={set('ownerAccountId')}
+              placeholder="Leave blank to keep current owner"
+              list="admin-accounts-list"
+            />
+            {accounts.length > 0 ? (
+              <datalist id="admin-accounts-list">
+                {accounts.filter((a) => a.role === 'OWNER' || a.role === 'owner').map((a) => (
+                  <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
+                ))}
+              </datalist>
+            ) : null}
+          </label>
+          <label>
+            <span className="admin-subtle">City</span>
+            <input value={form.city} onChange={set('city')} placeholder="Atlanta" />
+          </label>
+          <label>
+            <span className="admin-subtle">State</span>
+            <input value={form.state} onChange={set('state')} placeholder="GA" maxLength={4} />
+          </label>
+        </div>
+        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.featured} onChange={setCheck('featured')} />
+            <span>Featured</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.verified} onChange={setCheck('verified')} />
+            <span>Verified</span>
+          </label>
+        </div>
+        {error ? <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: '0.5rem 0 0' }}>{error}</p> : null}
+        <div className="admin-actions" style={{ marginTop: '1rem' }}>
+          <button type="button" className="admin-btn" onClick={onClose}>Cancel</button>
+          <a
+            href={`/studios/${studio.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="admin-btn"
+            style={{ textDecoration: 'none' }}
+          >
+            View public profile ↗
+          </a>
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function AdminPanel() {
   const { currentUser, showToast } = useAppContext();
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -88,6 +195,7 @@ export default function AdminPanel() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [createType, setCreateType] = useState('');
   const [formValues, setFormValues] = useState({});
+  const [editStudio, setEditStudio] = useState(null);
 
   useEffect(() => {
     if (toast) {
@@ -389,28 +497,67 @@ export default function AdminPanel() {
     <div className="admin-panel">
       <div className="admin-toolbar">
         <input placeholder="Search studios" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="ALL">All statuses</option>
-          <option value="ACTIVE">Active</option>
-          <option value="SUSPENDED">Suspended</option>
-          <option value="PENDING">Pending</option>
-        </select>
         <button type="button" className="admin-btn admin-btn-primary" onClick={() => setCreateType('studio')}>+ Add studio</button>
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>Name</th><th>Owner account</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Studio</th>
+              <th>Owner</th>
+              <th>Flags</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody>
             {pagedRows.map((studio) => (
               <tr key={studio.id}>
-                <td>{studio.name}</td>
-                <td>{studio.ownerAccountName || studio.owner?.name || studio.ownerAccountId}</td>
-                <td>{studio.status}</td>
-                <td>{studio.createdAt}</td>
+                <td>
+                  <strong>{studio.name}</strong>
+                  {studio.slug ? (
+                    <div className="admin-subtle">/studios/{studio.slug}</div>
+                  ) : null}
+                </td>
+                <td>
+                  {studio.owner?.name || '—'}
+                  <div className="admin-subtle">{studio.owner?.email}</div>
+                </td>
                 <td>
                   <div className="admin-actions">
-                    <button type="button" className="admin-btn" onClick={() => adminApi.updateStudio(studio.id, { status: studio.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE' }).then((updated) => setStudios((prev) => prev.map((item) => (item.id === studio.id ? updated : item))))}>Edit</button>
-                    <button type="button" className="admin-btn admin-btn-danger" onClick={() => handleStudioDelete(studio)}>Delete</button>
+                    {studio.featured ? <span style={{ color: '#f59e0b', fontSize: '0.78rem' }}>★ Featured</span> : null}
+                    {studio.verified ? <span style={{ color: '#22c55e', fontSize: '0.78rem' }}>✓ Verified</span> : null}
+                    {!studio.featured && !studio.verified ? <span className="admin-subtle">—</span> : null}
+                  </div>
+                </td>
+                <td className="admin-subtle">
+                  {studio.createdAt ? new Date(studio.createdAt).toLocaleDateString() : '—'}
+                </td>
+                <td>
+                  <div className="admin-actions">
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-primary"
+                      onClick={() => setEditStudio(studio)}
+                    >
+                      Edit
+                    </button>
+                    <a
+                      href={`/studios/${studio.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="admin-btn"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      Profile ↗
+                    </a>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-danger"
+                      onClick={() => handleStudioDelete(studio)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -418,6 +565,11 @@ export default function AdminPanel() {
             {pagedRows.length === 0 ? <tr><td colSpan={5}>No studios found.</td></tr> : null}
           </tbody>
         </table>
+      </div>
+      <div className="admin-pager">
+        <button type="button" className="admin-btn" disabled={page <= 1} onClick={() => setPage((v) => v - 1)}>Prev</button>
+        <span className="admin-subtle">Page {page} / {totalPages}</span>
+        <button type="button" className="admin-btn" disabled={page >= totalPages} onClick={() => setPage((v) => v + 1)}>Next</button>
       </div>
     </div>
   );
