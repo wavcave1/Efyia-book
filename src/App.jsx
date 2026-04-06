@@ -8,7 +8,6 @@ import BookingPage from './pages/efyia/BookingPage';
 import { ClientDashboard, StudioDashboard } from './pages/efyia/DashboardPages';
 import AdminPanel from './pages/efyia/AdminPanel';
 import HomePage from './pages/efyia/HomePage';
-import MapPage from './pages/efyia/MapPage';
 import SearchPage from './pages/efyia/SearchPage';
 import StudioProfilePage from './pages/efyia/StudioProfilePage';
 import StudioPublicPage from './pages/efyia/StudioPublicPage';
@@ -33,7 +32,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="discover" element={<SearchPage />} />
-            <Route path="map" element={<MapPage />} />
+            <Route path="map" element={<Navigate to="/discover" replace />} />
             <Route path="studios/:slug" element={<StudioProfilePage />} />
             <Route
               path="booking/:studioId"

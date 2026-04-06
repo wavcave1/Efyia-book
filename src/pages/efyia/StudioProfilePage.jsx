@@ -1,9 +1,72 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { studiosApi } from '../../lib/api';
+import { reviewsApi, studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { Badge, EmptyState, ErrorMessage, Spinner, Stars } from '../../components/efyia/ui';
 import ProfileCustomizer from '../../components/studio/ProfileCustomizer';
+
+// ─── Review submission form ───────────────────────────────────────────────────
+function ReviewForm({ studioId, onSubmitted }) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [content, setContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!rating) { setError('Please select a star rating.'); return; }
+    if (content.trim().length < 10) { setError('Review must be at least 10 characters.'); return; }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await reviewsApi.create({ studioId, rating, content: content.trim() });
+      onSubmitted();
+    } catch (err) {
+      setError(err.message || 'Could not submit review. You may need a completed booking first.');
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="eyf-review-form eyf-card">
+      <h4 style={{ margin: '0 0 1rem' }}>Leave a review</h4>
+      <div className="eyf-review-stars-input" aria-label="Star rating">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={`eyf-review-star${n <= (hovered || rating) ? ' is-active' : ''}`}
+            onClick={() => setRating(n)}
+            onMouseEnter={() => setHovered(n)}
+            onMouseLeave={() => setHovered(0)}
+            aria-label={`${n} star${n !== 1 ? 's' : ''}`}
+          >
+            ★
+          </button>
+        ))}
+        {rating > 0 ? <span className="eyf-muted" style={{ fontSize: '0.85rem', marginLeft: '0.5rem' }}>{rating}/5</span> : null}
+      </div>
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Share your experience — studio quality, engineer, booking process…"
+        rows={4}
+        style={{ marginTop: '0.75rem' }}
+        required
+      />
+      {error ? <p style={{ color: 'var(--danger, #ef4444)', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>{error}</p> : null}
+      <button
+        type="submit"
+        className="eyf-button"
+        disabled={submitting}
+        style={{ marginTop: '0.75rem' }}
+      >
+        {submitting ? 'Submitting…' : 'Submit review'}
+      </button>
+    </form>
+  );
+}
 
 // Converts a YouTube watch/share URL to an embed URL
 function toEmbedUrl(url) {
@@ -431,6 +494,15 @@ export default function StudioProfilePage() {
                                 allowFullScreen
                               />
                             </div>
+                          ) : item.audioUrl ? (
+                            <div style={{ padding: '0.75rem 0.75rem 0' }}>
+                              <audio
+                                src={item.audioUrl}
+                                controls
+                                style={{ width: '100%', borderRadius: 8 }}
+                                aria-label={item.title || `Audio track ${i + 1}`}
+                              />
+                            </div>
                           ) : null}
                           <div className="eyf-portfolio-card__body">
                             {item.title ? <strong style={{ display: 'block' }}>{item.title}</strong> : null}
@@ -564,9 +636,25 @@ export default function StudioProfilePage() {
 
           {/* Reviews tab */}
           {tab === 'reviews' ? (
-            reviews.length > 0 ? (
-              <div className="eyf-stack">
-                {reviews.map((review) => (
+            <div className="eyf-stack">
+              {/* Review form — non-owners only */}
+              {currentUser && !isOwner ? (
+                reviews.some((r) => r.user?.id === currentUser?.id || r.userId === currentUser?.id) ? (
+                  <div className="eyf-card">
+                    <p className="eyf-muted" style={{ fontSize: '0.875rem' }}>
+                      ✓ You have already reviewed this studio.
+                    </p>
+                  </div>
+                ) : (
+                  <ReviewForm
+                    studioId={studio.id}
+                    onSubmitted={() => fetchStudio()}
+                  />
+                )
+              ) : null}
+
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
                   <article key={review.id} className="eyf-card eyf-stack">
                     <div className="eyf-row eyf-row--between eyf-row--start">
                       <div className="eyf-row">
@@ -585,14 +673,14 @@ export default function StudioProfilePage() {
                       </div>
                     ) : null}
                   </article>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No reviews yet"
-                description="Reviews appear here after verified bookings are completed."
-              />
-            )
+                ))
+              ) : (
+                <EmptyState
+                  title="No reviews yet"
+                  description="Reviews appear here after verified bookings are completed."
+                />
+              )}
+            </div>
           ) : null}
         </div>
 

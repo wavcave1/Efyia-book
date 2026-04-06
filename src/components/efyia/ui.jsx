@@ -91,7 +91,6 @@ export function StudioCard({ studio, onFavoriteToggle, isFavorite = false }) {
             {isFavorite ? '♥' : '♡'}
           </button>
         ) : null}
-        <span className="eyf-price">${studio.pricePerHour}/hr</span>
       </div>
       <div className="eyf-studio-card__body">
         <div className="eyf-row eyf-row--between eyf-row--start">

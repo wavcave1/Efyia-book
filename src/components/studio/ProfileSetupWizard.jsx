@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { studioProfileApi } from '../../lib/api';
+import FileUpload from '../efyia/FileUpload';
 
 const STEPS = [
   {
@@ -219,53 +220,32 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
           {/* Step 2: Logo */}
           {step === 2 ? (
             <div className="eyf-wizard-fields">
-              <label className="eyf-wizard-field">
-                <span>Logo URL</span>
-                <input
-                  type="url"
-                  value={form.logoUrl}
-                  onChange={set('logoUrl')}
-                  placeholder="https://cdn.example.com/logo.png"
-                  autoFocus
-                />
-              </label>
-              {form.logoUrl ? (
-                <img
-                  src={form.logoUrl}
-                  alt="Logo preview"
-                  className="eyf-wizard-logo-preview"
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              ) : null}
-              <p className="eyf-muted" style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
-                Upload your logo to a CDN (Cloudinary, Imgbb, Imgur) and paste the URL here.
+              <p className="eyf-muted" style={{ fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+                Your logo appears on your public profile, studio card, and booking sidebar.
                 Square images at least 200×200px work best.
               </p>
+              <FileUpload
+                value={form.logoUrl}
+                onChange={(url) => setForm((prev) => ({ ...prev, logoUrl: url }))}
+                type="image"
+                hint="PNG or JPG — square format recommended (200×200px+)"
+              />
             </div>
           ) : null}
 
           {/* Step 3: Photos */}
           {step === 3 ? (
             <div className="eyf-wizard-fields">
-              <label className="eyf-wizard-field">
-                <span>
-                  Cover photo URL{' '}
-                  <span className="eyf-muted" style={{ fontWeight: 400 }}>(main hero image)</span>
-                </span>
-                <input
-                  type="url"
-                  value={form.coverUrl}
-                  onChange={set('coverUrl')}
-                  placeholder="https://cdn.example.com/cover.jpg"
-                  autoFocus
-                />
-              </label>
-              {form.coverUrl ? (
-                <div
-                  className="eyf-wizard-cover-preview"
-                  style={{ backgroundImage: `url(${form.coverUrl})` }}
-                />
-              ) : null}
+              <p className="eyf-muted" style={{ fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+                Your cover image is the large hero photo shown at the top of your public studio page.
+                Landscape orientation recommended (1600×600px+).
+              </p>
+              <FileUpload
+                value={form.coverUrl}
+                onChange={(url) => setForm((prev) => ({ ...prev, coverUrl: url }))}
+                type="image"
+                hint="Landscape format recommended (1600×600px+)"
+              />
 
               <div>
                 <div

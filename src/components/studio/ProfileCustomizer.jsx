@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { studioProfileApi } from '../../lib/api';
+import FileUpload from '../efyia/FileUpload';
 import { FONT_PAIRINGS, LAYOUT_TYPES, buildStudioVars, FONT_URLS } from '../../lib/studioTheme';
 import LayoutMinimal from './LayoutMinimal';
 import LayoutHero from './LayoutHero';
@@ -334,7 +335,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Portfolio embeds ────────────────────────────────────────────────────────
   const addPortfolio = () => {
-    setForm((prev) => ({ ...prev, portfolio: [...prev.portfolio, { title: '', artistName: '', trackName: '', serviceType: '', embedUrl: '' }] }));
+    setForm((prev) => ({ ...prev, portfolio: [...prev.portfolio, { title: '', artistName: '', trackName: '', serviceType: '', embedUrl: '', audioUrl: '' }] }));
     setSaveState('idle');
   };
   const removePortfolio = (idx) => {
@@ -404,7 +405,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       const gallery = (form.gallery || []).filter((g) => g.url.trim());
       const credits = (form.credits || []).filter((c) => c.artistName.trim());
       const achievements = (form.achievements || []).filter((a) => a.title.trim());
-      const portfolio = (form.portfolio || []).filter((p) => p.embedUrl.trim() || p.title.trim());
+      const portfolio = (form.portfolio || []).filter((p) => p.embedUrl?.trim() || p.audioUrl?.trim() || p.title.trim());
       const team = (form.team || []).filter((t) => t.name.trim());
       const testimonials = (form.testimonials || []).filter((t) => t.quote.trim());
 
@@ -502,8 +503,13 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             </div>
           </FieldGroup>
 
-          <FieldGroup label="Logo URL" hint="Upload to Cloudinary or Imgbb. Square images (200×200px+) work best.">
-            <input type="url" value={form.logoUrl} onChange={set('logoUrl')} placeholder="https://cdn.example.com/logo.png" />
+          <FieldGroup label="Logo" hint="Square images (200×200px+) work best.">
+            <FileUpload
+              value={form.logoUrl}
+              onChange={(url) => { setForm((prev) => ({ ...prev, logoUrl: url })); setSaveState('idle'); }}
+              type="image"
+              hint="PNG or JPG — square format recommended"
+            />
             {form.logoUrl ? (
               <img
                 src={form.logoUrl}
@@ -514,8 +520,13 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             ) : null}
           </FieldGroup>
 
-          <FieldGroup label="Cover image URL" hint="Used as the hero/header image on your public studio page.">
-            <input type="url" value={form.coverUrl} onChange={set('coverUrl')} placeholder="https://cdn.example.com/cover.jpg" />
+          <FieldGroup label="Cover image" hint="Used as the hero/header image on your public studio page.">
+            <FileUpload
+              value={form.coverUrl}
+              onChange={(url) => { setForm((prev) => ({ ...prev, coverUrl: url })); setSaveState('idle'); }}
+              type="image"
+              hint="Landscape orientation recommended (1600×600px+)"
+            />
             {form.coverUrl ? (
               <div
                 style={{
@@ -621,26 +632,23 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         <div>
           <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
             Add photos of your studio space — control room, live room, isolation booth, equipment, vibe.
-            Upload images to a CDN and paste URLs here.
           </p>
           {form.gallery.map((item, idx) => (
             <ArrayItemCard key={idx} label={`Photo ${idx + 1}`} onRemove={() => removeGallery(idx)}>
-              <FieldGroup label="Image URL">
-                <input type="url" value={item.url} onChange={setGallery(idx, 'url')} placeholder="https://cdn.example.com/studio-photo.jpg" />
-                {item.url ? (
-                  <div
-                    style={{
-                      marginTop: '0.5rem',
-                      height: 100,
-                      borderRadius: 8,
-                      backgroundImage: `url(${item.url})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      border: '1px solid var(--border)',
-                    }}
-                    onError={() => {}}
-                  />
-                ) : null}
+              <FieldGroup label="Photo">
+                <FileUpload
+                  value={item.url}
+                  onChange={(url) => {
+                    setForm((prev) => {
+                      const updated = [...prev.gallery];
+                      updated[idx] = { ...updated[idx], url };
+                      return { ...prev, gallery: updated };
+                    });
+                    setSaveState('idle');
+                  }}
+                  type="image"
+                  hint="Control room, live room, equipment, vibe"
+                />
               </FieldGroup>
               <FieldGroup label="Caption (optional)">
                 <input type="text" value={item.caption} onChange={setGallery(idx, 'caption')} placeholder="e.g. Control room — SSL 4000 G console" />
@@ -759,8 +767,24 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 </div>
               </div>
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Embed URL *</label>
-                <input type="url" value={item.embedUrl} onChange={setPortfolio(idx, 'embedUrl')} placeholder="https://www.youtube.com/embed/…" />
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Embed URL (YouTube / SoundCloud)</label>
+                <input type="url" value={item.embedUrl} onChange={setPortfolio(idx, 'embedUrl')} placeholder="https://www.youtube.com/watch?v=…" />
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.4rem' }}>— or upload audio file —</label>
+                <FileUpload
+                  value={item.audioUrl || ''}
+                  onChange={(url) => {
+                    setForm((prev) => {
+                      const updated = [...prev.portfolio];
+                      updated[idx] = { ...updated[idx], audioUrl: url };
+                      return { ...prev, portfolio: updated };
+                    });
+                    setSaveState('idle');
+                  }}
+                  type="audio"
+                  hint="MP3, WAV, AAC — direct track upload"
+                />
               </div>
             </ArrayItemCard>
           ))}
@@ -817,8 +841,20 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 <textarea rows={2} value={member.bio} onChange={setTeamMember(idx, 'bio')} placeholder="Short bio about their background and specialty…" />
               </div>
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Photo URL (optional)</label>
-                <input type="url" value={member.photoUrl} onChange={setTeamMember(idx, 'photoUrl')} placeholder="https://cdn.example.com/photo.jpg" />
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.4rem' }}>Photo (optional)</label>
+                <FileUpload
+                  value={member.photoUrl}
+                  onChange={(url) => {
+                    setForm((prev) => {
+                      const updated = [...prev.team];
+                      updated[idx] = { ...updated[idx], photoUrl: url };
+                      return { ...prev, team: updated };
+                    });
+                    setSaveState('idle');
+                  }}
+                  type="image"
+                  hint="Headshot or professional photo"
+                />
               </div>
             </ArrayItemCard>
           ))}
