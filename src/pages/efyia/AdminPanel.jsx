@@ -287,13 +287,12 @@ export default function AdminPanel() {
     { name: 'name', label: 'Full name', required: true },
     { name: 'email', label: 'Email', type: 'email', required: true },
     { name: 'role', label: 'Role', type: 'select', required: true, options: [
-      { value: 'client', label: 'Client' },
-      { value: 'owner', label: 'Studio Owner' },
-      { value: 'admin', label: 'Admin' },
+      { value: 'CLIENT', label: 'Client' },
+      { value: 'OWNER', label: 'Studio Owner' },
+      { value: 'ADMIN', label: 'Admin' },
     ] },
     { name: 'status', label: 'Status', type: 'select', required: true, options: [
       { value: 'ACTIVE', label: 'Active' },
-      { value: 'PENDING', label: 'Pending' },
       { value: 'SUSPENDED', label: 'Suspended' },
     ] },
   ];
@@ -301,22 +300,15 @@ export default function AdminPanel() {
   const studioFields = [
     { name: 'name', label: 'Studio name', required: true },
     { name: 'ownerAccountId', label: 'Owner account ID', required: true },
-    { name: 'status', label: 'Status', type: 'select', required: true, options: [
-      { value: 'ACTIVE', label: 'Active' },
-      { value: 'PENDING', label: 'Pending' },
-      { value: 'SUSPENDED', label: 'Suspended' },
-    ] },
+    { name: 'city', label: 'City' },
+    { name: 'state', label: 'State' },
+    { name: 'pricePerHour', label: 'Price per hour ($)', type: 'number' },
   ];
 
   const profileFields = [
     { name: 'displayName', label: 'Profile name', required: true },
     { name: 'studioId', label: 'Studio ID', required: true },
     { name: 'accountId', label: 'Account ID', required: true },
-    { name: 'status', label: 'Status', type: 'select', required: true, options: [
-      { value: 'ACTIVE', label: 'Active' },
-      { value: 'PENDING', label: 'Pending' },
-      { value: 'SUSPENDED', label: 'Suspended' },
-    ] },
   ];
 
   const createConfig = {
@@ -385,24 +377,6 @@ export default function AdminPanel() {
     });
   };
 
-  const handleEnableOwnerProfile = async (account) => {
-    try {
-      const result = await adminApi.enableOwnerProfile(account.id);
-      const updatedAccount = { ...account, role: 'OWNER', _count: { ...(account._count || {}), studios: 1 } };
-      setAccounts((prev) => prev.map((item) => (item.id === account.id ? updatedAccount : item)));
-      if (result?.studio) {
-        setStudios((prev) => {
-          const exists = prev.some((s) => s.id === result.studio.id);
-          return exists ? prev : [result.studio, ...prev];
-        });
-      }
-      setToast('Owner profile enabled.');
-      showToast('Owner profile enabled.');
-    } catch (error) {
-      setToast(error.message || 'Could not enable owner profile.');
-    }
-  };
-
   const handleStudioDelete = (studio) => {
     setConfirmAction({
       title: `Delete studio ${studio.name}?`,
@@ -443,7 +417,7 @@ export default function AdminPanel() {
       callback: async () => {
         let updatedAccount = account;
         if (role !== 'owner') {
-          updatedAccount = await adminApi.updateAccount(account.id, { role: 'owner' });
+          updatedAccount = await adminApi.updateAccount(account.id, { role: 'OWNER' });
           setAccounts((prev) => prev.map((item) => (item.id === account.id ? updatedAccount : item)));
         }
 
@@ -695,17 +669,45 @@ export default function AdminPanel() {
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>Profile</th><th>Studio</th><th>Account</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Profile</th><th>Studio</th><th>Account</th><th>Complete</th><th>Flags</th><th>Actions</th></tr></thead>
           <tbody>
             {pagedRows.map((profile) => (
               <tr key={profile.id}>
                 <td>{profile.displayName || profile.name}</td>
                 <td>{profile.studioName || profile.studioId}</td>
                 <td>{profile.accountName || profile.accountId}</td>
-                <td>{profile.status}</td>
+                <td>{profile.completion != null ? `${profile.completion}%` : '—'}</td>
                 <td>
                   <div className="admin-actions">
-                    <button type="button" className="admin-btn" onClick={() => adminApi.updateProfile(profile.id, { status: profile.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE' }).then((updated) => setProfiles((prev) => prev.map((item) => (item.id === profile.id ? updated : item))))}>Edit</button>
+                    {profile.featured ? <span style={{ color: '#f59e0b', fontSize: '0.78rem' }}>★ Featured</span> : null}
+                    {profile.verified ? <span style={{ color: '#22c55e', fontSize: '0.78rem' }}>✓ Verified</span> : null}
+                    {!profile.featured && !profile.verified ? <span className="admin-subtle">—</span> : null}
+                  </div>
+                </td>
+                <td>
+                  <div className="admin-actions">
+                    <button
+                      type="button"
+                      className="admin-btn"
+                      onClick={() =>
+                        adminApi.updateProfile(profile.id, { featured: !profile.featured }).then((updated) =>
+                          setProfiles((prev) => prev.map((item) => (item.id === profile.id ? updated : item))),
+                        )
+                      }
+                    >
+                      {profile.featured ? 'Unfeature' : 'Feature'}
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn"
+                      onClick={() =>
+                        adminApi.updateProfile(profile.id, { verified: !profile.verified }).then((updated) =>
+                          setProfiles((prev) => prev.map((item) => (item.id === profile.id ? updated : item))),
+                        )
+                      }
+                    >
+                      {profile.verified ? 'Unverify' : 'Verify'}
+                    </button>
                     <button type="button" className="admin-btn admin-btn-danger" onClick={() => handleProfileDelete(profile)}>Delete</button>
                   </div>
                 </td>
@@ -790,6 +792,20 @@ export default function AdminPanel() {
         {!loading && activeTab === 'Profiles' ? renderProfiles() : null}
         {!loading && activeTab === 'Permissions' ? renderPermissions() : null}
       </main>
+
+      {editStudio ? (
+        <EditStudioModal
+          studio={editStudio}
+          accounts={accounts}
+          onSave={(updated) => {
+            setStudios((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+            setEditStudio(null);
+            setToast('Studio saved.');
+            showToast('Studio saved.');
+          }}
+          onClose={() => setEditStudio(null)}
+        />
+      ) : null}
 
       <ConfirmationModal
         open={Boolean(confirmAction)}
