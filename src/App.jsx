@@ -5,7 +5,8 @@ import Layout from './components/efyia/Layout';
 import ProtectedRoute from './components/efyia/ProtectedRoute';
 import AuthPage from './pages/efyia/AuthPage';
 import BookingPage from './pages/efyia/BookingPage';
-import { AdminDashboard, ClientDashboard, StudioDashboard } from './pages/efyia/DashboardPages';
+import { ClientDashboard, StudioDashboard } from './pages/efyia/DashboardPages';
+import AdminPanel from './pages/efyia/AdminPanel';
 import HomePage from './pages/efyia/HomePage';
 import MapPage from './pages/efyia/MapPage';
 import SearchPage from './pages/efyia/SearchPage';
@@ -19,6 +20,15 @@ export default function App() {
         <Routes>
           {/* Standalone studio public page — outside main Layout */}
           <Route path="s/:slug" element={<StudioPublicPage />} />
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+
 
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
@@ -51,14 +61,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="dashboard/admin"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="dashboard/admin" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
