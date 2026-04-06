@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { bookingsApi, studiosApi, usersApi } from '../../lib/api';
+import { bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
 import ProfileCustomizer from '../../components/studio/ProfileCustomizer';
+import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 
+// ─── Booking status badge ─────────────────────────────────────────────────────
 function BookingStatusBadge({ status }) {
   const map = {
     PENDING: 'pending',
@@ -18,6 +20,7 @@ function BookingStatusBadge({ status }) {
   );
 }
 
+// ─── Booking rows ─────────────────────────────────────────────────────────────
 function BookingRows({ bookings, onStatusChange }) {
   if (!bookings.length) {
     return <EmptyState title="No bookings yet" description="Confirmed bookings will appear here." />;
@@ -59,6 +62,66 @@ function BookingRows({ bookings, onStatusChange }) {
           </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+// ─── Profile completion helper ────────────────────────────────────────────────
+function calcCompletion(studio) {
+  if (!studio) return { pct: 0, checklist: [] };
+  const checks = [
+    { label: 'Studio name',          done: !!(studio.name?.trim()) },
+    { label: 'Profile picture (logo)', done: !!studio.logoUrl },
+    { label: 'Cover photo',          done: !!studio.coverUrl },
+    { label: 'Bio & story',          done: !!(studio.richDescription?.trim()) },
+    { label: 'At least 1 service',   done: !!(studio.services?.length) },
+    { label: 'Contact info',         done: !!(studio.contactInfo?.email || studio.contactInfo?.phone) },
+    { label: 'Gallery photos',       done: !!(studio.gallery?.length) },
+    { label: 'Genre tags',           done: !!(studio.genres?.length) },
+    { label: 'Credits',              done: !!(studio.credits?.length) },
+    { label: 'Social links',         done: !!(studio.socialLinks && Object.values(studio.socialLinks).some(Boolean)) },
+  ];
+  const done = checks.filter((c) => c.done).length;
+  return { pct: Math.round((done / checks.length) * 100), checklist: checks };
+}
+
+// ─── Completion widget ────────────────────────────────────────────────────────
+function CompletionWidget({ studio, onSetupClick }) {
+  const { pct, checklist } = calcCompletion(studio);
+
+  return (
+    <div className="eyf-card eyf-stack">
+      <div className="eyf-row eyf-row--between">
+        <h3 style={{ margin: 0 }}>Profile completion</h3>
+        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: pct === 100 ? 'var(--sage)' : 'var(--muted)' }}>
+          {pct}%
+        </span>
+      </div>
+      <div className="eyf-completion-widget">
+        <div className="eyf-completion-track">
+          <div className="eyf-completion-fill" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="eyf-completion-checklist">
+          {checklist.map((item) => (
+            <div key={item.label} className={`eyf-completion-item${item.done ? ' is-done' : ''}`}>
+              <span className="eyf-completion-dot">{item.done ? '✓' : ''}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {pct < 100 ? (
+        <button
+          type="button"
+          className="eyf-button eyf-button--secondary"
+          style={{ justifySelf: 'start' }}
+          onClick={onSetupClick}
+        >
+          Complete setup
+        </button>
+      ) : (
+        <p className="eyf-muted" style={{ fontSize: '0.875rem' }}>Your profile is complete! ✓</p>
+      )}
     </div>
   );
 }
@@ -135,20 +198,36 @@ export function StudioDashboard() {
   const [studio, setStudio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showWizard, setShowWizard] = useState(false);
 
   const fetchData = useCallback(() => {
     setLoading(true);
     setError(null);
     Promise.all([
       bookingsApi.list(),
-      studiosApi.list({ limit: 50 }),
+      studioProfileApi.get().catch(() => null),           // full owner-scoped profile
+      studiosApi.list({ limit: 50 }).catch(() => ({ studios: [] })),  // fallback for extra fields
     ])
-      .then(([bkgs, { studios }]) => {
+      .then(([bkgs, profile, { studios }]) => {
         setBookings(bkgs);
-        const owned = studios.find((s) => s.owner?.id === currentUser?.id || s.ownerId === currentUser?.id);
-        if (owned) {
-          setStudio(owned);
+
+        // Prefer studioProfileApi data (richer), fall back to list match
+        if (profile) {
+          setStudio(profile);
+          // Show wizard if profile is incomplete and owner hasn't dismissed it
+          const wizardKey = `efyia_wizard_seen_${profile.id}`;
+          const hasDismissed = localStorage.getItem(wizardKey);
+          if (!hasDismissed && !profile.richDescription?.trim()) {
+            setShowWizard(true);
+          }
+        } else {
+          // Fallback: find in public list
+          const owned = studios.find(
+            (s) => s.owner?.id === currentUser?.id || s.ownerId === currentUser?.id
+          );
+          if (owned) setStudio(owned);
         }
+
         setLoading(false);
       })
       .catch((err) => {
@@ -169,49 +248,95 @@ export function StudioDashboard() {
     }
   };
 
+  const handleWizardFinished = (updated) => {
+    setStudio(updated);
+    setShowWizard(false);
+    if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, '1');
+    showToast('Profile set up successfully!');
+  };
+
+  const handleWizardDismiss = () => {
+    setShowWizard(false);
+    if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, '1');
+  };
+
+  const openWizard = () => setShowWizard(true);
+
   const revenue = bookings.filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
     .reduce((sum, b) => sum + (b.total || 0), 0);
 
   return (
-    <div className="eyf-page">
-      <section className="eyf-section eyf-stack">
-        <SectionHeading
-          eyebrow="Studio dashboard"
-          title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
+    <>
+      {/* Profile setup wizard — rendered outside page flow as overlay */}
+      {showWizard && studio ? (
+        <ProfileSetupWizard
+          studio={studio}
+          onFinished={handleWizardFinished}
+          onDismiss={handleWizardDismiss}
         />
-        {loading ? <Spinner /> : error ? <ErrorMessage message={error} onRetry={fetchData} /> : (
-          <>
-            <div className="eyf-stats-grid">
-              <div className="eyf-card"><strong>{bookings.length}</strong><span>Total bookings</span></div>
-              <div className="eyf-card"><strong>{bookings.filter((b) => b.status === 'PENDING').length}</strong><span>Pending</span></div>
-              <div className="eyf-card"><strong>${revenue.toFixed(0)}</strong><span>Revenue</span></div>
-              <div className="eyf-card"><strong>{studio?.rating || '—'}</strong><span>Rating</span></div>
-            </div>
+      ) : null}
 
-            <h3>Bookings</h3>
-            <BookingRows bookings={bookings} onStatusChange={handleStatusChange} />
+      <div className="eyf-page">
+        <section className="eyf-section eyf-stack">
+          <SectionHeading
+            eyebrow="Studio dashboard"
+            title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
+          />
 
-            {studio ? (
-              <div className="eyf-card eyf-stack">
-                <h3>Studio page &amp; branding</h3>
-                <ProfileCustomizer
-                  studio={studio}
-                  onSaved={(updated) => {
-                    setStudio(updated);
-                    showToast('Studio profile updated.');
-                  }}
-                />
+          {loading ? <Spinner /> : error ? <ErrorMessage message={error} onRetry={fetchData} /> : (
+            <>
+              {/* Stats */}
+              <div className="eyf-stats-grid">
+                <div className="eyf-card"><strong>{bookings.length}</strong><span>Total bookings</span></div>
+                <div className="eyf-card"><strong>{bookings.filter((b) => b.status === 'PENDING').length}</strong><span>Pending</span></div>
+                <div className="eyf-card"><strong>${revenue.toFixed(0)}</strong><span>Revenue</span></div>
+                <div className="eyf-card"><strong>{studio?.rating || '—'}</strong><span>Rating</span></div>
               </div>
-            ) : (
-              <EmptyState
-                title="No studio linked to your account"
-                description="Contact support to link your studio profile."
-              />
-            )}
-          </>
-        )}
-      </section>
-    </div>
+
+              {/* Bookings */}
+              <h3>Bookings</h3>
+              <BookingRows bookings={bookings} onStatusChange={handleStatusChange} />
+
+              {studio ? (
+                <>
+                  {/* Profile completion */}
+                  <CompletionWidget studio={studio} onSetupClick={openWizard} />
+
+                  {/* Studio branding customizer */}
+                  <div className="eyf-card eyf-stack">
+                    <div className="eyf-row eyf-row--between">
+                      <h3 style={{ margin: 0 }}>Studio page &amp; branding</h3>
+                      {studio.slug ? (
+                        <a
+                          href={`/studios/${studio.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.82rem', color: 'var(--muted)', textDecoration: 'underline' }}
+                        >
+                          View public profile ↗
+                        </a>
+                      ) : null}
+                    </div>
+                    <ProfileCustomizer
+                      studio={studio}
+                      onSaved={(updated) => {
+                        setStudio(updated);
+                        showToast('Studio profile updated.');
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <EmptyState
+                  title="No studio linked to your account"
+                  description="Contact support to link your studio profile."
+                />
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    </>
   );
 }
 
@@ -277,15 +402,15 @@ export function AdminDashboard() {
             <div className="eyf-admin-grid">
               <div className="eyf-card eyf-stack">
                 <h3>Studios ({studios.length})</h3>
-                {studios.map((studio) => (
-                  <div key={studio.id} className="eyf-row eyf-row--between">
+                {studios.map((s) => (
+                  <div key={s.id} className="eyf-row eyf-row--between">
                     <div>
-                      <span>{studio.name}</span>
+                      <span>{s.name}</span>
                       <span className="eyf-muted" style={{ display: 'block', fontSize: '0.85rem' }}>
-                        {studio.city}, {studio.state}
+                        {s.city}, {s.state}
                       </span>
                     </div>
-                    <span className="eyf-muted">${studio.pricePerHour}/hr</span>
+                    <span className="eyf-muted">${s.pricePerHour}/hr</span>
                   </div>
                 ))}
               </div>

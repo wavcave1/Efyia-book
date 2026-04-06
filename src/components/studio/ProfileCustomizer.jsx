@@ -25,19 +25,138 @@ function injectFont(url) {
   document.head.appendChild(link);
 }
 
-function FieldGroup({ label, children }) {
+// ─── TagInput ─────────────────────────────────────────────────────────────────
+function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…', suggestions = [] }) {
+  const [inputValue, setInputValue] = useState('');
+
+  const addTag = (tag) => {
+    const trimmed = tag.trim().replace(/,$/, '').trim();
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+    }
+    setInputValue('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(inputValue);
+    } else if (e.key === 'Backspace' && !inputValue && value.length) {
+      onChange(value.slice(0, -1));
+    }
+  };
+
+  const removeTag = (tag) => onChange(value.filter((v) => v !== tag));
+
+  return (
+    <div>
+      <div className="eyf-tag-input" onClick={(e) => e.currentTarget.querySelector('input')?.focus()}>
+        {value.map((tag) => (
+          <span key={tag} className="eyf-tag-chip">
+            {tag}
+            <button type="button" onClick={() => removeTag(tag)} aria-label={`Remove ${tag}`}>×</button>
+          </span>
+        ))}
+        <input
+          type="text"
+          className="eyf-tag-input__field"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => { if (inputValue.trim()) addTag(inputValue); }}
+          placeholder={value.length ? '' : placeholder}
+        />
+      </div>
+      {suggestions.length > 0 ? (
+        <div className="eyf-tags" style={{ marginTop: '0.5rem', flexWrap: 'wrap' }}>
+          {suggestions.filter((s) => !value.includes(s)).slice(0, 12).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="eyf-chip"
+              onClick={() => onChange([...value, s])}
+              style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ─── FieldGroup ───────────────────────────────────────────────────────────────
+function FieldGroup({ label, children, hint }) {
   return (
     <div style={{ marginBottom: '1.25rem' }}>
       <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', fontSize: '0.875rem' }}>
         {label}
       </label>
       {children}
+      {hint ? <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.4 }}>{hint}</p> : null}
     </div>
   );
 }
 
-export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
+// ─── ArrayItemCard ────────────────────────────────────────────────────────────
+function ArrayItemCard({ label, onRemove, children }) {
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '1rem', marginBottom: '1rem', background: 'var(--card)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <strong style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{label}</strong>
+        <button
+          type="button"
+          onClick={onRemove}
+          style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1, padding: '0.1rem 0.3rem' }}
+          aria-label={`Remove ${label}`}
+        >
+          ×
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ─── SectionDivider ───────────────────────────────────────────────────────────
+function SectionDivider({ title }) {
+  return (
+    <h4 style={{ margin: '1.75rem 0 1rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+      {title}
+    </h4>
+  );
+}
+
+const GENRE_SUGGESTIONS = [
+  'Hip-Hop', 'R&B', 'Pop', 'Rock', 'Gospel', 'Country', 'Electronic', 'Jazz', 'Soul',
+  'Reggae', 'Latin', 'Podcast', 'Film/TV', 'Beat Production', 'Indie', 'Alternative',
+  'Classical', 'Metal', 'Funk', 'House', 'Trap',
+];
+
+const AMENITY_SUGGESTIONS = [
+  'Parking', 'Lounge', 'Refreshments', 'Wi-Fi', 'Isolation booth', 'Live room',
+  'Control room', 'ADA accessible', 'Video monitoring', 'Live streaming', 'Lodging nearby',
+  '24/7 access', 'Vocal booth', 'Drum kit', 'Grand piano',
+];
+
+const TABS = [
+  { id: 'branding', label: 'Branding' },
+  { id: 'layout', label: 'Layout' },
+  { id: 'content', label: 'Content' },
+  { id: 'gallery', label: 'Gallery' },
+  { id: 'services', label: 'Services' },
+  { id: 'credits', label: 'Credits' },
+  { id: 'portfolio', label: 'Portfolio' },
+  { id: 'team', label: 'Team & Specs' },
+  { id: 'discovery', label: 'Discovery' },
+  { id: 'contact', label: 'Contact' },
+];
+
+// ─── Main component ───────────────────────────────────────────────────────────
+export default function ProfileCustomizer({ studio: initialStudio, onSaved, initialTab }) {
   const [form, setForm] = useState(() => ({
+    // Existing fields
     name: initialStudio?.name || '',
     description: initialStudio?.description || '',
     richDescription: initialStudio?.richDescription || '',
@@ -50,12 +169,59 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
     socialLinks: initialStudio?.socialLinks || {},
     contactInfo: initialStudio?.contactInfo || {},
     services: initialStudio?.services || [],
+    // New fields
+    gallery: initialStudio?.gallery || [],
+    credits: initialStudio?.credits || [],
+    achievements: initialStudio?.achievements || [],
+    portfolio: initialStudio?.portfolio || [],
+    team: initialStudio?.team || [],
+    studioSpecs: initialStudio?.studioSpecs || { consoleType: '', daws: '', mics: '', outboardGear: '', rooms: '' },
+    bookingInfo: initialStudio?.bookingInfo || { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '' },
+    genres: initialStudio?.genres || [],
+    amenities: initialStudio?.amenities || [],
+    testimonials: initialStudio?.testimonials || [],
   }));
 
-  const [saving, setSaving] = useState(false);
+  const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   const [saveError, setSaveError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState('branding');
+  const [activeTab, setActiveTab] = useState(initialTab || 'branding');
+  const saveTimerRef = useRef(null);
+
+  // Sync initialTab prop when drawer reopens on a different section
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
+  // Sync form if studio prop changes (e.g., after external refresh)
+  useEffect(() => {
+    if (initialStudio?.id) {
+      setForm({
+        name: initialStudio.name || '',
+        description: initialStudio.description || '',
+        richDescription: initialStudio.richDescription || '',
+        logoUrl: initialStudio.logoUrl || '',
+        coverUrl: initialStudio.coverUrl || '',
+        accentColor: initialStudio.accentColor || '#62f3d4',
+        themeOverride: initialStudio.themeOverride || '',
+        fontPairing: initialStudio.fontPairing || 'modern',
+        layoutType: initialStudio.layoutType || 'minimal',
+        socialLinks: initialStudio.socialLinks || {},
+        contactInfo: initialStudio.contactInfo || {},
+        services: initialStudio.services || [],
+        gallery: initialStudio.gallery || [],
+        credits: initialStudio.credits || [],
+        achievements: initialStudio.achievements || [],
+        portfolio: initialStudio.portfolio || [],
+        team: initialStudio.team || [],
+        studioSpecs: initialStudio.studioSpecs || { consoleType: '', daws: '', mics: '', outboardGear: '', rooms: '' },
+        bookingInfo: initialStudio.bookingInfo || { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '' },
+        genres: initialStudio.genres || [],
+        amenities: initialStudio.amenities || [],
+        testimonials: initialStudio.testimonials || [],
+      });
+    }
+  }, [initialStudio?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Inject font when pairing changes
   useEffect(() => {
@@ -63,51 +229,169 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
     if (url) injectFont(url);
   }, [form.fontPairing]);
 
+  // ─── Field setters ──────────────────────────────────────────────────────────
   const set = useCallback((field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    setSaveState('idle');
   }, []);
 
   const setSocial = useCallback((field) => (e) => {
-    setForm((prev) => ({
-      ...prev,
-      socialLinks: { ...prev.socialLinks, [field]: e.target.value },
-    }));
+    setForm((prev) => ({ ...prev, socialLinks: { ...prev.socialLinks, [field]: e.target.value } }));
+    setSaveState('idle');
   }, []);
 
   const setContact = useCallback((field) => (e) => {
-    setForm((prev) => ({
-      ...prev,
-      contactInfo: { ...prev.contactInfo, [field]: e.target.value },
-    }));
+    setForm((prev) => ({ ...prev, contactInfo: { ...prev.contactInfo, [field]: e.target.value } }));
+    setSaveState('idle');
   }, []);
 
+  const setSpecs = useCallback((field) => (e) => {
+    setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, [field]: e.target.value } }));
+    setSaveState('idle');
+  }, []);
+
+  const setBookingInfo = useCallback((field) => (e) => {
+    setForm((prev) => ({ ...prev, bookingInfo: { ...prev.bookingInfo, [field]: e.target.value } }));
+    setSaveState('idle');
+  }, []);
+
+  const setTagField = useCallback((field) => (tags) => {
+    setForm((prev) => ({ ...prev, [field]: tags }));
+    setSaveState('idle');
+  }, []);
+
+  // ─── Services ───────────────────────────────────────────────────────────────
   const addService = () => {
-    setForm((prev) => ({
-      ...prev,
-      services: [...(prev.services || []), { name: '', description: '', price: '', unit: 'hr' }],
-    }));
+    setForm((prev) => ({ ...prev, services: [...prev.services, { name: '', description: '', price: '', unit: 'hr' }] }));
+    setSaveState('idle');
   };
-
   const removeService = (idx) => {
-    setForm((prev) => ({
-      ...prev,
-      services: prev.services.filter((_, i) => i !== idx),
-    }));
+    setForm((prev) => ({ ...prev, services: prev.services.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
   };
-
   const setService = (idx, field) => (e) => {
     setForm((prev) => {
       const updated = [...prev.services];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, services: updated };
     });
+    setSaveState('idle');
   };
 
+  // ─── Gallery ────────────────────────────────────────────────────────────────
+  const addGallery = () => {
+    setForm((prev) => ({ ...prev, gallery: [...prev.gallery, { url: '', caption: '' }] }));
+    setSaveState('idle');
+  };
+  const removeGallery = (idx) => {
+    setForm((prev) => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
+  };
+  const setGallery = (idx, field) => (e) => {
+    setForm((prev) => {
+      const updated = [...prev.gallery];
+      updated[idx] = { ...updated[idx], [field]: e.target.value };
+      return { ...prev, gallery: updated };
+    });
+    setSaveState('idle');
+  };
+
+  // ─── Credits ────────────────────────────────────────────────────────────────
+  const addCredit = () => {
+    setForm((prev) => ({ ...prev, credits: [...prev.credits, { artistName: '', projectName: '', role: '', year: '', link: '' }] }));
+    setSaveState('idle');
+  };
+  const removeCredit = (idx) => {
+    setForm((prev) => ({ ...prev, credits: prev.credits.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
+  };
+  const setCredit = (idx, field) => (e) => {
+    setForm((prev) => {
+      const updated = [...prev.credits];
+      updated[idx] = { ...updated[idx], [field]: e.target.value };
+      return { ...prev, credits: updated };
+    });
+    setSaveState('idle');
+  };
+
+  // ─── Achievements ───────────────────────────────────────────────────────────
+  const addAchievement = () => {
+    setForm((prev) => ({ ...prev, achievements: [...prev.achievements, { title: '', org: '', year: '' }] }));
+    setSaveState('idle');
+  };
+  const removeAchievement = (idx) => {
+    setForm((prev) => ({ ...prev, achievements: prev.achievements.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
+  };
+  const setAchievement = (idx, field) => (e) => {
+    setForm((prev) => {
+      const updated = [...prev.achievements];
+      updated[idx] = { ...updated[idx], [field]: e.target.value };
+      return { ...prev, achievements: updated };
+    });
+    setSaveState('idle');
+  };
+
+  // ─── Portfolio embeds ────────────────────────────────────────────────────────
+  const addPortfolio = () => {
+    setForm((prev) => ({ ...prev, portfolio: [...prev.portfolio, { title: '', artistName: '', trackName: '', serviceType: '', embedUrl: '' }] }));
+    setSaveState('idle');
+  };
+  const removePortfolio = (idx) => {
+    setForm((prev) => ({ ...prev, portfolio: prev.portfolio.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
+  };
+  const setPortfolio = (idx, field) => (e) => {
+    setForm((prev) => {
+      const updated = [...prev.portfolio];
+      updated[idx] = { ...updated[idx], [field]: e.target.value };
+      return { ...prev, portfolio: updated };
+    });
+    setSaveState('idle');
+  };
+
+  // ─── Team ────────────────────────────────────────────────────────────────────
+  const addTeamMember = () => {
+    setForm((prev) => ({ ...prev, team: [...prev.team, { name: '', role: '', bio: '', photoUrl: '' }] }));
+    setSaveState('idle');
+  };
+  const removeTeamMember = (idx) => {
+    setForm((prev) => ({ ...prev, team: prev.team.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
+  };
+  const setTeamMember = (idx, field) => (e) => {
+    setForm((prev) => {
+      const updated = [...prev.team];
+      updated[idx] = { ...updated[idx], [field]: e.target.value };
+      return { ...prev, team: updated };
+    });
+    setSaveState('idle');
+  };
+
+  // ─── Testimonials ────────────────────────────────────────────────────────────
+  const addTestimonial = () => {
+    setForm((prev) => ({ ...prev, testimonials: [...prev.testimonials, { quote: '', authorName: '', authorRole: '' }] }));
+    setSaveState('idle');
+  };
+  const removeTestimonial = (idx) => {
+    setForm((prev) => ({ ...prev, testimonials: prev.testimonials.filter((_, i) => i !== idx) }));
+    setSaveState('idle');
+  };
+  const setTestimonial = (idx, field) => (e) => {
+    setForm((prev) => {
+      const updated = [...prev.testimonials];
+      updated[idx] = { ...updated[idx], [field]: e.target.value };
+      return { ...prev, testimonials: updated };
+    });
+    setSaveState('idle');
+  };
+
+  // ─── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    setSaving(true);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveState('saving');
     setSaveError(null);
     try {
-      // Normalize services: convert price string to number or undefined
       const services = (form.services || [])
         .filter((s) => s.name.trim())
         .map((s) => ({
@@ -117,26 +401,44 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
           unit: s.unit || undefined,
         }));
 
+      const gallery = (form.gallery || []).filter((g) => g.url.trim());
+      const credits = (form.credits || []).filter((c) => c.artistName.trim());
+      const achievements = (form.achievements || []).filter((a) => a.title.trim());
+      const portfolio = (form.portfolio || []).filter((p) => p.embedUrl.trim() || p.title.trim());
+      const team = (form.team || []).filter((t) => t.name.trim());
+      const testimonials = (form.testimonials || []).filter((t) => t.quote.trim());
+
       const payload = {
         ...form,
         themeOverride: form.themeOverride || null,
         logoUrl: form.logoUrl || null,
         coverUrl: form.coverUrl || null,
         services: services.length ? services : null,
-        socialLinks: Object.values(form.socialLinks).some(Boolean) ? form.socialLinks : null,
-        contactInfo: Object.values(form.contactInfo).some(Boolean) ? form.contactInfo : null,
+        socialLinks: Object.values(form.socialLinks || {}).some(Boolean) ? form.socialLinks : null,
+        contactInfo: Object.values(form.contactInfo || {}).some(Boolean) ? form.contactInfo : null,
+        gallery: gallery.length ? gallery : null,
+        credits: credits.length ? credits : null,
+        achievements: achievements.length ? achievements : null,
+        portfolio: portfolio.length ? portfolio : null,
+        team: team.length ? team : null,
+        testimonials: testimonials.length ? testimonials : null,
+        genres: form.genres?.length ? form.genres : null,
+        amenities: form.amenities?.length ? form.amenities : null,
+        studioSpecs: Object.values(form.studioSpecs || {}).some(Boolean) ? form.studioSpecs : null,
+        bookingInfo: Object.values(form.bookingInfo || {}).some(Boolean) ? form.bookingInfo : null,
       };
 
       const updated = await studioProfileApi.update(payload);
+      setSaveState('saved');
+      saveTimerRef.current = setTimeout(() => setSaveState('idle'), 3000);
       if (onSaved) onSaved(updated);
     } catch (err) {
+      setSaveState('error');
       setSaveError(err.message || 'Could not save profile.');
-    } finally {
-      setSaving(false);
     }
   };
 
-  // Build a preview studio object by merging the form with the initial studio data
+  // Preview
   const previewStudio = {
     ...initialStudio,
     ...form,
@@ -144,37 +446,33 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
       .filter((s) => s.name.trim())
       .map((s) => ({ ...s, price: s.price !== '' ? parseFloat(s.price) : undefined })),
   };
-
   const PreviewLayout = LAYOUT_COMPONENTS[form.layoutType] || LayoutMinimal;
   const previewVars = buildStudioVars(previewStudio);
 
-  const TABS = [
-    { id: 'branding', label: 'Branding' },
-    { id: 'layout', label: 'Layout' },
-    { id: 'content', label: 'Content' },
-    { id: 'services', label: 'Services' },
-    { id: 'contact', label: 'Contact' },
-  ];
-
   return (
     <div>
-      {/* Tab nav */}
-      <div style={{ display: 'flex', gap: '0.25rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+      {/* Tab bar */}
+      <div
+        className="eyf-tabs eyf-tabs--scroll"
+        style={{ borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', gap: '0' }}
+      >
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.5rem 0.9rem',
               background: 'none',
               border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid var(--studio-accent, #62f3d4)' : '2px solid transparent',
+              borderBottom: activeTab === tab.id ? '2px solid var(--mint)' : '2px solid transparent',
               color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
               cursor: 'pointer',
               fontWeight: activeTab === tab.id ? 700 : 400,
-              fontSize: '0.9rem',
-              paddingBottom: '0.6rem',
+              fontSize: '0.875rem',
+              paddingBottom: '0.65rem',
+              whiteSpace: 'nowrap',
+              transition: 'color 0.15s',
             }}
           >
             {tab.label}
@@ -182,7 +480,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
         ))}
       </div>
 
-      {/* Branding tab */}
+      {/* ── Branding tab ────────────────────────────────────────────────────── */}
       {activeTab === 'branding' ? (
         <div>
           <FieldGroup label="Accent color">
@@ -191,7 +489,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
                 type="color"
                 value={form.accentColor}
                 onChange={set('accentColor')}
-                style={{ width: 44, height: 44, border: 'none', cursor: 'pointer', borderRadius: 6, background: 'none' }}
+                style={{ width: 44, height: 44, border: 'none', cursor: 'pointer', borderRadius: 6, background: 'none', padding: 0 }}
               />
               <input
                 type="text"
@@ -204,13 +502,8 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
             </div>
           </FieldGroup>
 
-          <FieldGroup label="Logo URL">
-            <input
-              type="url"
-              value={form.logoUrl}
-              onChange={set('logoUrl')}
-              placeholder="https://cdn.example.com/logo.png"
-            />
+          <FieldGroup label="Logo URL" hint="Upload to Cloudinary or Imgbb. Square images (200×200px+) work best.">
+            <input type="url" value={form.logoUrl} onChange={set('logoUrl')} placeholder="https://cdn.example.com/logo.png" />
             {form.logoUrl ? (
               <img
                 src={form.logoUrl}
@@ -221,13 +514,8 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
             ) : null}
           </FieldGroup>
 
-          <FieldGroup label="Cover image URL">
-            <input
-              type="url"
-              value={form.coverUrl}
-              onChange={set('coverUrl')}
-              placeholder="https://cdn.example.com/cover.jpg"
-            />
+          <FieldGroup label="Cover image URL" hint="Used as the hero/header image on your public studio page.">
+            <input type="url" value={form.coverUrl} onChange={set('coverUrl')} placeholder="https://cdn.example.com/cover.jpg" />
             {form.coverUrl ? (
               <div
                 style={{
@@ -253,7 +541,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
         </div>
       ) : null}
 
-      {/* Layout tab */}
+      {/* ── Layout tab ──────────────────────────────────────────────────────── */}
       {activeTab === 'layout' ? (
         <div>
           <FieldGroup label="Layout template">
@@ -262,7 +550,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, layoutType: key }))}
+                  onClick={() => { setForm((prev) => ({ ...prev, layoutType: key })); setSaveState('idle'); }}
                   style={{
                     padding: '1rem',
                     borderRadius: 10,
@@ -274,9 +562,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
                 >
                   <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{cfg.preview}</div>
                   <strong style={{ fontSize: '0.9rem' }}>{cfg.label}</strong>
-                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
-                    {cfg.description}
-                  </p>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>{cfg.description}</p>
                 </button>
               ))}
             </div>
@@ -288,7 +574,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, fontPairing: key }))}
+                  onClick={() => { setForm((prev) => ({ ...prev, fontPairing: key })); setSaveState('idle'); }}
                   style={{
                     padding: '0.75rem 1rem',
                     borderRadius: 8,
@@ -310,18 +596,18 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
         </div>
       ) : null}
 
-      {/* Content tab */}
+      {/* ── Content tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'content' ? (
         <div>
           <FieldGroup label="Studio name">
             <input type="text" value={form.name} onChange={set('name')} />
           </FieldGroup>
-          <FieldGroup label="Short description (used on marketplace cards)">
+          <FieldGroup label="Short description" hint="Shown on marketplace cards and search results (1–2 sentences).">
             <textarea rows={3} value={form.description} onChange={set('description')} />
           </FieldGroup>
-          <FieldGroup label="Rich description (full text shown on your studio page — supports line breaks)">
+          <FieldGroup label="Rich description / bio" hint="Full text shown on your public studio page. Supports line breaks.">
             <textarea
-              rows={8}
+              rows={10}
               value={form.richDescription}
               onChange={set('richDescription')}
               placeholder="Tell your story, describe the vibe, list what makes your space special…"
@@ -330,31 +616,48 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
         </div>
       ) : null}
 
-      {/* Services tab */}
+      {/* ── Gallery tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'gallery' ? (
+        <div>
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+            Add photos of your studio space — control room, live room, isolation booth, equipment, vibe.
+            Upload images to a CDN and paste URLs here.
+          </p>
+          {form.gallery.map((item, idx) => (
+            <ArrayItemCard key={idx} label={`Photo ${idx + 1}`} onRemove={() => removeGallery(idx)}>
+              <FieldGroup label="Image URL">
+                <input type="url" value={item.url} onChange={setGallery(idx, 'url')} placeholder="https://cdn.example.com/studio-photo.jpg" />
+                {item.url ? (
+                  <div
+                    style={{
+                      marginTop: '0.5rem',
+                      height: 100,
+                      borderRadius: 8,
+                      backgroundImage: `url(${item.url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      border: '1px solid var(--border)',
+                    }}
+                    onError={() => {}}
+                  />
+                ) : null}
+              </FieldGroup>
+              <FieldGroup label="Caption (optional)">
+                <input type="text" value={item.caption} onChange={setGallery(idx, 'caption')} placeholder="e.g. Control room — SSL 4000 G console" />
+              </FieldGroup>
+            </ArrayItemCard>
+          ))}
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addGallery} style={{ width: '100%' }}>
+            + Add photo
+          </button>
+        </div>
+      ) : null}
+
+      {/* ── Services tab ────────────────────────────────────────────────────── */}
       {activeTab === 'services' ? (
         <div>
           {(form.services || []).map((svc, idx) => (
-            <div
-              key={idx}
-              style={{
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                padding: '1rem',
-                marginBottom: '1rem',
-                background: 'var(--card)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <strong style={{ fontSize: '0.875rem' }}>Service {idx + 1}</strong>
-                <button
-                  type="button"
-                  onClick={() => removeService(idx)}
-                  style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '1.1rem' }}
-                  aria-label="Remove service"
-                >
-                  ×
-                </button>
-              </div>
+            <ArrayItemCard key={idx} label={`Service ${idx + 1}`} onRemove={() => removeService(idx)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Name *</label>
@@ -367,28 +670,278 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
                   </div>
                   <div>
                     <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Unit</label>
-                    <input value={svc.unit} onChange={setService(idx, 'unit')} placeholder="hr" />
+                    <select value={svc.unit} onChange={setService(idx, 'unit')}>
+                      <option value="hr">per hour</option>
+                      <option value="half-day">half day</option>
+                      <option value="day">per day</option>
+                      <option value="project">per project</option>
+                      <option value="session">per session</option>
+                    </select>
                   </div>
                 </div>
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Description</label>
-                <textarea rows={2} value={svc.description} onChange={setService(idx, 'description')} placeholder="Brief description of what's included…" />
+                <textarea rows={2} value={svc.description} onChange={setService(idx, 'description')} placeholder="What's included, session length, engineer availability…" />
               </div>
-            </div>
+            </ArrayItemCard>
           ))}
-          <button
-            type="button"
-            className="eyf-button eyf-button--secondary"
-            onClick={addService}
-            style={{ width: '100%' }}
-          >
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addService} style={{ width: '100%' }}>
             + Add service
           </button>
         </div>
       ) : null}
 
-      {/* Contact tab */}
+      {/* ── Credits tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'credits' ? (
+        <div>
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+            Artists, albums, films, or projects your studio has worked on.
+          </p>
+          {form.credits.map((credit, idx) => (
+            <ArrayItemCard key={idx} label={`Credit ${idx + 1}`} onRemove={() => removeCredit(idx)}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Artist / Client *</label>
+                  <input value={credit.artistName} onChange={setCredit(idx, 'artistName')} placeholder="Drake, Taylor Swift…" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Project name</label>
+                  <input value={credit.projectName} onChange={setCredit(idx, 'projectName')} placeholder="Album, EP, Film title…" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Role</label>
+                  <input value={credit.role} onChange={setCredit(idx, 'role')} placeholder="Recorded at, Mixed at…" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Year</label>
+                  <input type="number" min="1900" max="2099" value={credit.year} onChange={setCredit(idx, 'year')} placeholder="2024" />
+                </div>
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Link (optional)</label>
+                <input type="url" value={credit.link} onChange={setCredit(idx, 'link')} placeholder="Spotify, Apple Music, YouTube…" />
+              </div>
+            </ArrayItemCard>
+          ))}
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addCredit} style={{ width: '100%' }}>
+            + Add credit
+          </button>
+        </div>
+      ) : null}
+
+      {/* ── Portfolio tab ────────────────────────────────────────────────────── */}
+      {activeTab === 'portfolio' ? (
+        <div>
+          <SectionDivider title="Audio & Video samples" />
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+            YouTube, SoundCloud, or Spotify embed URLs. For YouTube: use the embed URL format
+            (youtube.com/embed/VIDEO_ID).
+          </p>
+          {form.portfolio.map((item, idx) => (
+            <ArrayItemCard key={idx} label={`Sample ${idx + 1}`} onRemove={() => removePortfolio(idx)}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Title</label>
+                  <input value={item.title} onChange={setPortfolio(idx, 'title')} placeholder="Before/After Mix Demo" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Artist name</label>
+                  <input value={item.artistName} onChange={setPortfolio(idx, 'artistName')} placeholder="Artist" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Track name</label>
+                  <input value={item.trackName} onChange={setPortfolio(idx, 'trackName')} placeholder="Track title" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Service type</label>
+                  <input value={item.serviceType} onChange={setPortfolio(idx, 'serviceType')} placeholder="Mixing, Mastering…" />
+                </div>
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Embed URL *</label>
+                <input type="url" value={item.embedUrl} onChange={setPortfolio(idx, 'embedUrl')} placeholder="https://www.youtube.com/embed/…" />
+              </div>
+            </ArrayItemCard>
+          ))}
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addPortfolio} style={{ width: '100%', marginBottom: '1.5rem' }}>
+            + Add sample
+          </button>
+
+          <SectionDivider title="Achievements & Awards" />
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+            Certifications, press features, industry recognitions.
+          </p>
+          {form.achievements.map((item, idx) => (
+            <ArrayItemCard key={idx} label={`Achievement ${idx + 1}`} onRemove={() => removeAchievement(idx)}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Title / Award *</label>
+                  <input value={item.title} onChange={setAchievement(idx, 'title')} placeholder="Grammy Nominated Studio" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Organization / Publication</label>
+                  <input value={item.org} onChange={setAchievement(idx, 'org')} placeholder="Recording Academy" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Year</label>
+                  <input type="number" min="1900" max="2099" value={item.year} onChange={setAchievement(idx, 'year')} placeholder="2023" />
+                </div>
+              </div>
+            </ArrayItemCard>
+          ))}
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addAchievement} style={{ width: '100%' }}>
+            + Add achievement
+          </button>
+        </div>
+      ) : null}
+
+      {/* ── Team & Specs tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'team' ? (
+        <div>
+          <SectionDivider title="Team members" />
+          {form.team.map((member, idx) => (
+            <ArrayItemCard key={idx} label={member.name || `Member ${idx + 1}`} onRemove={() => removeTeamMember(idx)}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Name *</label>
+                  <input value={member.name} onChange={setTeamMember(idx, 'name')} placeholder="Alex Johnson" />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Role</label>
+                  <input value={member.role} onChange={setTeamMember(idx, 'role')} placeholder="Lead Engineer, Producer…" />
+                </div>
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Bio (optional)</label>
+                <textarea rows={2} value={member.bio} onChange={setTeamMember(idx, 'bio')} placeholder="Short bio about their background and specialty…" />
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Photo URL (optional)</label>
+                <input type="url" value={member.photoUrl} onChange={setTeamMember(idx, 'photoUrl')} placeholder="https://cdn.example.com/photo.jpg" />
+              </div>
+            </ArrayItemCard>
+          ))}
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addTeamMember} style={{ width: '100%', marginBottom: '1.5rem' }}>
+            + Add team member
+          </button>
+
+          <SectionDivider title="Studio specs" />
+          <FieldGroup label="Console / Desk" hint="e.g. SSL 4000 G+, Neve 8078, In The Box">
+            <input type="text" value={form.studioSpecs.consoleType || ''} onChange={setSpecs('consoleType')} placeholder="SSL 4000 G+" />
+          </FieldGroup>
+          <FieldGroup label="DAWs available" hint="Type and press Enter to add each">
+            <TagInput
+              value={typeof form.studioSpecs.daws === 'string' ? (form.studioSpecs.daws ? [form.studioSpecs.daws] : []) : (form.studioSpecs.daws || [])}
+              onChange={(tags) => setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, daws: tags } }))}
+              placeholder="Pro Tools, Logic Pro, Ableton…"
+              suggestions={['Pro Tools', 'Logic Pro', 'Ableton Live', 'FL Studio', 'Cubase', 'Studio One', 'Reason']}
+            />
+          </FieldGroup>
+          <FieldGroup label="Notable microphones">
+            <TagInput
+              value={typeof form.studioSpecs.mics === 'string' ? (form.studioSpecs.mics ? [form.studioSpecs.mics] : []) : (form.studioSpecs.mics || [])}
+              onChange={(tags) => setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, mics: tags } }))}
+              placeholder="Neumann U87, AKG C414…"
+            />
+          </FieldGroup>
+          <FieldGroup label="Outboard gear">
+            <TagInput
+              value={typeof form.studioSpecs.outboardGear === 'string' ? (form.studioSpecs.outboardGear ? [form.studioSpecs.outboardGear] : []) : (form.studioSpecs.outboardGear || [])}
+              onChange={(tags) => setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, outboardGear: tags } }))}
+              placeholder="API 2500, Neve 33609, Distressor…"
+            />
+          </FieldGroup>
+          <FieldGroup label="Studio rooms / description">
+            <textarea
+              rows={3}
+              value={form.studioSpecs.rooms || ''}
+              onChange={setSpecs('rooms')}
+              placeholder="Control room (18×14ft), Live room (24×20ft, 14ft ceilings), Isolation booth (8×6ft)"
+            />
+          </FieldGroup>
+
+          <SectionDivider title="Booking & availability" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <FieldGroup label="Min. session (hours)">
+              <input type="number" min="0" value={form.bookingInfo.minHours || ''} onChange={setBookingInfo('minHours')} placeholder="2" />
+            </FieldGroup>
+            <FieldGroup label="Max. session (hours)">
+              <input type="number" min="0" value={form.bookingInfo.maxHours || ''} onChange={setBookingInfo('maxHours')} placeholder="12" />
+            </FieldGroup>
+          </div>
+          <FieldGroup label="Advance notice required (days)">
+            <input type="number" min="0" value={form.bookingInfo.advanceNoticeDays || ''} onChange={setBookingInfo('advanceNoticeDays')} placeholder="1" />
+          </FieldGroup>
+          <FieldGroup label="Availability notes / deposit policy">
+            <textarea
+              rows={3}
+              value={form.bookingInfo.notes || ''}
+              onChange={setBookingInfo('notes')}
+              placeholder="Available Mon–Sat 10am–2am. 50% deposit required to confirm. 48hr cancellation policy."
+            />
+          </FieldGroup>
+        </div>
+      ) : null}
+
+      {/* ── Discovery tab ────────────────────────────────────────────────────── */}
+      {activeTab === 'discovery' ? (
+        <div>
+          <SectionDivider title="Genre specializations" />
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+            What styles does your studio specialize in? Clients filter by genre.
+          </p>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <TagInput
+              value={form.genres}
+              onChange={setTagField('genres')}
+              placeholder="Hip-Hop, R&B, Pop…"
+              suggestions={GENRE_SUGGESTIONS}
+            />
+          </div>
+
+          <SectionDivider title="Amenities" />
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+            What does your studio offer? Clients often filter by these.
+          </p>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <TagInput
+              value={form.amenities}
+              onChange={setTagField('amenities')}
+              placeholder="Parking, Lounge, Wi-Fi…"
+              suggestions={AMENITY_SUGGESTIONS}
+            />
+          </div>
+
+          <SectionDivider title="Client testimonials" />
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+            Add quotes from past clients until a review system is in place.
+          </p>
+          {form.testimonials.map((item, idx) => (
+            <ArrayItemCard key={idx} label={item.authorName || `Testimonial ${idx + 1}`} onRemove={() => removeTestimonial(idx)}>
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Quote *</label>
+                <textarea rows={3} value={item.quote} onChange={setTestimonial(idx, 'quote')} placeholder='"Working at this studio was a game-changer…"' />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Client name</label>
+                  <input value={item.authorName} onChange={setTestimonial(idx, 'authorName')} placeholder="Alex M." />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Role / description</label>
+                  <input value={item.authorRole} onChange={setTestimonial(idx, 'authorRole')} placeholder="Independent artist, Atlanta GA" />
+                </div>
+              </div>
+            </ArrayItemCard>
+          ))}
+          <button type="button" className="eyf-button eyf-button--secondary" onClick={addTestimonial} style={{ width: '100%' }}>
+            + Add testimonial
+          </button>
+        </div>
+      ) : null}
+
+      {/* ── Contact tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'contact' ? (
         <div>
           <FieldGroup label="Phone number">
@@ -397,36 +950,44 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
           <FieldGroup label="Booking email">
             <input type="email" value={form.contactInfo?.email || ''} onChange={setContact('email')} placeholder="bookings@yourstudio.com" />
           </FieldGroup>
-          <FieldGroup label="External booking URL">
+          <FieldGroup label="External booking URL" hint="Calendly, StudioBookings, or your own form.">
             <input type="url" value={form.contactInfo?.bookingUrl || ''} onChange={setContact('bookingUrl')} placeholder="https://calendly.com/yourstudio" />
           </FieldGroup>
 
-          <h4 style={{ margin: '1.5rem 0 1rem', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)' }}>
-            Social links
-          </h4>
-          {['instagram', 'twitter', 'facebook', 'youtube', 'soundcloud', 'website'].map((platform) => (
+          <SectionDivider title="Social links" />
+          {['instagram', 'twitter', 'facebook', 'youtube', 'soundcloud', 'tiktok', 'website'].map((platform) => (
             <FieldGroup key={platform} label={platform.charAt(0).toUpperCase() + platform.slice(1)}>
               <input
                 type="url"
                 value={form.socialLinks?.[platform] || ''}
                 onChange={setSocial(platform)}
-                placeholder={`https://${platform}.com/yourstudio`}
+                placeholder={platform === 'website' ? 'https://yourstudio.com' : `https://${platform}.com/yourstudio`}
               />
             </FieldGroup>
           ))}
         </div>
       ) : null}
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+      {/* ── Actions bar ─────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '1rem',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginTop: '1.75rem',
+          paddingTop: '1.5rem',
+          borderTop: '1px solid var(--border)',
+        }}
+      >
         <button
           type="button"
           className="eyf-button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saveState === 'saving'}
           style={{ background: form.accentColor, color: '#111', borderColor: form.accentColor }}
         >
-          {saving ? 'Saving…' : 'Save changes'}
+          {saveState === 'saving' ? 'Saving…' : 'Save changes'}
         </button>
         <button
           type="button"
@@ -445,12 +1006,12 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved }) {
             Open live page ↗
           </Link>
         ) : null}
-        {saveError ? (
-          <span style={{ color: 'var(--error, #f87171)', fontSize: '0.875rem' }}>{saveError}</span>
-        ) : null}
+        <span className={`eyf-save-indicator eyf-save-indicator--${saveState}`} aria-live="polite">
+          {saveState === 'saved' ? 'All changes saved' : saveState === 'error' ? (saveError || 'Save failed') : saveState === 'saving' ? 'Saving…' : ''}
+        </span>
       </div>
 
-      {/* Live preview */}
+      {/* ── Live preview ──────────────────────────────────────────────────────── */}
       {showPreview ? (
         <div style={{ marginTop: '2rem' }}>
           <h4 style={{ marginBottom: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)' }}>
