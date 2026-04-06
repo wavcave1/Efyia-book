@@ -547,15 +547,6 @@ export default function AdminPanel() {
                     )}
                     <button type="button" className="admin-btn" onClick={() => handleAccountAction('reset', account)}>Reset pw</button>
                     <button type="button" className="admin-btn" onClick={() => handleAccountAction('revoke', account)}>Revoke sessions</button>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn-primary"
-                      onClick={() => handleEnableOwnerProfile(account)}
-                      disabled={ownerReady}
-                      title={ownerReady ? 'Owner profile already configured' : 'Enable owner role + profile setup'}
-                    >
-                      {ownerReady ? 'Profile ready' : 'Enable owner profile'}
-                    </button>
                     <button type="button" className="admin-btn admin-btn-danger" onClick={() => handleAccountAction('delete', account)}>Delete</button>
                   </div>
                 </td>
