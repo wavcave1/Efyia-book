@@ -113,3 +113,45 @@ export const studioProfileApi = {
   get: () => api.get('/api/studio/profile'),
   update: (data) => api.patch('/api/studio/profile', data),
 };
+
+
+// ─── Admin (internal control plane) ──────────────────────────────────────────
+export const adminApi = {
+  dashboardSummary: () => api.get('/api/admin/dashboard'),
+
+  listAccounts: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/api/admin/accounts${qs ? `?${qs}` : ''}`);
+  },
+  getAccount: (id) => api.get(`/api/admin/accounts/${id}`),
+  createAccount: (data) => api.post('/api/admin/accounts', data),
+  updateAccount: (id, data) => api.patch(`/api/admin/accounts/${id}`, data),
+  deleteAccount: (id) => api.delete(`/api/admin/accounts/${id}`),
+  resetAccountPassword: (id) => api.post(`/api/admin/accounts/${id}/reset-password`, {}),
+  revokeAccountSessions: (id) => api.post(`/api/admin/accounts/${id}/revoke-sessions`, {}),
+
+  listStudios: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/api/admin/studios${qs ? `?${qs}` : ''}`);
+  },
+  createStudio: (data) => api.post('/api/admin/studios', data),
+  updateStudio: (id, data) => api.patch(`/api/admin/studios/${id}`, data),
+  deleteStudio: (id) => api.delete(`/api/admin/studios/${id}`),
+
+  listProfiles: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/api/admin/profiles${qs ? `?${qs}` : ''}`);
+  },
+  createProfile: (data) => api.post('/api/admin/profiles', data),
+  updateProfile: (id, data) => api.patch(`/api/admin/profiles/${id}`, data),
+  deleteProfile: (id) => api.delete(`/api/admin/profiles/${id}`),
+
+  listPermissions: () => api.get('/api/admin/permissions'),
+  updatePermission: (id, data) => api.patch(`/api/admin/permissions/${id}`, data),
+};
