@@ -97,6 +97,13 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
     setForm((prev) => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }));
   };
 
+  const handleGalleryUpload = (urls) => {
+    setForm((prev) => {
+      const mapped = urls.map((url) => prev.gallery.find((g) => g.url === url) || { url, caption: '' });
+      return { ...prev, gallery: mapped };
+    });
+  };
+
   const canGoNext = step !== 1 || form.name.trim().length >= 2;
 
   const handleFinish = async () => {
@@ -256,14 +263,23 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
                     Gallery photos{' '}
                     <span className="eyf-muted" style={{ fontWeight: 400 }}>(optional)</span>
                   </span>
-                  <button
-                    type="button"
-                    className="eyf-button eyf-button--ghost"
-                    style={{ minHeight: 'unset', padding: '0.3rem 0.75rem', fontSize: '0.82rem' }}
-                    onClick={addGalleryRow}
-                  >
-                    + Add photo
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--ghost"
+                      style={{ minHeight: 'unset', padding: '0.3rem 0.75rem', fontSize: '0.82rem' }}
+                      onClick={addGalleryRow}
+                    >
+                      + Add empty row
+                    </button>
+                    <FileUpload
+                      value={form.gallery.map((g) => g.url).filter(Boolean)}
+                      onChange={handleGalleryUpload}
+                      type="image"
+                      multiple
+                      hint="Upload multiple photos at once; drag & drop supported"
+                    />
+                  </div>
                 </div>
                 {form.gallery.length === 0 ? (
                   <p className="eyf-muted" style={{ fontSize: '0.85rem' }}>

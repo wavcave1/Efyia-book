@@ -131,6 +131,7 @@ export const adminApi = {
   deleteAccount: (id) => api.delete(`/api/admin/accounts/${id}`),
   resetAccountPassword: (id) => api.post(`/api/admin/accounts/${id}/reset-password`, {}),
   revokeAccountSessions: (id) => api.post(`/api/admin/accounts/${id}/revoke-sessions`, {}),
+  enableOwnerProfile: (id, data = {}) => api.post(`/api/admin/accounts/${id}/enable-owner-profile`, data),
 
   listStudios: (params = {}) => {
     const qs = new URLSearchParams(

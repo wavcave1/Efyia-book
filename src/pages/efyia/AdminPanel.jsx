@@ -367,6 +367,24 @@ export default function AdminPanel() {
     });
   };
 
+  const handleEnableOwnerProfile = async (account) => {
+    try {
+      const result = await adminApi.enableOwnerProfile(account.id);
+      const updatedAccount = { ...account, role: 'OWNER', _count: { ...(account._count || {}), studios: 1 } };
+      setAccounts((prev) => prev.map((item) => (item.id === account.id ? updatedAccount : item)));
+      if (result?.studio) {
+        setStudios((prev) => {
+          const exists = prev.some((s) => s.id === result.studio.id);
+          return exists ? prev : [result.studio, ...prev];
+        });
+      }
+      setToast('Owner profile enabled.');
+      showToast('Owner profile enabled.');
+    } catch (error) {
+      setToast(error.message || 'Could not enable owner profile.');
+    }
+  };
+
   const handleStudioDelete = (studio) => {
     setConfirmAction({
       title: `Delete studio ${studio.name}?`,
@@ -469,6 +487,15 @@ export default function AdminPanel() {
                 <td>{account.signupDate || account.createdAt}</td>
                 <td>
                   <div className="admin-actions">
+                    {account.role?.toLowerCase() !== 'admin' && (account._count?.studios || 0) === 0 ? (
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-primary"
+                        onClick={() => handleEnableOwnerProfile(account)}
+                      >
+                        Enable owner profile
+                      </button>
+                    ) : null}
                     {account.status === 'ACTIVE' ? (
                       <button type="button" className="admin-btn" onClick={() => handleAccountAction('suspend', account)}>Suspend</button>
                     ) : (
