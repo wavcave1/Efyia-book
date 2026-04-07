@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
-import ProfileCustomizer from '../../components/studio/ProfileCustomizer';
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 
 // ─── Booking status badge ─────────────────────────────────────────────────────
@@ -302,7 +301,7 @@ export function StudioDashboard() {
                   {/* Profile completion */}
                   <CompletionWidget studio={studio} onSetupClick={openWizard} />
 
-                  {/* Studio branding customizer */}
+                  {/* Studio branding customizer CTA (single editing surface lives on studio profile drawer) */}
                   <div className="eyf-card eyf-stack">
                     <div className="eyf-row eyf-row--between">
                       <h3 style={{ margin: 0 }}>Studio page &amp; branding</h3>
@@ -317,13 +316,20 @@ export function StudioDashboard() {
                         </a>
                       ) : null}
                     </div>
-                    <ProfileCustomizer
-                      studio={studio}
-                      onSaved={(updated) => {
-                        setStudio(updated);
-                        showToast('Studio profile updated.');
-                      }}
-                    />
+                    <p className="eyf-muted" style={{ margin: 0 }}>
+                      Edit branding, layout, content, and contact details from your studio profile editor.
+                    </p>
+                    {studio.slug ? (
+                      <a
+                        href={`/studios/${studio.slug}`}
+                        className="eyf-button"
+                        style={{ width: 'fit-content' }}
+                      >
+                        Open profile editor
+                      </a>
+                    ) : (
+                      <p className="eyf-muted" style={{ margin: 0 }}>A public studio URL is required to open the profile editor.</p>
+                    )}
                   </div>
                 </>
               ) : (
