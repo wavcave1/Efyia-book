@@ -390,13 +390,13 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   // ─── Save ────────────────────────────────────────────────────────────────────
   function normalizeStudioSpecs(specs) {
     if (!specs) return null;
-    const toArr = (v) => Array.isArray(v) ? (v.length ? v : null) : (v ? [v] : null);
+    const toStr = (v) => Array.isArray(v) ? (v.length ? v.join(', ') : null) : (v || null);
     const cleaned = {
       consoleType: specs.consoleType || null,
-      daws: toArr(specs.daws),
-      mics: toArr(specs.mics),
-      outboardGear: toArr(specs.outboardGear),
-      rooms: specs.rooms || null,
+      daws: toStr(specs.daws),
+      mics: toStr(specs.mics),
+      outboardGear: toStr(specs.outboardGear),
+      rooms: toStr(specs.rooms),
     };
     return Object.values(cleaned).some(Boolean) ? cleaned : null;
   }
