@@ -388,6 +388,31 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   };
 
   // ─── Save ────────────────────────────────────────────────────────────────────
+  function normalizeStudioSpecs(specs) {
+    if (!specs) return null;
+    const toArr = (v) => Array.isArray(v) ? (v.length ? v : null) : (v ? [v] : null);
+    const cleaned = {
+      consoleType: specs.consoleType || null,
+      daws: toArr(specs.daws),
+      mics: toArr(specs.mics),
+      outboardGear: toArr(specs.outboardGear),
+      rooms: specs.rooms || null,
+    };
+    return Object.values(cleaned).some(Boolean) ? cleaned : null;
+  }
+
+  function normalizeBookingInfo(info) {
+    if (!info) return null;
+    const toNum = (v) => (v !== '' && v != null) ? Number(v) : null;
+    const cleaned = {
+      minHours: toNum(info.minHours),
+      maxHours: toNum(info.maxHours),
+      advanceNoticeDays: toNum(info.advanceNoticeDays),
+      notes: info.notes || null,
+    };
+    return Object.values(cleaned).some((v) => v !== null) ? cleaned : null;
+  }
+
   const handleSave = async () => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setSaveState('saving');
@@ -425,8 +450,8 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         testimonials: testimonials.length ? testimonials : null,
         genres: form.genres?.length ? form.genres : null,
         amenities: form.amenities?.length ? form.amenities : null,
-        studioSpecs: Object.values(form.studioSpecs || {}).some(Boolean) ? form.studioSpecs : null,
-        bookingInfo: Object.values(form.bookingInfo || {}).some(Boolean) ? form.bookingInfo : null,
+        studioSpecs: normalizeStudioSpecs(form.studioSpecs),
+        bookingInfo: normalizeBookingInfo(form.bookingInfo),
       };
 
       const updated = await studioProfileApi.update(payload);
@@ -435,7 +460,10 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       if (onSaved) onSaved(updated);
     } catch (err) {
       setSaveState('error');
-      setSaveError(err.message || 'Could not save profile.');
+      const detail = err.details
+        ? ' — ' + (Array.isArray(err.details) ? err.details.map((d) => d.message || d).join(', ') : String(err.details))
+        : '';
+      setSaveError((err.message || 'Could not save profile.') + detail);
     }
   };
 
