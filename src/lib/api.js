@@ -114,6 +114,18 @@ export const studioProfileApi = {
   update: (data) => api.patch('/api/studio/profile', data),
 };
 
+// ─── Stripe Connect & Payments ───────────────────────────────────────────────
+export const stripeConnectApi = {
+  onboard: (studioId) => api.post('/api/connect/onboard', { studioId }),
+  refresh: (studioId) => api.post('/api/connect/refresh-link', { studioId }),
+  status: (studioId) => api.get(`/api/connect/status/${studioId}`),
+};
+
+export const paymentsApi = {
+  createIntent: (bookingId) => api.post('/api/payments/intents', { bookingId }),
+  refund: (bookingId, reason) => api.post('/api/payments/refunds', { bookingId, reason }),
+};
+
 
 // ─── Admin (internal control plane) ──────────────────────────────────────────
 export const adminApi = {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { bookingsApi, studiosApi } from '../../lib/api';
+import { bookingsApi, studiosApi, paymentsApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { ErrorMessage, Spinner } from '../../components/efyia/ui';
+import BookingCheckout from '../../components/stripe/BookingCheckout';
 
 const TIMES = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
-const PLATFORM_FEE_RATE = 0.08;
+const PLATFORM_FEE_RATE = (Number(import.meta.env.VITE_APP_FEE_PERCENT ?? 8) || 8) / 100;
 
 function todayString() {
   return new Date().toISOString().slice(0, 10);
@@ -29,6 +30,9 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [paymentInfo, setPaymentInfo] = useState(null);
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   useEffect(() => {
     studiosApi.getById(studioId)
@@ -80,8 +84,16 @@ export default function BookingPage() {
         hours,
       });
       setBooking(created);
+      // Create a PaymentIntent for this booking
+      const intent = await paymentsApi.createIntent(created.id);
+      setPaymentInfo({
+        clientSecret: intent.clientSecret,
+        connectedAccountId: intent.connectedAccountId,
+        paymentIntentId: intent.paymentIntentId,
+        amountCents: Math.round(total * 100),
+      });
       setStep(3);
-      showToast('Booking confirmed. Check your dashboard for details.');
+      showToast('Booking created. Complete payment to finalize.');
     } catch (err) {
       setSubmitError(err.message || 'Booking failed. Please try again.');
     } finally {
@@ -93,7 +105,7 @@ export default function BookingPage() {
     <div className="eyf-page">
       <section className="eyf-section eyf-booking-flow">
         <div className="eyf-steps">
-          {['Session details', 'Review & confirm', 'Confirmed'].map((label, index) => (
+          {['Session details', 'Review & confirm', 'Payment', 'Done'].map((label, index) => (
             <div
               key={label}
               className={`eyf-step ${step === index + 1 ? 'is-active' : ''} ${step > index + 1 ? 'is-done' : ''}`}
@@ -196,13 +208,40 @@ export default function BookingPage() {
           ) : null}
 
           {step === 3 && booking ? (
+            <div className="eyf-stack">
+              <h2>Complete payment</h2>
+              <p className="eyf-muted">
+                Secure checkout for <strong>{studio.name}</strong>. Total due: <strong>${total.toFixed(2)}</strong>
+              </p>
+              {paymentError ? <div className="eyf-error-box" role="alert">{paymentError}</div> : null}
+              {paymentInfo?.clientSecret ? (
+                <BookingCheckout
+                  clientSecret={paymentInfo.clientSecret}
+                  connectedAccountId={paymentInfo.connectedAccountId}
+                  bookingId={booking.id}
+                  studioName={studio.name}
+                  amountCents={paymentInfo.amountCents}
+                  bookingDetails={{ date, time, duration: `${hours} hour${hours !== 1 ? 's' : ''}` }}
+                  onSuccess={() => {
+                    setPaymentCompleted(true);
+                    setStep(4);
+                  }}
+                  onError={(msg) => setPaymentError(msg)}
+                />
+              ) : (
+                <div className="checkout-loading">Setting up secure checkout...</div>
+              )}
+            </div>
+          ) : null}
+
+          {step === 4 && booking ? (
             <div className="eyf-stack" style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2.5rem' }}>✓</div>
-              <h2>Booking confirmed</h2>
+              <h2>Payment received</h2>
               <p className="eyf-muted">
                 Your session at <strong>{studio.name}</strong> on{' '}
                 {new Date(booking.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}{' '}
-                at {booking.time} has been submitted.
+                at {booking.time} is confirmed.
               </p>
               <p className="eyf-muted">
                 Booking reference: <strong>#{booking.id}</strong> · Status: <strong>{booking.status.toLowerCase()}</strong>
