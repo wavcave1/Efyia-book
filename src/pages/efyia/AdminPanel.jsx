@@ -289,7 +289,6 @@ export default function AdminPanel() {
     { name: 'role', label: 'Role', type: 'select', required: true, options: [
       { value: 'CLIENT', label: 'Client' },
       { value: 'OWNER', label: 'Studio Owner' },
-      { value: 'ADMIN', label: 'Admin' },
     ] },
     { name: 'status', label: 'Status', type: 'select', required: true, options: [
       { value: 'ACTIVE', label: 'Active' },
