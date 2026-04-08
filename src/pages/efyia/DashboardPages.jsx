@@ -3,6 +3,7 @@ import { bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/a
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
+import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
 
 // ─── Booking status badge ─────────────────────────────────────────────────────
 function BookingStatusBadge({ status }) {
@@ -298,6 +299,17 @@ export function StudioDashboard() {
 
               {studio ? (
                 <>
+                  <StudioStripeOnboarding
+                    studioId={studio.id}
+                    studioName={studio.name}
+                    existingStripeAccountId={studio.stripeConnectAccountId}
+                    onboardingComplete={Boolean(studio.stripeOnboardingComplete)}
+                    chargesEnabled={Boolean(studio.stripeChargesEnabled)}
+                    payoutsEnabled={Boolean(studio.stripePayoutsEnabled)}
+                    detailsSubmitted={Boolean(studio.stripeDetailsSubmitted)}
+                    connectStatus={studio.stripeConnectStatus}
+                  />
+
                   {/* Profile completion */}
                   <CompletionWidget studio={studio} onSetupClick={openWizard} />
 

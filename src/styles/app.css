@@ -1495,3 +1495,95 @@ input[type="range"] { padding: 0; background: none; border: none; }
     height: 320px;
   }
 }
+
+/* ─── Stripe connect widgets ───────────────────────────────────────────────── */
+.stripe-onboarding-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.panel-header .studio-name {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.panel-header h3 {
+  margin: 0;
+}
+
+.status-badge {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+
+.status-active {
+  color: var(--sage);
+  border-color: rgba(109, 194, 163, 0.5);
+  background: rgba(109, 194, 163, 0.12);
+}
+
+.status-pending {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.status-not_started {
+  color: var(--muted);
+}
+
+.status-details {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.status-details p,
+.status-details ul {
+  margin: 0;
+}
+
+.status-details ul {
+  padding-left: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.status-details.success {
+  border-color: rgba(109, 194, 163, 0.4);
+}
+
+.status-details.warning {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.error-banner {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.1);
+  color: #fecaca;
+  border-radius: 12px;
+  padding: 0.65rem 0.8rem;
+}
+
+.status-details .note {
+  color: var(--muted);
+  font-size: 0.88rem;
+}

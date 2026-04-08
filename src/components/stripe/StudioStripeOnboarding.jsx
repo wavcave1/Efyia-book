@@ -6,6 +6,10 @@ export default function StudioStripeOnboarding({
   studioName,
   existingStripeAccountId,
   onboardingComplete,
+  chargesEnabled = false,
+  payoutsEnabled = false,
+  detailsSubmitted = false,
+  connectStatus,
 }) {
   const [loading, setLoading] = useState(false);
   const [stripeStatus, setStripeStatus] = useState(null);
@@ -14,6 +18,8 @@ export default function StudioStripeOnboarding({
   useEffect(() => {
     if (existingStripeAccountId) {
       fetchStripeStatus();
+    } else {
+      setStripeStatus(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingStripeAccountId]);
@@ -53,13 +59,17 @@ export default function StudioStripeOnboarding({
     }
   }
 
-  const isActive = stripeStatus?.status === 'ACTIVE' || onboardingComplete;
+  const normalizedStatus = stripeStatus?.status || connectStatus;
+  const isActive = normalizedStatus === 'ACTIVE' || onboardingComplete;
   const isPending = Boolean(existingStripeAccountId) && !isActive;
   const isNotStarted = !existingStripeAccountId;
   const feePercent = import.meta.env.VITE_APP_FEE_PERCENT ?? 10;
+  const liveChargesEnabled = stripeStatus?.chargesEnabled ?? chargesEnabled;
+  const livePayoutsEnabled = stripeStatus?.payoutsEnabled ?? payoutsEnabled;
+  const liveDetailsSubmitted = stripeStatus?.detailsSubmitted ?? detailsSubmitted;
 
   return (
-    <div className="stripe-onboarding-panel">
+    <div className="eyf-card stripe-onboarding-panel">
       <div className="panel-header">
         <StripeLogo />
         <div>
@@ -79,10 +89,11 @@ export default function StudioStripeOnboarding({
         <div className="status-details success">
           <p>✅ This studio is fully set up to accept payments.</p>
           <ul>
-            <li>Card payments: {stripeStatus?.chargesEnabled ? '✓ Enabled' : '⏳ Pending'}</li>
-            <li>Payouts: {stripeStatus?.payoutsEnabled ? '✓ Enabled' : '⏳ Pending'}</li>
+            <li>Card payments: {liveChargesEnabled ? '✓ Enabled' : '⏳ Pending'}</li>
+            <li>Payouts: {livePayoutsEnabled ? '✓ Enabled' : '⏳ Pending'}</li>
+            <li>Details submitted: {liveDetailsSubmitted ? '✓ Complete' : '⏳ Pending'}</li>
           </ul>
-          <button onClick={fetchStripeStatus} className="btn-secondary">
+          <button onClick={fetchStripeStatus} className="eyf-button eyf-button--ghost">
             Refresh Status
           </button>
         </div>
@@ -92,10 +103,10 @@ export default function StudioStripeOnboarding({
         <div className="status-details warning">
           <p>⏳ Stripe onboarding is in progress. The studio owner needs to complete their Stripe setup.</p>
           <div className="action-row">
-            <button onClick={handleRefreshOnboarding} disabled={loading} className="btn-primary">
+            <button onClick={handleRefreshOnboarding} disabled={loading} className="eyf-button">
               {loading ? 'Generating link...' : 'Resend Onboarding Link'}
             </button>
-            <button onClick={fetchStripeStatus} className="btn-secondary">
+            <button onClick={fetchStripeStatus} className="eyf-button eyf-button--ghost">
               Check Status
             </button>
           </div>
@@ -111,7 +122,7 @@ export default function StudioStripeOnboarding({
           <p className="note">
             The studio will be the merchant of record. Efiya collects a {feePercent}% platform fee on each booking.
           </p>
-          <button onClick={handleEnableStripe} disabled={loading} className="btn-primary">
+          <button onClick={handleEnableStripe} disabled={loading} className="eyf-button">
             {loading ? 'Setting up Stripe...' : '⚡ Enable Studio & Start Onboarding'}
           </button>
         </div>
