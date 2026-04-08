@@ -39,9 +39,19 @@ export default function HomePage() {
     studiosApi.list({ featured: true, limit: 6 })
       .then(({ studios, pagination }) => {
         if (cancelled) return;
-        setFeatured(studios);
-        setStats({ studios: pagination.total });
-        setLoading(false);
+        if (studios.length > 0) {
+          setFeatured(studios);
+          setStats({ studios: pagination.total });
+          setLoading(false);
+        } else {
+          // No featured studios yet — fall back to top-rated
+          return studiosApi.list({ limit: 6 }).then(({ studios: all, pagination: pg }) => {
+            if (cancelled) return;
+            setFeatured(all);
+            setStats({ studios: pg.total });
+            setLoading(false);
+          });
+        }
       })
       .catch((err) => {
         if (cancelled) return;
