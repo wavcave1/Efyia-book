@@ -138,8 +138,8 @@ export function ClientDashboard() {
     setLoading(true);
     setError(null);
     Promise.all([
-      bookingsApi.list(),
-      studiosApi.list({ limit: 50 }).then(({ studios }) =>
+      bookingsApi.list().catch(() => []),
+      studiosApi.list({ limit: 50 }).catch(() => ({ studios: [] })).then(({ studios }) =>
         studios.filter((s) => favoriteStudioIds.includes(s.id))
       ),
     ])
@@ -203,7 +203,7 @@ export function StudioDashboard() {
     setLoading(true);
     setError(null);
     Promise.all([
-      bookingsApi.list(),
+      bookingsApi.list().catch(() => []),
       studioProfileApi.get().catch(() => null),           // full owner-scoped profile
       studiosApi.list({ limit: 50 }).catch(() => ({ studios: [] })),  // fallback for extra fields
     ])
