@@ -26,14 +26,57 @@ function injectFont(url) {
   document.head.appendChild(link);
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function asObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function buildInitialForm(studio) {
+  return {
+    name: studio?.name || '',
+    description: studio?.description || '',
+    richDescription: studio?.richDescription || '',
+    logoUrl: studio?.logoUrl || '',
+    coverUrl: studio?.coverUrl || '',
+    accentColor: studio?.accentColor || '#62f3d4',
+    themeOverride: studio?.themeOverride || '',
+    fontPairing: studio?.fontPairing || 'modern',
+    layoutType: studio?.layoutType || 'minimal',
+    socialLinks: asObject(studio?.socialLinks),
+    contactInfo: asObject(studio?.contactInfo),
+    services: asArray(studio?.services),
+    gallery: asArray(studio?.gallery),
+    credits: asArray(studio?.credits),
+    achievements: asArray(studio?.achievements),
+    portfolio: asArray(studio?.portfolio),
+    team: asArray(studio?.team),
+    studioSpecs:
+      studio?.studioSpecs && typeof studio.studioSpecs === 'object' && !Array.isArray(studio.studioSpecs)
+        ? studio.studioSpecs
+        : { consoleType: '', daws: '', mics: '', outboardGear: '', rooms: '' },
+    bookingInfo:
+      studio?.bookingInfo && typeof studio.bookingInfo === 'object' && !Array.isArray(studio.bookingInfo)
+        ? studio.bookingInfo
+        : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '' },
+    genres: asArray(studio?.genres),
+    amenities: asArray(studio?.amenities),
+    testimonials: asArray(studio?.testimonials),
+  };
+}
+
 // ─── TagInput ─────────────────────────────────────────────────────────────────
 function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…', suggestions = [] }) {
   const [inputValue, setInputValue] = useState('');
 
+  const safeValue = Array.isArray(value) ? value : [];
+
   const addTag = (tag) => {
     const trimmed = tag.trim().replace(/,$/, '').trim();
-    if (trimmed && !value.includes(trimmed)) {
-      onChange([...value, trimmed]);
+    if (trimmed && !safeValue.includes(trimmed)) {
+      onChange([...safeValue, trimmed]);
     }
     setInputValue('');
   };
@@ -42,17 +85,17 @@ function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag(inputValue);
-    } else if (e.key === 'Backspace' && !inputValue && value.length) {
-      onChange(value.slice(0, -1));
+    } else if (e.key === 'Backspace' && !inputValue && safeValue.length) {
+      onChange(safeValue.slice(0, -1));
     }
   };
 
-  const removeTag = (tag) => onChange(value.filter((v) => v !== tag));
+  const removeTag = (tag) => onChange(safeValue.filter((v) => v !== tag));
 
   return (
     <div>
       <div className="eyf-tag-input" onClick={(e) => e.currentTarget.querySelector('input')?.focus()}>
-        {value.map((tag) => (
+        {safeValue.map((tag) => (
           <span key={tag} className="eyf-tag-chip">
             {tag}
             <button type="button" onClick={() => removeTag(tag)} aria-label={`Remove ${tag}`}>×</button>
@@ -65,17 +108,17 @@ function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={() => { if (inputValue.trim()) addTag(inputValue); }}
-          placeholder={value.length ? '' : placeholder}
+          placeholder={safeValue.length ? '' : placeholder}
         />
       </div>
       {suggestions.length > 0 ? (
         <div className="eyf-tags" style={{ marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {suggestions.filter((s) => !value.includes(s)).slice(0, 12).map((s) => (
+          {suggestions.filter((s) => !safeValue.includes(s)).slice(0, 12).map((s) => (
             <button
               key={s}
               type="button"
               className="eyf-chip"
-              onClick={() => onChange([...value, s])}
+              onClick={() => onChange([...safeValue, s])}
               style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
             >
               + {s}
@@ -156,32 +199,7 @@ const TABS = [
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ProfileCustomizer({ studio: initialStudio, onSaved, initialTab }) {
-  const [form, setForm] = useState(() => ({
-    // Existing fields
-    name: initialStudio?.name || '',
-    description: initialStudio?.description || '',
-    richDescription: initialStudio?.richDescription || '',
-    logoUrl: initialStudio?.logoUrl || '',
-    coverUrl: initialStudio?.coverUrl || '',
-    accentColor: initialStudio?.accentColor || '#62f3d4',
-    themeOverride: initialStudio?.themeOverride || '',
-    fontPairing: initialStudio?.fontPairing || 'modern',
-    layoutType: initialStudio?.layoutType || 'minimal',
-    socialLinks: initialStudio?.socialLinks || {},
-    contactInfo: initialStudio?.contactInfo || {},
-    services: initialStudio?.services || [],
-    // New fields
-    gallery: initialStudio?.gallery || [],
-    credits: initialStudio?.credits || [],
-    achievements: initialStudio?.achievements || [],
-    portfolio: initialStudio?.portfolio || [],
-    team: initialStudio?.team || [],
-    studioSpecs: initialStudio?.studioSpecs || { consoleType: '', daws: '', mics: '', outboardGear: '', rooms: '' },
-    bookingInfo: initialStudio?.bookingInfo || { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '' },
-    genres: initialStudio?.genres || [],
-    amenities: initialStudio?.amenities || [],
-    testimonials: initialStudio?.testimonials || [],
-  }));
+  const [form, setForm] = useState(() => buildInitialForm(initialStudio));
 
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   const [saveError, setSaveError] = useState(null);
@@ -197,30 +215,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   // Sync form if studio prop changes (e.g., after external refresh)
   useEffect(() => {
     if (initialStudio?.id) {
-      setForm({
-        name: initialStudio.name || '',
-        description: initialStudio.description || '',
-        richDescription: initialStudio.richDescription || '',
-        logoUrl: initialStudio.logoUrl || '',
-        coverUrl: initialStudio.coverUrl || '',
-        accentColor: initialStudio.accentColor || '#62f3d4',
-        themeOverride: initialStudio.themeOverride || '',
-        fontPairing: initialStudio.fontPairing || 'modern',
-        layoutType: initialStudio.layoutType || 'minimal',
-        socialLinks: initialStudio.socialLinks || {},
-        contactInfo: initialStudio.contactInfo || {},
-        services: initialStudio.services || [],
-        gallery: initialStudio.gallery || [],
-        credits: initialStudio.credits || [],
-        achievements: initialStudio.achievements || [],
-        portfolio: initialStudio.portfolio || [],
-        team: initialStudio.team || [],
-        studioSpecs: initialStudio.studioSpecs || { consoleType: '', daws: '', mics: '', outboardGear: '', rooms: '' },
-        bookingInfo: initialStudio.bookingInfo || { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '' },
-        genres: initialStudio.genres || [],
-        amenities: initialStudio.amenities || [],
-        testimonials: initialStudio.testimonials || [],
-      });
+      setForm(buildInitialForm(initialStudio));
     }
   }, [initialStudio?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -257,22 +252,22 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   }, []);
 
   const setTagField = useCallback((field) => (tags) => {
-    setForm((prev) => ({ ...prev, [field]: tags }));
+    setForm((prev) => ({ ...prev, [field]: Array.isArray(tags) ? tags : [] }));
     setSaveState('idle');
   }, []);
 
   // ─── Services ───────────────────────────────────────────────────────────────
   const addService = () => {
-    setForm((prev) => ({ ...prev, services: [...prev.services, { name: '', description: '', price: '', unit: 'hr' }] }));
+    setForm((prev) => ({ ...prev, services: [...asArray(prev.services), { name: '', description: '', price: '', unit: 'hr' }] }));
     setSaveState('idle');
   };
   const removeService = (idx) => {
-    setForm((prev) => ({ ...prev, services: prev.services.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, services: asArray(prev.services).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setService = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.services];
+      const updated = [...asArray(prev.services)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, services: updated };
     });
@@ -281,16 +276,16 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Gallery ────────────────────────────────────────────────────────────────
   const addGallery = () => {
-    setForm((prev) => ({ ...prev, gallery: [...prev.gallery, { url: '', caption: '' }] }));
+    setForm((prev) => ({ ...prev, gallery: [...asArray(prev.gallery), { url: '', caption: '' }] }));
     setSaveState('idle');
   };
   const removeGallery = (idx) => {
-    setForm((prev) => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, gallery: asArray(prev.gallery).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setGallery = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.gallery];
+      const updated = [...asArray(prev.gallery)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, gallery: updated };
     });
@@ -299,16 +294,16 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Credits ────────────────────────────────────────────────────────────────
   const addCredit = () => {
-    setForm((prev) => ({ ...prev, credits: [...prev.credits, { artistName: '', projectName: '', role: '', year: '', link: '' }] }));
+    setForm((prev) => ({ ...prev, credits: [...asArray(prev.credits), { artistName: '', projectName: '', role: '', year: '', link: '' }] }));
     setSaveState('idle');
   };
   const removeCredit = (idx) => {
-    setForm((prev) => ({ ...prev, credits: prev.credits.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, credits: asArray(prev.credits).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setCredit = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.credits];
+      const updated = [...asArray(prev.credits)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, credits: updated };
     });
@@ -317,16 +312,16 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Achievements ───────────────────────────────────────────────────────────
   const addAchievement = () => {
-    setForm((prev) => ({ ...prev, achievements: [...prev.achievements, { title: '', org: '', year: '' }] }));
+    setForm((prev) => ({ ...prev, achievements: [...asArray(prev.achievements), { title: '', org: '', year: '' }] }));
     setSaveState('idle');
   };
   const removeAchievement = (idx) => {
-    setForm((prev) => ({ ...prev, achievements: prev.achievements.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, achievements: asArray(prev.achievements).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setAchievement = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.achievements];
+      const updated = [...asArray(prev.achievements)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, achievements: updated };
     });
@@ -335,16 +330,16 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Portfolio embeds ────────────────────────────────────────────────────────
   const addPortfolio = () => {
-    setForm((prev) => ({ ...prev, portfolio: [...prev.portfolio, { title: '', artistName: '', trackName: '', serviceType: '', embedUrl: '', audioUrl: '' }] }));
+    setForm((prev) => ({ ...prev, portfolio: [...asArray(prev.portfolio), { title: '', artistName: '', trackName: '', serviceType: '', embedUrl: '', audioUrl: '' }] }));
     setSaveState('idle');
   };
   const removePortfolio = (idx) => {
-    setForm((prev) => ({ ...prev, portfolio: prev.portfolio.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, portfolio: asArray(prev.portfolio).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setPortfolio = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.portfolio];
+      const updated = [...asArray(prev.portfolio)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, portfolio: updated };
     });
@@ -353,16 +348,16 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Team ────────────────────────────────────────────────────────────────────
   const addTeamMember = () => {
-    setForm((prev) => ({ ...prev, team: [...prev.team, { name: '', role: '', bio: '', photoUrl: '' }] }));
+    setForm((prev) => ({ ...prev, team: [...asArray(prev.team), { name: '', role: '', bio: '', photoUrl: '' }] }));
     setSaveState('idle');
   };
   const removeTeamMember = (idx) => {
-    setForm((prev) => ({ ...prev, team: prev.team.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, team: asArray(prev.team).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setTeamMember = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.team];
+      const updated = [...asArray(prev.team)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, team: updated };
     });
@@ -371,16 +366,16 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
 
   // ─── Testimonials ────────────────────────────────────────────────────────────
   const addTestimonial = () => {
-    setForm((prev) => ({ ...prev, testimonials: [...prev.testimonials, { quote: '', authorName: '', authorRole: '' }] }));
+    setForm((prev) => ({ ...prev, testimonials: [...asArray(prev.testimonials), { quote: '', authorName: '', authorRole: '' }] }));
     setSaveState('idle');
   };
   const removeTestimonial = (idx) => {
-    setForm((prev) => ({ ...prev, testimonials: prev.testimonials.filter((_, i) => i !== idx) }));
+    setForm((prev) => ({ ...prev, testimonials: asArray(prev.testimonials).filter((_, i) => i !== idx) }));
     setSaveState('idle');
   };
   const setTestimonial = (idx, field) => (e) => {
     setForm((prev) => {
-      const updated = [...prev.testimonials];
+      const updated = [...asArray(prev.testimonials)];
       updated[idx] = { ...updated[idx], [field]: e.target.value };
       return { ...prev, testimonials: updated };
     });
@@ -417,9 +412,10 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setSaveState('saving');
     setSaveError(null);
+
     try {
-      const services = (form.services || [])
-        .filter((s) => s.name.trim())
+      const services = asArray(form.services)
+        .filter((s) => (s?.name || '').trim())
         .map((s) => ({
           name: s.name,
           description: s.description || undefined,
@@ -427,29 +423,29 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           unit: s.unit || undefined,
         }));
 
-      const gallery = (form.gallery || []).filter((g) => g.url.trim());
-      const credits = (form.credits || []).filter((c) => c.artistName.trim());
-      const achievements = (form.achievements || []).filter((a) => a.title.trim());
-      const portfolio = (form.portfolio || []).filter((p) => p.embedUrl?.trim() || p.audioUrl?.trim() || p.title.trim());
-      const team = (form.team || []).filter((t) => t.name.trim());
-      const testimonials = (form.testimonials || []).filter((t) => t.quote.trim());
+      const gallery = asArray(form.gallery).filter((g) => (g?.url || '').trim());
+      const credits = asArray(form.credits).filter((c) => (c?.artistName || '').trim());
+      const achievements = asArray(form.achievements).filter((a) => (a?.title || '').trim());
+      const portfolio = asArray(form.portfolio).filter((p) => p?.embedUrl?.trim() || p?.audioUrl?.trim() || (p?.title || '').trim());
+      const team = asArray(form.team).filter((t) => (t?.name || '').trim());
+      const testimonials = asArray(form.testimonials).filter((t) => (t?.quote || '').trim());
 
       const payload = {
         ...form,
         themeOverride: form.themeOverride || null,
         logoUrl: form.logoUrl || null,
         coverUrl: form.coverUrl || null,
-        services: services.length ? services : null,
+        services,
         socialLinks: Object.values(form.socialLinks || {}).some(Boolean) ? form.socialLinks : null,
         contactInfo: Object.values(form.contactInfo || {}).some(Boolean) ? form.contactInfo : null,
-        gallery: gallery.length ? gallery : null,
-        credits: credits.length ? credits : null,
-        achievements: achievements.length ? achievements : null,
-        portfolio: portfolio.length ? portfolio : null,
-        team: team.length ? team : null,
-        testimonials: testimonials.length ? testimonials : null,
-        genres: form.genres?.length ? form.genres : null,
-        amenities: form.amenities?.length ? form.amenities : null,
+        gallery,
+        credits,
+        achievements,
+        portfolio,
+        team,
+        testimonials,
+        genres: Array.isArray(form.genres) ? form.genres : [],
+        amenities: Array.isArray(form.amenities) ? form.amenities : [],
         studioSpecs: normalizeStudioSpecs(form.studioSpecs),
         bookingInfo: normalizeBookingInfo(form.bookingInfo),
       };
@@ -471,10 +467,11 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   const previewStudio = {
     ...initialStudio,
     ...form,
-    services: (form.services || [])
-      .filter((s) => s.name.trim())
+    services: asArray(form.services)
+      .filter((s) => (s?.name || '').trim())
       .map((s) => ({ ...s, price: s.price !== '' ? parseFloat(s.price) : undefined })),
   };
+
   const PreviewLayout = LAYOUT_COMPONENTS[form.layoutType] || LayoutMinimal;
   const previewVars = buildStudioVars(previewStudio);
 
@@ -661,14 +658,14 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
             Add photos of your studio space — control room, live room, isolation booth, equipment, vibe.
           </p>
-          {form.gallery.map((item, idx) => (
+          {asArray(form.gallery).map((item, idx) => (
             <ArrayItemCard key={idx} label={`Photo ${idx + 1}`} onRemove={() => removeGallery(idx)}>
               <FieldGroup label="Photo">
                 <FileUpload
                   value={item.url}
                   onChange={(url) => {
                     setForm((prev) => {
-                      const updated = [...prev.gallery];
+                      const updated = [...asArray(prev.gallery)];
                       updated[idx] = { ...updated[idx], url };
                       return { ...prev, gallery: updated };
                     });
@@ -692,7 +689,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       {/* ── Services tab ────────────────────────────────────────────────────── */}
       {activeTab === 'services' ? (
         <div>
-          {(form.services || []).map((svc, idx) => (
+          {asArray(form.services).map((svc, idx) => (
             <ArrayItemCard key={idx} label={`Service ${idx + 1}`} onRemove={() => removeService(idx)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
@@ -734,7 +731,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1.25rem' }}>
             Artists, albums, films, or projects your studio has worked on.
           </p>
-          {form.credits.map((credit, idx) => (
+          {asArray(form.credits).map((credit, idx) => (
             <ArrayItemCard key={idx} label={`Credit ${idx + 1}`} onRemove={() => removeCredit(idx)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
@@ -774,7 +771,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             YouTube, SoundCloud, or Spotify embed URLs. For YouTube: use the embed URL format
             (youtube.com/embed/VIDEO_ID).
           </p>
-          {form.portfolio.map((item, idx) => (
+          {asArray(form.portfolio).map((item, idx) => (
             <ArrayItemCard key={idx} label={`Sample ${idx + 1}`} onRemove={() => removePortfolio(idx)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
@@ -804,7 +801,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                   value={item.audioUrl || ''}
                   onChange={(url) => {
                     setForm((prev) => {
-                      const updated = [...prev.portfolio];
+                      const updated = [...asArray(prev.portfolio)];
                       updated[idx] = { ...updated[idx], audioUrl: url };
                       return { ...prev, portfolio: updated };
                     });
@@ -824,7 +821,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
             Certifications, press features, industry recognitions.
           </p>
-          {form.achievements.map((item, idx) => (
+          {asArray(form.achievements).map((item, idx) => (
             <ArrayItemCard key={idx} label={`Achievement ${idx + 1}`} onRemove={() => removeAchievement(idx)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
@@ -852,7 +849,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       {activeTab === 'team' ? (
         <div>
           <SectionDivider title="Team members" />
-          {form.team.map((member, idx) => (
+          {asArray(form.team).map((member, idx) => (
             <ArrayItemCard key={idx} label={member.name || `Member ${idx + 1}`} onRemove={() => removeTeamMember(idx)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
@@ -874,7 +871,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                   value={member.photoUrl}
                   onChange={(url) => {
                     setForm((prev) => {
-                      const updated = [...prev.team];
+                      const updated = [...asArray(prev.team)];
                       updated[idx] = { ...updated[idx], photoUrl: url };
                       return { ...prev, team: updated };
                     });
@@ -897,7 +894,10 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <FieldGroup label="DAWs available" hint="Type and press Enter to add each">
             <TagInput
               value={typeof form.studioSpecs.daws === 'string' ? (form.studioSpecs.daws ? [form.studioSpecs.daws] : []) : (form.studioSpecs.daws || [])}
-              onChange={(tags) => setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, daws: tags } }))}
+              onChange={(tags) => {
+                setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, daws: tags } }));
+                setSaveState('idle');
+              }}
               placeholder="Pro Tools, Logic Pro, Ableton…"
               suggestions={['Pro Tools', 'Logic Pro', 'Ableton Live', 'FL Studio', 'Cubase', 'Studio One', 'Reason']}
             />
@@ -905,14 +905,20 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <FieldGroup label="Notable microphones">
             <TagInput
               value={typeof form.studioSpecs.mics === 'string' ? (form.studioSpecs.mics ? [form.studioSpecs.mics] : []) : (form.studioSpecs.mics || [])}
-              onChange={(tags) => setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, mics: tags } }))}
+              onChange={(tags) => {
+                setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, mics: tags } }));
+                setSaveState('idle');
+              }}
               placeholder="Neumann U87, AKG C414…"
             />
           </FieldGroup>
           <FieldGroup label="Outboard gear">
             <TagInput
               value={typeof form.studioSpecs.outboardGear === 'string' ? (form.studioSpecs.outboardGear ? [form.studioSpecs.outboardGear] : []) : (form.studioSpecs.outboardGear || [])}
-              onChange={(tags) => setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, outboardGear: tags } }))}
+              onChange={(tags) => {
+                setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, outboardGear: tags } }));
+                setSaveState('idle');
+              }}
               placeholder="API 2500, Neve 33609, Distressor…"
             />
           </FieldGroup>
@@ -981,7 +987,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
             Add quotes from past clients until a review system is in place.
           </p>
-          {form.testimonials.map((item, idx) => (
+          {asArray(form.testimonials).map((item, idx) => (
             <ArrayItemCard key={idx} label={item.authorName || `Testimonial ${idx + 1}`} onRemove={() => removeTestimonial(idx)}>
               <div style={{ marginBottom: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Quote *</label>
