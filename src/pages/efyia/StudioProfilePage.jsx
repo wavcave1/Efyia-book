@@ -695,9 +695,10 @@ export default function StudioProfilePage() {
             />
           ) : null}
           <div className="eyf-row eyf-row--between">
-            <h2> className="eyf-muted">{studio.rating} ★ · {studio.reviewCount} reviews </h2>
+            <h2 className="efy-muted"> {studio.rating} ★ ·
+               {studio.reviewCount} reviews </h2>
           </div>
-          <p className="eyf-muted">{studio.city}, {studio.state}</p>
+          <p className="eyf-muted">{studio.city} {studio.state}</p>
 
           {/* Social links */}
           {studio.socialLinks && Object.entries(studio.socialLinks).some(([, v]) => v) ? (
