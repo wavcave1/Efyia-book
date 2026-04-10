@@ -695,7 +695,7 @@ export default function StudioProfilePage() {
             />
           ) : null}
           <div className="eyf-row eyf-row--between">
-            <h2 className="efy-muted"> {studio.rating} ★ ·
+            <h2 className="efy-muted"> {studio.rating} ★ 
                {studio.reviewCount} reviews </h2>
           </div>
           <p className="eyf-muted">{studio.city} {studio.state}</p>
