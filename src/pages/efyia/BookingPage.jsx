@@ -127,11 +127,15 @@ export default function BookingPage() {
               <div>
                 <label>
                   Session type
-                  <select value={sessionType} onChange={(e) => setSessionType(e.target.value)}>
-                    {(studio.sessionTypes || []).map((item) => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
-                  </select>
+            <select value={sessionType || ''} onChange={(e) => setSessionType(e.target.value)}>
+              <option value="">Select session type</option>
+              {Array.isArray(studio?.sessionTypes) &&
+                studio.sessionTypes.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+            </select>
                 </label>
                 {fieldErrors.sessionType ? <p className="eyf-field-error">{fieldErrors.sessionType}</p> : null}
               </div>
