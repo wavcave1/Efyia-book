@@ -695,8 +695,7 @@ export default function StudioProfilePage() {
             />
           ) : null}
           <div className="eyf-row eyf-row--between">
-            <h2>${studio.pricePerHour}/hr</h2>
-            <span className="eyf-muted">{studio.rating} ★ · {studio.reviewCount} reviews</span>
+            <h2> className="eyf-muted">{studio.rating} ★ · {studio.reviewCount} reviews </h2>
           </div>
           <p className="eyf-muted">{studio.city}, {studio.state}</p>
 
