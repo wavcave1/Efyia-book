@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { studioProfileApi } from '../../lib/api';
+import { studioProfileApi, studiosApi } from '../../lib/api';
 import FileUpload from '../efyia/FileUpload';
 import { FONT_PAIRINGS, LAYOUT_TYPES, buildStudioVars, FONT_URLS } from '../../lib/studioTheme';
 import LayoutMinimal from './LayoutMinimal';
@@ -64,6 +64,7 @@ function buildInitialForm(studio) {
     genres: asArray(studio?.genres),
     amenities: asArray(studio?.amenities),
     testimonials: asArray(studio?.testimonials),
+    sessionTypes: asArray(studio?.sessionTypes),
   };
 }
 
@@ -450,7 +451,15 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         bookingInfo: normalizeBookingInfo(form.bookingInfo),
       };
 
-      const updated = await studioProfileApi.update(payload);
+      let updated = await studioProfileApi.update(payload);
+
+      // sessionTypes is not in the studioProfile schema — save via the studios endpoint
+      if (initialStudio?.id) {
+        const sessionTypes = Array.isArray(form.sessionTypes) ? form.sessionTypes : [];
+        const withSessionTypes = await studiosApi.update(initialStudio.id, { sessionTypes });
+        updated = { ...updated, sessionTypes: withSessionTypes.sessionTypes };
+      }
+
       setSaveState('saved');
       saveTimerRef.current = setTimeout(() => setSaveState('idle'), 3000);
       if (onSaved) onSaved(updated);
@@ -967,6 +976,18 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               onChange={setTagField('genres')}
               placeholder="Hip-Hop, R&B, Pop…"
               suggestions={GENRE_SUGGESTIONS}
+            />
+          </div>
+
+          <SectionDivider title="Session types" />
+          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+            What kinds of sessions can clients book? These appear in the booking form.
+          </p>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <TagInput
+              value={form.sessionTypes}
+              onChange={setTagField('sessionTypes')}
+              placeholder="Recording, Mixing, Mastering…"
             />
           </div>
 
