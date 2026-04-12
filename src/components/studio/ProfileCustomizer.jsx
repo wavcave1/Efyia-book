@@ -970,7 +970,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <FieldGroup label="Advance notice required (days)">
             <input type="number" min="0" value={form.bookingInfo.advanceNoticeDays || ''} onChange={setBookingInfo('advanceNoticeDays')} placeholder="1" />
           </FieldGroup>
-          <FieldGroup label="Availability notes / deposit policy">
+         <FieldGroup label="Availability notes / deposit policy">
             <textarea
               rows={3}
               value={form.bookingInfo.notes || ''}
@@ -978,6 +978,22 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               placeholder="Available Mon–Sat 10am–2am. 50% deposit required to confirm. 48hr cancellation policy."
             />
           </FieldGroup>
+          
+         <FieldGroup
+  label="Cancellation policy"
+  hint="Clients will be shown this and must agree before completing a booking."
+>
+  <textarea
+    rows={5}
+    value={form.bookingInfo.cancellationPolicy || ''}
+    onChange={setBookingInfo('cancellationPolicy')}
+    placeholder={
+      "e.g. Cancellations made 48+ hours before the session receive a full refund. " +
+      "Cancellations within 24 hours of the session are non-refundable. " +
+      "No-shows will be charged 100% of the session fee."
+    }
+  />
+</FieldGroup> 
         </div>
       ) : null}
 
