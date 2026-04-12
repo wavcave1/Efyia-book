@@ -211,7 +211,7 @@ export default function StudioProfilePage() {
                 {studio.verified ? <Badge tone="sage">Verified</Badge> : null}
               </div>
               <h1>{studio.name}</h1>
-              <p className="eyf-muted">{studio.address || `${studio.city}${studio.state ? `, ${studio.state}` : ''}`}</p>
+             <p className="eyf-muted">{studio.address || [studio.city, studio.state].filter(Boolean).join(', ') || null}</p>
               {genres.length > 0 ? (
                 <div className="eyf-genre-chips" style={{ marginTop: '0.5rem' }}>
                   {genres.map((g) => <span key={g} className="eyf-genre-chip">{g}</span>)}
@@ -698,7 +698,10 @@ export default function StudioProfilePage() {
             <h2 className="efy-muted"> {studio.rating} ★ 
                {studio.reviewCount} reviews </h2>
           </div>
-          <p className="eyf-muted">{studio.city} {studio.state}</p>
+          
+          {(studio.city || studio.state) ? (
+        <p className="eyf-muted">{[studio.city, studio.state].filter(Boolean).join(', ')}</p>
+    ) : null}
 
           {/* Social links */}
           {studio.socialLinks && Object.entries(studio.socialLinks).some(([, v]) => v) ? (
