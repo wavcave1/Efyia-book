@@ -8,11 +8,16 @@ import BookingCheckout from '../../components/stripe/BookingCheckout';
 const TIMES = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
 const PLATFORM_FEE_RATE = (Number(import.meta.env.VITE_APP_FEE_PERCENT ?? 8) || 8) / 100;
 
-// FIX: fallback session types so the dropdown always has options
 const DEFAULT_SESSION_TYPES = ['Recording', 'Mixing', 'Mastering', 'Podcast', 'Production'];
 
 function todayString() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// FIX: build location string only from non-empty parts
+function studioLocation(studio) {
+  const parts = [studio.city, studio.state].filter(Boolean);
+  return parts.length ? parts.join(', ') : null;
 }
 
 export default function BookingPage() {
@@ -37,7 +42,6 @@ export default function BookingPage() {
   const [paymentError, setPaymentError] = useState('');
 
   useEffect(() => {
-    // FIX: coerce studioId to number for the API call
     const id = parseInt(studioId, 10);
     if (isNaN(id)) {
       setStudioError('Invalid studio ID.');
@@ -47,7 +51,6 @@ export default function BookingPage() {
     studiosApi.getById(id)
       .then((data) => {
         setStudio(data);
-        // FIX: pick first available session type; fall back to default list first item
         const types = Array.isArray(data.sessionTypes) && data.sessionTypes.length
           ? data.sessionTypes
           : DEFAULT_SESSION_TYPES;
@@ -63,7 +66,6 @@ export default function BookingPage() {
   if (studioLoading) return <div className="eyf-page"><section className="eyf-section"><Spinner /></section></div>;
   if (studioError || !studio) return <div className="eyf-page"><section className="eyf-section"><ErrorMessage message={studioError} /></section></div>;
 
-  // FIX: always have a usable list of session types in the dropdown
   const availableSessionTypes = Array.isArray(studio.sessionTypes) && studio.sessionTypes.length
     ? studio.sessionTypes
     : DEFAULT_SESSION_TYPES;
@@ -71,6 +73,7 @@ export default function BookingPage() {
   const subtotal = studio.pricePerHour * hours;
   const fee = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
   const total = subtotal + fee;
+  const location = studioLocation(studio);
 
   const validateStep1 = () => {
     const errors = {};
@@ -82,10 +85,7 @@ export default function BookingPage() {
 
   const goToStep2 = () => {
     const errors = validateStep1();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
+    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
     setFieldErrors({});
     setStep(2);
   };
@@ -95,7 +95,7 @@ export default function BookingPage() {
     setSubmitError('');
     try {
       const created = await bookingsApi.create({
-        studioId: parseInt(studioId, 10), // FIX: always send as number
+        studioId: parseInt(studioId, 10),
         sessionType,
         date,
         time,
@@ -136,7 +136,10 @@ export default function BookingPage() {
         <div className="eyf-card eyf-stack">
           <div>
             <h1>Book {studio.name}</h1>
-            <p className="eyf-muted">{studio.city}, {studio.state} · ${studio.pricePerHour}/hour</p>
+            {/* FIX: only show location separator if city/state exist */}
+            <p className="eyf-muted">
+              {location ? `${location} · ` : ''} ${studio.pricePerHour}/hour
+            </p>
           </div>
 
           {step === 1 ? (
@@ -197,6 +200,7 @@ export default function BookingPage() {
               {submitError ? <div className="eyf-error-box" role="alert">{submitError}</div> : null}
               <div className="eyf-summary-list">
                 <div><span>Studio</span><strong>{studio.name}</strong></div>
+                {location ? <div><span>Location</span><strong>{location}</strong></div> : null}
                 <div><span>Session type</span><strong>{sessionType}</strong></div>
                 <div><span>Date</span><strong>{new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></div>
                 <div><span>Start time</span><strong>{time}</strong></div>
@@ -210,15 +214,8 @@ export default function BookingPage() {
                 Payment is processed securely via Stripe. You will receive a booking confirmation in your dashboard.
               </p>
               <div className="eyf-grid-2">
-                <button type="button" className="eyf-button eyf-button--ghost" onClick={() => setStep(1)}>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  className="eyf-button"
-                  onClick={confirmBooking}
-                  disabled={submitting}
-                >
+                <button type="button" className="eyf-button eyf-button--ghost" onClick={() => setStep(1)}>Back</button>
+                <button type="button" className="eyf-button" onClick={confirmBooking} disabled={submitting}>
                   {submitting ? 'Confirming…' : 'Confirm booking'}
                 </button>
               </div>
@@ -262,12 +259,8 @@ export default function BookingPage() {
                 Booking reference: <strong>#{booking.id}</strong> · Status: <strong>{booking.status.toLowerCase()}</strong>
               </p>
               <div className="eyf-grid-2">
-                <Link className="eyf-link-button eyf-link-button--ghost" to="/discover">
-                  Browse more studios
-                </Link>
-                <Link className="eyf-link-button" to="/dashboard/client">
-                  View dashboard
-                </Link>
+                <Link className="eyf-link-button eyf-link-button--ghost" to="/discover">Browse more studios</Link>
+                <Link className="eyf-link-button" to="/dashboard/client">View dashboard</Link>
               </div>
             </div>
           ) : null}
