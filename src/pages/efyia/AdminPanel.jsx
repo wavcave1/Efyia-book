@@ -80,6 +80,7 @@ function EditStudioModal({ studio, accounts, onSave, onClose }) {
     featured: !!studio.featured,
     verified: !!studio.verified,
     ownerAccountId: studio.owner?.id || studio.ownerId || '',
+    sessionTypes: Array.isArray(studio.sessionTypes) ? studio.sessionTypes.join(', ') : '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -92,6 +93,10 @@ function EditStudioModal({ studio, accounts, onSave, onClose }) {
     setSaving(true);
     setError(null);
     try {
+      const sessionTypes = form.sessionTypes
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       const updated = await adminApi.updateStudio(studio.id, {
         name: form.name,
         pricePerHour: Number(form.pricePerHour),
@@ -100,6 +105,7 @@ function EditStudioModal({ studio, accounts, onSave, onClose }) {
         featured: form.featured,
         verified: form.verified,
         ownerAccountId: form.ownerAccountId ? Number(form.ownerAccountId) : undefined,
+        sessionTypes,
       });
       onSave(updated);
     } catch (err) {
@@ -144,6 +150,14 @@ function EditStudioModal({ studio, accounts, onSave, onClose }) {
           <label>
             <span className="admin-subtle">State</span>
             <input value={form.state} onChange={set('state')} placeholder="GA" maxLength={4} />
+          </label>
+          <label className="full">
+            <span className="admin-subtle">Session types (comma-separated)</span>
+            <input
+              value={form.sessionTypes}
+              onChange={set('sessionTypes')}
+              placeholder="Recording, Mixing, Mastering, Podcast"
+            />
           </label>
         </div>
         <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
