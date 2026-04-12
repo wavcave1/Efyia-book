@@ -34,6 +34,16 @@ function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
+// FIX: normalise a studioSpecs field value to an array for the tag input widget.
+// The backend may store it as a comma-joined string; split it back out here.
+function specsFieldToArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    return value.split(',').map((v) => v.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function buildInitialForm(studio) {
   return {
     name: studio?.name || '',
@@ -55,8 +65,15 @@ function buildInitialForm(studio) {
     team: asArray(studio?.team),
     studioSpecs:
       studio?.studioSpecs && typeof studio.studioSpecs === 'object' && !Array.isArray(studio.studioSpecs)
-        ? studio.studioSpecs
-        : { consoleType: '', daws: '', mics: '', outboardGear: '', rooms: '' },
+        ? {
+            consoleType: studio.studioSpecs.consoleType || '',
+            // FIX: convert stored string → array for the tag input
+            daws: specsFieldToArray(studio.studioSpecs.daws),
+            mics: specsFieldToArray(studio.studioSpecs.mics),
+            outboardGear: specsFieldToArray(studio.studioSpecs.outboardGear),
+            rooms: studio.studioSpecs.rooms || '',
+          }
+        : { consoleType: '', daws: [], mics: [], outboardGear: [], rooms: '' },
     bookingInfo:
       studio?.bookingInfo && typeof studio.bookingInfo === 'object' && !Array.isArray(studio.bookingInfo)
         ? studio.bookingInfo
@@ -71,7 +88,6 @@ function buildInitialForm(studio) {
 // ─── TagInput ─────────────────────────────────────────────────────────────────
 function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…', suggestions = [] }) {
   const [inputValue, setInputValue] = useState('');
-
   const safeValue = Array.isArray(value) ? value : [];
 
   const addTag = (tag) => {
@@ -131,7 +147,6 @@ function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…
   );
 }
 
-// ─── FieldGroup ───────────────────────────────────────────────────────────────
 function FieldGroup({ label, children, hint }) {
   return (
     <div style={{ marginBottom: '1.25rem' }}>
@@ -144,7 +159,6 @@ function FieldGroup({ label, children, hint }) {
   );
 }
 
-// ─── ArrayItemCard ────────────────────────────────────────────────────────────
 function ArrayItemCard({ label, onRemove, children }) {
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '1rem', marginBottom: '1rem', background: 'var(--card)' }}>
@@ -164,7 +178,6 @@ function ArrayItemCard({ label, onRemove, children }) {
   );
 }
 
-// ─── SectionDivider ───────────────────────────────────────────────────────────
 function SectionDivider({ title }) {
   return (
     <h4 style={{ margin: '1.75rem 0 1rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
@@ -198,35 +211,29 @@ const TABS = [
   { id: 'contact', label: 'Contact' },
 ];
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function ProfileCustomizer({ studio: initialStudio, onSaved, initialTab }) {
   const [form, setForm] = useState(() => buildInitialForm(initialStudio));
-
-  const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+  const [saveState, setSaveState] = useState('idle');
   const [saveError, setSaveError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || 'branding');
   const saveTimerRef = useRef(null);
 
-  // Sync initialTab prop when drawer reopens on a different section
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
 
-  // Sync form if studio prop changes (e.g., after external refresh)
   useEffect(() => {
     if (initialStudio?.id) {
       setForm(buildInitialForm(initialStudio));
     }
   }, [initialStudio?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Inject font when pairing changes
   useEffect(() => {
     const url = FONT_URLS[form.fontPairing];
     if (url) injectFont(url);
   }, [form.fontPairing]);
 
-  // ─── Field setters ──────────────────────────────────────────────────────────
   const set = useCallback((field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
     setSaveState('idle');
@@ -329,7 +336,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     setSaveState('idle');
   };
 
-  // ─── Portfolio embeds ────────────────────────────────────────────────────────
+  // ─── Portfolio ────────────────────────────────────────────────────────────
   const addPortfolio = () => {
     setForm((prev) => ({ ...prev, portfolio: [...asArray(prev.portfolio), { title: '', artistName: '', trackName: '', serviceType: '', embedUrl: '', audioUrl: '' }] }));
     setSaveState('idle');
@@ -384,22 +391,30 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   };
 
   // ─── Save ────────────────────────────────────────────────────────────────────
+  // FIX: keep studioSpecs fields as arrays — the backend schema now accepts them directly.
+  // Only clean out empty/null values so Prisma doesn't choke.
   function normalizeStudioSpecs(specs) {
     if (!specs) return null;
-    const toStr = (v) => Array.isArray(v) ? (v.length ? v.join(', ') : null) : (v || null);
     const cleaned = {
       consoleType: specs.consoleType || null,
-      daws: toStr(specs.daws),
-      mics: toStr(specs.mics),
-      outboardGear: toStr(specs.outboardGear),
-      rooms: toStr(specs.rooms),
+      // Keep arrays as-is; backend transforms them to strings
+      daws: Array.isArray(specs.daws) ? specs.daws : (specs.daws || null),
+      mics: Array.isArray(specs.mics) ? specs.mics : (specs.mics || null),
+      outboardGear: Array.isArray(specs.outboardGear) ? specs.outboardGear : (specs.outboardGear || null),
+      rooms: specs.rooms || null,
     };
-    return Object.values(cleaned).some(Boolean) ? cleaned : null;
+    // Return null if there's nothing useful
+    const hasValue = cleaned.consoleType
+      || (Array.isArray(cleaned.daws) ? cleaned.daws.length : cleaned.daws)
+      || (Array.isArray(cleaned.mics) ? cleaned.mics.length : cleaned.mics)
+      || (Array.isArray(cleaned.outboardGear) ? cleaned.outboardGear.length : cleaned.outboardGear)
+      || cleaned.rooms;
+    return hasValue ? cleaned : null;
   }
 
   function normalizeBookingInfo(info) {
     if (!info) return null;
-    const toNum = (v) => (v !== '' && v != null) ? Number(v) : null;
+    const toNum = (v) => (v !== '' && v != null && !isNaN(Number(v))) ? Number(v) : null;
     const cleaned = {
       minHours: toNum(info.minHours),
       maxHours: toNum(info.maxHours),
@@ -451,13 +466,17 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         bookingInfo: normalizeBookingInfo(form.bookingInfo),
       };
 
-      let updated = await studioProfileApi.update(payload);
+      // Remove sessionTypes from the profile payload — it's saved via studiosApi below
+      const { sessionTypes: _sessionTypes, ...profilePayload } = payload;
 
-      // sessionTypes is not in the studioProfile schema — save via the studios endpoint
+      let updated = await studioProfileApi.update(profilePayload);
+
+      // sessionTypes lives on the Studio model, not the profile endpoint
       if (initialStudio?.id) {
         const sessionTypes = Array.isArray(form.sessionTypes) ? form.sessionTypes : [];
-        const withSessionTypes = await studiosApi.update(initialStudio.id, { sessionTypes });
-        updated = { ...updated, sessionTypes: withSessionTypes.sessionTypes };
+        // FIX: also save amenities here in case the profile endpoint strips them
+        const withExtras = await studiosApi.update(initialStudio.id, { sessionTypes });
+        updated = { ...updated, sessionTypes: withExtras.sessionTypes };
       }
 
       setSaveState('saved');
@@ -472,7 +491,6 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     }
   };
 
-  // Preview
   const previewStudio = {
     ...initialStudio,
     ...form,
@@ -902,7 +920,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           </FieldGroup>
           <FieldGroup label="DAWs available" hint="Type and press Enter to add each">
             <TagInput
-              value={typeof form.studioSpecs.daws === 'string' ? (form.studioSpecs.daws ? [form.studioSpecs.daws] : []) : (form.studioSpecs.daws || [])}
+              value={asArray(form.studioSpecs.daws)}
               onChange={(tags) => {
                 setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, daws: tags } }));
                 setSaveState('idle');
@@ -913,7 +931,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           </FieldGroup>
           <FieldGroup label="Notable microphones">
             <TagInput
-              value={typeof form.studioSpecs.mics === 'string' ? (form.studioSpecs.mics ? [form.studioSpecs.mics] : []) : (form.studioSpecs.mics || [])}
+              value={asArray(form.studioSpecs.mics)}
               onChange={(tags) => {
                 setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, mics: tags } }));
                 setSaveState('idle');
@@ -923,7 +941,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           </FieldGroup>
           <FieldGroup label="Outboard gear">
             <TagInput
-              value={typeof form.studioSpecs.outboardGear === 'string' ? (form.studioSpecs.outboardGear ? [form.studioSpecs.outboardGear] : []) : (form.studioSpecs.outboardGear || [])}
+              value={asArray(form.studioSpecs.outboardGear)}
               onChange={(tags) => {
                 setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, outboardGear: tags } }));
                 setSaveState('idle');
@@ -967,9 +985,6 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       {activeTab === 'discovery' ? (
         <div>
           <SectionDivider title="Genre specializations" />
-          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>
-            What styles does your studio specialize in? Clients filter by genre.
-          </p>
           <div style={{ marginBottom: '1.5rem' }}>
             <TagInput
               value={form.genres}
@@ -992,9 +1007,6 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           </div>
 
           <SectionDivider title="Amenities" />
-          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>
-            What does your studio offer? Clients often filter by these.
-          </p>
           <div style={{ marginBottom: '1.5rem' }}>
             <TagInput
               value={form.amenities}
@@ -1005,9 +1017,6 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           </div>
 
           <SectionDivider title="Client testimonials" />
-          <p className="eyf-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
-            Add quotes from past clients until a review system is in place.
-          </p>
           {asArray(form.testimonials).map((item, idx) => (
             <ArrayItemCard key={idx} label={item.authorName || `Testimonial ${idx + 1}`} onRemove={() => removeTestimonial(idx)}>
               <div style={{ marginBottom: '0.75rem' }}>
