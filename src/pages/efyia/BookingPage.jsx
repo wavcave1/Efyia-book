@@ -8,6 +8,9 @@ import BookingCheckout from '../../components/stripe/BookingCheckout';
 const TIMES = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
 const PLATFORM_FEE_RATE = (Number(import.meta.env.VITE_APP_FEE_PERCENT ?? 8) || 8) / 100;
 
+// FIX: fallback session types so the dropdown always has options
+const DEFAULT_SESSION_TYPES = ['Recording', 'Mixing', 'Mastering', 'Podcast', 'Production'];
+
 function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -32,13 +35,23 @@ export default function BookingPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [paymentError, setPaymentError] = useState('');
-  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   useEffect(() => {
-    studiosApi.getById(studioId)
+    // FIX: coerce studioId to number for the API call
+    const id = parseInt(studioId, 10);
+    if (isNaN(id)) {
+      setStudioError('Invalid studio ID.');
+      setStudioLoading(false);
+      return;
+    }
+    studiosApi.getById(id)
       .then((data) => {
         setStudio(data);
-        setSessionType(data.sessionTypes?.[0] || '');
+        // FIX: pick first available session type; fall back to default list first item
+        const types = Array.isArray(data.sessionTypes) && data.sessionTypes.length
+          ? data.sessionTypes
+          : DEFAULT_SESSION_TYPES;
+        setSessionType(types[0] || '');
         setStudioLoading(false);
       })
       .catch((err) => {
@@ -49,6 +62,11 @@ export default function BookingPage() {
 
   if (studioLoading) return <div className="eyf-page"><section className="eyf-section"><Spinner /></section></div>;
   if (studioError || !studio) return <div className="eyf-page"><section className="eyf-section"><ErrorMessage message={studioError} /></section></div>;
+
+  // FIX: always have a usable list of session types in the dropdown
+  const availableSessionTypes = Array.isArray(studio.sessionTypes) && studio.sessionTypes.length
+    ? studio.sessionTypes
+    : DEFAULT_SESSION_TYPES;
 
   const subtotal = studio.pricePerHour * hours;
   const fee = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
@@ -77,14 +95,13 @@ export default function BookingPage() {
     setSubmitError('');
     try {
       const created = await bookingsApi.create({
-        studioId: studio.id,
+        studioId: parseInt(studioId, 10), // FIX: always send as number
         sessionType,
         date,
         time,
         hours,
       });
       setBooking(created);
-      // Create a PaymentIntent for this booking
       const intent = await paymentsApi.createIntent(created.id);
       setPaymentInfo({
         clientSecret: intent.clientSecret,
@@ -127,15 +144,12 @@ export default function BookingPage() {
               <div>
                 <label>
                   Session type
-            <select value={sessionType || ''} onChange={(e) => setSessionType(e.target.value)}>
-              <option value="">Select session type</option>
-              {Array.isArray(studio?.sessionTypes) &&
-                studio.sessionTypes.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-            </select>
+                  <select value={sessionType || ''} onChange={(e) => setSessionType(e.target.value)}>
+                    <option value="">Select session type</option>
+                    {availableSessionTypes.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
                 </label>
                 {fieldErrors.sessionType ? <p className="eyf-field-error">{fieldErrors.sessionType}</p> : null}
               </div>
@@ -189,11 +203,11 @@ export default function BookingPage() {
                 <div><span>Duration</span><strong>{hours} hour{hours !== 1 ? 's' : ''}</strong></div>
                 <div><span>Studio rate</span><strong>${studio.pricePerHour}/hr</strong></div>
                 <div><span>Subtotal</span><strong>${subtotal.toFixed(2)}</strong></div>
-                <div><span>Platform fee (8%)</span><strong>${fee.toFixed(2)}</strong></div>
+                <div><span>Platform fee ({Math.round(PLATFORM_FEE_RATE * 100)}%)</span><strong>${fee.toFixed(2)}</strong></div>
                 <div className="total-row"><span><strong>Total</strong></span><strong style={{ color: 'var(--mint)' }}>${total.toFixed(2)}</strong></div>
               </div>
               <p className="eyf-muted" style={{ fontSize: '0.85rem' }}>
-                Payment is processed at the studio. You will receive a booking confirmation in your dashboard.
+                Payment is processed securely via Stripe. You will receive a booking confirmation in your dashboard.
               </p>
               <div className="eyf-grid-2">
                 <button type="button" className="eyf-button eyf-button--ghost" onClick={() => setStep(1)}>
@@ -226,10 +240,7 @@ export default function BookingPage() {
                   studioName={studio.name}
                   amountCents={paymentInfo.amountCents}
                   bookingDetails={{ date, time, duration: `${hours} hour${hours !== 1 ? 's' : ''}` }}
-                  onSuccess={() => {
-                    setPaymentCompleted(true);
-                    setStep(4);
-                  }}
+                  onSuccess={() => setStep(4)}
                   onError={(msg) => setPaymentError(msg)}
                 />
               ) : (
