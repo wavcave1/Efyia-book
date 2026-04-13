@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
@@ -142,38 +143,40 @@ function ClientBookingRows({ bookings, onCancel }) {
 
       <div className="eyf-stack">
         {bookings.map((booking) => (
-          <article
-            key={booking.id}
-            className="eyf-card eyf-row eyf-row--between eyf-row--start"
-          >
-            <div>
-              <h3>{booking.studio?.name || 'Studio'}</h3>
-              <p className="eyf-muted">
-                {booking.date} · {booking.time} · {booking.sessionType} ·{' '}
-                {booking.hours}hr
-              </p>
-            </div>
-            <div className="eyf-booking-meta">
-              <BookingStatusBadge status={booking.status} />
-              <strong>${booking.total?.toFixed(2)}</strong>
-              {['PENDING', 'CONFIRMED'].includes(booking.status) ? (
-                <button
-                  type="button"
-                  className="eyf-button eyf-button--ghost"
-                  style={{
-                    padding: '0.4rem 0.75rem',
-                    minHeight: 'unset',
-                    fontSize: '0.82rem',
-                    color: '#f87171',
-                    borderColor: '#f87171',
-                  }}
-                  onClick={() => setConfirmCancel(booking)}
-                >
-                  Cancel
-                </button>
-              ) : null}
-            </div>
-          </article>
+        <article key={booking.id} className="eyf-card eyf-stack">
+  <div className="eyf-row eyf-row--between eyf-row--start">
+    <div>
+      <h3>{booking.studio?.name || 'Studio'}</h3>
+      <p className="eyf-muted">
+        {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
+      </p>
+    </div>
+    <div className="eyf-booking-meta">
+      <BookingStatusBadge status={booking.status} />
+      <strong>${booking.total?.toFixed(2)}</strong>
+      {['PENDING', 'CONFIRMED'].includes(booking.status) ? (
+        <button
+          type="button"
+          className="eyf-button eyf-button--ghost"
+          style={{ padding: '0.4rem 0.75rem', minHeight: 'unset', fontSize: '0.82rem', color: '#f87171', borderColor: '#f87171' }}
+          onClick={() => setConfirmCancel(booking)}
+        >
+          Cancel
+        </button>
+      ) : null}
+    </div>
+  </div>
+  {/* Book again button — shows on cancelled and completed bookings */}
+  {['CANCELLED', 'COMPLETED'].includes(booking.status) && booking.studio?.id ? (
+    <Link
+      to={`/booking/${booking.studio.id}`}
+      className="eyf-button eyf-button--secondary"
+      style={{ justifySelf: 'start', padding: '0.4rem 0.9rem', minHeight: 'unset', fontSize: '0.85rem' }}
+    >
+      Book again
+    </Link>
+  ) : null}
+</article>
         ))}
       </div>
     </>
