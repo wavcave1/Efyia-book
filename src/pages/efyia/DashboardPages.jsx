@@ -16,6 +16,7 @@ import FileList from '../../components/booking/FileList';
 import RevenueChart from '../../components/studio/RevenueChart';
 import AvailabilityManager from '../../components/studio/AvailabilityManager';
 import { canRevealBookingAddress, getPrivateAddress } from '../../lib/location';
+import EmailDomainManager from '../../components/efyia/EmailDomainManager';
 
 // ─── Confirm action modal ─────────────────────────────────────────────────────
 function ConfirmModal({
@@ -836,6 +837,8 @@ export function StudioDashboard() {
                       onSaved={() => showToast('Availability updated.')}
                     />
                   </div>
+
+                  <EmailDomainManager />
                 </>
               ) : (
                 <EmptyState
