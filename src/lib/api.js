@@ -214,6 +214,21 @@ export const analyticsApi = {
   studio: () => api.get('/api/analytics/studio'),
 };
 
+// ─── Email domains & forwarding aliases ─────────────────────────────────────
+export const emailDomainsApi = {
+  listDomains: () => api.get('/api/email-domains'),
+  createDomain: (data) => api.post('/api/email-domains', data),
+  getDomain: (domainId) => api.get(`/api/email-domains/${domainId}`),
+  refreshDomain: (domainId) => api.post(`/api/email-domains/${domainId}/refresh`, {}),
+
+  listAliases: (domainId) => api.get(`/api/email-domains/${domainId}/aliases`),
+  createAlias: (domainId, data) => api.post(`/api/email-domains/${domainId}/aliases`, data),
+  updateAlias: (domainId, aliasId, data) => api.patch(`/api/email-domains/${domainId}/aliases/${aliasId}`, data),
+  deleteAlias: (domainId, aliasId) => api.delete(`/api/email-domains/${domainId}/aliases/${aliasId}`),
+
+  transactionalActivity: (domainId) => api.get(`/api/email-domains/${domainId}/transactional-activity`),
+};
+
 export const depositApi = {
   payDeposit: (bookingId) => api.post('/api/payments/deposit/' + bookingId, {}),
   payFinal: (bookingId) => api.post('/api/payments/final/' + bookingId, {}),
