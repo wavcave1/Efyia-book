@@ -420,12 +420,35 @@ export default function BookingPage() {
     setCancelling(true);
 
     try {
-      await bookingsApi.updateStatus(booking.id, 'CANCELLED');
-      setBooking((prev) => ({ ...prev, status: 'CANCELLED' }));
+      const result = await bookingsApi.updateStatus(booking.id, 'CANCELLED');
+
+      setBooking((prev) => ({
+        ...prev,
+        status: 'CANCELLED',
+      }));
+
       setShowCancelModal(false);
-      showToast('Booking cancelled.');
+
+      if (result.refund?.refundId) {
+        showToast(
+          'Booking cancelled. Your refund has been issued and will appear in 5–10 business days.'
+        );
+      } else if (result.refund?.status === 'cancelled_before_capture') {
+        showToast('Booking cancelled. Your payment was voided — you were not charged.');
+      } else if (
+        result.refund?.status === 'no_payment_found' ||
+        result.refund?.status === 'no_charge'
+      ) {
+        showToast('Booking cancelled.');
+      } else if (result.refund?.error) {
+        showToast(
+          'Booking cancelled. Refund could not be processed automatically — please contact support.'
+        );
+      } else {
+        showToast('Booking cancelled.');
+      }
     } catch (err) {
-      showToast(err.message || 'Could not cancel.');
+      showToast(err.message || 'Could not cancel booking.');
     } finally {
       setCancelling(false);
     }
