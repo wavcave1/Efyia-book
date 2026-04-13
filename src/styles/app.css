@@ -1430,10 +1430,7 @@ input[type="range"] { padding: 0; background: none; border: none; }
   position: relative;
   overflow: hidden;
   min-height: 300px;
-  background-image:
-    linear-gradient(var(--map-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--map-grid) 1px, transparent 1px);
-  background-size: 32px 32px;
+ 
 }
 
 .eyf-discover-map-preview {
@@ -2271,3 +2268,10 @@ input[type="range"] { padding: 0; background: none; border: none; }
   font-size: 0.78rem;
   white-space: nowrap;
 }
+
+.eyf-map-canvas,
+.eyf-discover-map-canvas {
+  background: none !important;
+  background-image: none !important;
+}
+
