@@ -329,6 +329,11 @@ input[type="range"] { padding: 0; background: none; border: none; }
   padding: 1rem;
   background: linear-gradient(
     135deg,
+    rgba(98, 243, 212, 0.18),
+    rgba(17, 24, 32, 0.9)
+  );
+  background: linear-gradient(
+    135deg,
     color-mix(in srgb, var(--studio-color) 45%, transparent),
     color-mix(in srgb, var(--card) 55%, transparent)
   );
@@ -424,6 +429,11 @@ input[type="range"] { padding: 0; background: none; border: none; }
   margin: 1rem 0;
   background: linear-gradient(
     135deg,
+    rgba(98, 243, 212, 0.1),
+    var(--card)
+  );
+  background: linear-gradient(
+    135deg,
     color-mix(in srgb, var(--studio-color) 18%, var(--card)),
     var(--card)
   );
@@ -435,6 +445,7 @@ input[type="range"] { padding: 0; background: none; border: none; }
   border-radius: 999px;
   padding: 0.65rem 1rem;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
 }
 .eyf-tabs button:hover { border-color: var(--muted); color: var(--text); }
 .eyf-tabs .is-active { color: var(--bg); background: linear-gradient(135deg, var(--mint), var(--sage)); border-color: transparent; }
@@ -582,7 +593,7 @@ input[type="range"] { padding: 0; background: none; border: none; }
   .eyf-nav__actions { gap: 0.5rem; }
 }
 
-/* ─── Scrollable tab bar ─────────────────────────────────────────────────── */
+/* ─── Scrollable tab bar helper ───────────────────────────────────────────── */
 .eyf-tabs--scroll {
   overflow-x: auto;
   flex-wrap: nowrap;
@@ -1061,14 +1072,6 @@ input[type="range"] { padding: 0; background: none; border: none; }
   font-weight: 600;
 }
 
-@media (max-width: 640px) {
-  .eyf-wizard-body { padding: 1.5rem 1.25rem 1rem; }
-  .eyf-wizard-footer { padding: 1rem 1.25rem; }
-  .eyf-gallery-strip { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-  .eyf-portfolio-grid { grid-template-columns: 1fr; }
-  .eyf-team-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-}
-
 /* ─── Homepage hero (Airbnb-style) ──────────────────────────────────────────── */
 .eyf-home { padding: 0; }
 .eyf-container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
@@ -1088,10 +1091,6 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-home-hero__bg {
   position: absolute;
   inset: 0;
-  /* Placeholder gradient — replace with a real image:
-     background-image: url('/hero.jpg');
-     background-size: cover;
-     background-position: center; */
   background:
     radial-gradient(ellipse at 30% 60%, rgba(98, 243, 212, 0.18) 0%, transparent 55%),
     radial-gradient(ellipse at 75% 30%, rgba(109, 194, 163, 0.14) 0%, transparent 50%),
@@ -1292,7 +1291,7 @@ input[type="range"] { padding: 0; background: none; border: none; }
 }
 .eyf-home-cta__inner h2 { margin: 0; }
 
-/* ─── Find Studios — results + map split layout ───────────────────────────────── */
+/* ─── Find Studios — results + map split layout ────────────────────────────── */
 .eyf-results-area {
   display: grid;
   grid-template-columns: 1fr;
@@ -1475,27 +1474,6 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-review-star.is-active { color: #f59e0b; }
 .eyf-review-star:hover { transform: scale(1.15); }
 
-/* ─── Responsive adjustments ──────────────────────────────────────────────────── */
-@media (max-width: 860px) {
-  .eyf-hero-search {
-    grid-template-columns: 1fr;
-    border-radius: 14px;
-  }
-  .eyf-hero-search__divider { display: none; }
-  .eyf-hero-search__field { padding: 0.4rem 0.75rem; }
-  .eyf-hero-search__btn { margin: 0; border-radius: 10px; padding: 0.75rem; }
-
-  .eyf-home-stats { grid-template-columns: repeat(2, 1fr); }
-
-  .eyf-results-area.has-map {
-    grid-template-columns: 1fr;
-  }
-  .eyf-discover-map {
-    position: static;
-    height: 320px;
-  }
-}
-
 /* ─── Stripe connect widgets ───────────────────────────────────────────────── */
 .stripe-onboarding-panel {
   display: grid;
@@ -1588,12 +1566,45 @@ input[type="range"] { padding: 0; background: none; border: none; }
   font-size: 0.88rem;
 }
 
+/* ─── Stats card enhancement without breaking base grid ───────────────────── */
+.eyf-stats-grid > .eyf-card {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.eyf-stats-grid > .eyf-card strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.eyf-stats-grid > .eyf-card span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ─── Booking cards helper ────────────────────────────────────────────────── */
+.eyf-booking-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ─── Carousel: studio cards ──────────────────────────────────────────────── */
 .eyf-card-carousel {
   position: relative;
   width: 100%;
   height: 200px;
   overflow: hidden;
-  border-radius: 16px 16px 0 0;
+  background: linear-gradient(
+    135deg,
+    rgba(98, 243, 212, 0.18),
+    rgba(17, 24, 32, 0.9)
+  );
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--studio-color) 45%, transparent),
@@ -1619,6 +1630,11 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-card-carousel__fallback {
   width: 100%;
   height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(98, 243, 212, 0.18),
+    rgba(17, 24, 32, 0.9)
+  );
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--studio-color) 45%, transparent),
@@ -1680,7 +1696,7 @@ input[type="range"] { padding: 0; background: none; border: none; }
   transform: scale(1.3);
 }
 
-/* ─── Full profile gallery carousel ─────────────────────────────────────────── */
+/* ─── Carousel: profile gallery ───────────────────────────────────────────── */
 .eyf-gallery-carousel {
   position: relative;
   margin: 0.5rem 0 1.5rem;
@@ -1695,12 +1711,6 @@ input[type="range"] { padding: 0; background: none; border: none; }
   aspect-ratio: 16 / 9;
   background: var(--bg-subtle);
   overflow: hidden;
-}
-
-@media (max-width: 640px) {
-  .eyf-gallery-carousel__main {
-    aspect-ratio: 4 / 3;
-  }
 }
 
 .eyf-gallery-carousel__img {
@@ -1800,10 +1810,180 @@ input[type="range"] { padding: 0; background: none; border: none; }
   opacity: 0.9;
 }
 
+/* ─── Mobile / tablet updates merged safely ───────────────────────────────── */
+@media (max-width: 860px) {
+  .eyf-hero-search {
+    grid-template-columns: 1fr;
+    border-radius: 14px;
+  }
+
+  .eyf-hero-search__divider { display: none; }
+  .eyf-hero-search__field { padding: 0.4rem 0.75rem; }
+  .eyf-hero-search__btn { margin: 0; border-radius: 10px; padding: 0.75rem; }
+
+  .eyf-home-stats { grid-template-columns: repeat(2, 1fr); }
+
+  .eyf-results-area.has-map {
+    grid-template-columns: 1fr;
+  }
+
+  .eyf-discover-map {
+    position: static;
+    height: 320px;
+  }
+}
+
 @media (max-width: 640px) {
+  .eyf-wizard-body { padding: 1.5rem 1.25rem 1rem; }
+  .eyf-wizard-footer { padding: 1rem 1.25rem; }
+  .eyf-portfolio-grid { grid-template-columns: 1fr; }
+  .eyf-team-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+
+  .eyf-gallery-carousel__main {
+    aspect-ratio: 4 / 3;
+  }
+
   .eyf-gallery-carousel__thumb {
     width: 52px;
     height: 40px;
   }
+
+  .eyf-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eyf-booking-meta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .eyf-summary-list > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+
+  .eyf-summary-list .total-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .eyf-section-heading__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .eyf-completion-checklist {
+    grid-template-columns: 1fr;
+  }
+
+  .eyf-wizard-footer {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .eyf-wizard-footer > div {
+    width: 100%;
+  }
+
+  .eyf-wizard-footer .eyf-row {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .eyf-wizard-footer .eyf-button {
+    flex: 1;
+  }
+
+  .eyf-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stripe-onboarding-panel .panel-header {
+    flex-wrap: wrap;
+  }
+
+  .stripe-onboarding-panel .status-badge {
+    margin-left: 0;
+    margin-top: 0.25rem;
+  }
+
+  .action-row {
+    flex-direction: column;
+  }
+
+  .action-row .eyf-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .eyf-nav {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .eyf-nav__actions {
+    gap: 0.4rem;
+  }
+
+  .eyf-nav__actions .eyf-muted {
+    display: none;
+  }
+
+  .eyf-brand span:last-child {
+    font-size: 1rem;
+  }
+
+  .eyf-owner-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .eyf-drawer {
+    width: 100%;
+    padding: 1.25rem 1rem;
+  }
+
+  .eyf-gallery-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eyf-section {
+    padding: 1.5rem 0 0;
+  }
+
+  .eyf-card {
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .eyf-page {
+    width: calc(100% - 1.5rem);
+  }
+
+  .eyf-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .eyf-tabs::-webkit-scrollbar {
+    display: none;
+  }
 }
 
+@media (min-width: 640px) {
+  .eyf-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .eyf-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
