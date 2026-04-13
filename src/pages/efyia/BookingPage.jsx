@@ -11,9 +11,14 @@ const TIMES = [
   '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM',
 ];
 
-const PLATFORM_FEE_RATE =
-  (Number(import.meta.env.VITE_APP_FEE_PERCENT ?? 8) || 8) / 100;
+const FLAT_FEE = Number(import.meta.env.VITE_FLAT_FEE ?? 2);
+const FEE_CAP = Number(import.meta.env.VITE_FEE_CAP ?? 15);
+const FEE_PERCENT = Number(import.meta.env.VITE_FEE_PERCENT ?? 2) / 100;
 
+function calcFee(subtotal) {
+  const pct = Math.round(subtotal * FEE_PERCENT * 100) / 100;
+  return Math.min(Math.max(FLAT_FEE, pct), FEE_CAP);
+}
 const DEFAULT_SESSION_TYPES = [
   'Recording',
   'Mixing',
@@ -326,7 +331,7 @@ export default function BookingPage() {
   const selectedService = getServiceForSession(studio, sessionType);
 
   const subtotal = pricePerHour * hours;
-  const fee = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
+  const fee = calcFee(subtotal);
   const total = subtotal + fee;
 
   const location = studioLocation(studio);
