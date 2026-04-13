@@ -12,6 +12,7 @@ import HomePage from './pages/efyia/HomePage';
 import SearchPage from './pages/efyia/SearchPage';
 import StudioProfilePage from './pages/efyia/StudioProfilePage';
 import StudioPublicPage from './pages/efyia/StudioPublicPage';
+import MapPage from './pages/efyia/MapPage';
 
 export default function App() {
   return (
@@ -33,7 +34,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="discover" element={<SearchPage />} />
-            <Route path="map" element={<Navigate to="/discover" replace />} />
+            <Route path="map" element={<MapPage />} />
             <Route path="studios/:slug" element={<StudioProfilePage />} />
             <Route
               path="booking/:studioId"
