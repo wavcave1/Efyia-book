@@ -266,18 +266,6 @@ export default function StudioProfilePage() {
               <span className="eyf-add-prompt__sub">Control room, live room, equipment — give clients a feel for the space</span>
             </button>
           ) : null}
-            </div>
-          ) : isOwner ? (
-            <button
-              type="button"
-              className="eyf-add-prompt"
-              onClick={() => openDrawer('gallery')}
-              style={{ marginBottom: '1rem' }}
-            >
-              <span className="eyf-add-prompt__label">+ Add studio photos</span>
-              <span className="eyf-add-prompt__sub">Control room, live room, equipment — give clients a feel for the space</span>
-            </button>
-          ) : null}
 
           {/* Tabs */}
           <div className="eyf-tabs">
