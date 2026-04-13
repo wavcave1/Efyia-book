@@ -589,8 +589,7 @@ export default function BookingPage() {
                     className="eyf-muted"
                     style={{ fontSize: '0.85rem' }}
                   >
-                    Estimated total: $
-                    {(pricePerHour * hours * (1 + PLATFORM_FEE_RATE)).toFixed(0)}
+                    Estimated total: ${(pricePerHour * hours + calcFee(pricePerHour * hours)).toFixed(0)}
                   </span>
                 </label>
 
@@ -668,9 +667,7 @@ export default function BookingPage() {
                   </div>
 
                   <div>
-                    <span>
-                      Platform fee ({Math.round(PLATFORM_FEE_RATE * 100)}%)
-                    </span>
+                    <span>Booking fee</span>
                     <strong>${fee.toFixed(2)}</strong>
                   </div>
 
