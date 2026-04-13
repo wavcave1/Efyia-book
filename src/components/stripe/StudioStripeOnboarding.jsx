@@ -120,7 +120,7 @@ export default function StudioStripeOnboarding({
             owner through Stripe's secure identity verification and bank account setup.
           </p>
           <p className="note">
-            The studio will be the merchant of record. Efiya collects a {feePercent}% platform fee on each booking.
+            A small booking fee applies per session. Your subscription includes your website, booking system, and payments.
           </p>
           <button onClick={handleEnableStripe} disabled={loading} className="eyf-button">
             {loading ? 'Setting up Stripe...' : '⚡ Enable Studio & Start Onboarding'}
