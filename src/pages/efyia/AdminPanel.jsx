@@ -278,9 +278,7 @@ export default function AdminPanel() {
   const studioFields = [
     { name: 'name', label: 'Studio name', required: true },
     { name: 'ownerAccountId', label: 'Owner account ID', required: true },
-    { name: 'city', label: 'City' },
-    { name: 'state', label: 'State' },
-    { name: 'pricePerHour', label: 'Price per hour ($)', type: 'number' },
+    
   ];
 
   const profileFields = [
