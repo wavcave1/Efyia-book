@@ -46,6 +46,7 @@ function specsFieldToArray(value) {
 }
 
 function buildInitialForm(studio) {
+  const profileLocationLabel = studio?.publicLocationLabel || studio?.displayLocation || '';
   return {
     name: studio?.name || '',
     description: studio?.description || '',
@@ -83,6 +84,17 @@ function buildInitialForm(studio) {
     amenities: asArray(studio?.amenities),
     testimonials: asArray(studio?.testimonials),
     sessionTypes: asArray(studio?.sessionTypes),
+    addressLine1: studio?.addressLine1 || '',
+    addressLine2: studio?.addressLine2 || '',
+    city: studio?.city || '',
+    state: studio?.state || '',
+    postalCode: studio?.postalCode || '',
+    country: studio?.country || '',
+    displayLocation: profileLocationLabel,
+    publicLocationLabel: profileLocationLabel,
+    arrivalInstructions: studio?.arrivalInstructions || studio?.directions || '',
+    latitude: studio?.latitude ?? studio?.lat ?? '',
+    longitude: studio?.longitude ?? studio?.lng ?? '',
   };
 }
 
@@ -428,6 +440,12 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     return Object.values(cleaned).some((v) => v !== null) ? cleaned : null;
   }
 
+  function normalizeOptionalNumber(value) {
+    if (value === '' || value == null) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   const handleSave = async () => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setSaveState('saving');
@@ -468,6 +486,18 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         amenities: Array.isArray(form.amenities) ? form.amenities : [],
         studioSpecs: normalizeStudioSpecs(form.studioSpecs),
         bookingInfo: normalizeBookingInfo(form.bookingInfo),
+        addressLine1: form.addressLine1?.trim() || null,
+        addressLine2: form.addressLine2?.trim() || null,
+        city: form.city?.trim() || null,
+        state: form.state?.trim() || null,
+        postalCode: form.postalCode?.trim() || null,
+        country: form.country?.trim() || null,
+        displayLocation: form.displayLocation?.trim() || form.publicLocationLabel?.trim() || null,
+        publicLocationLabel: form.publicLocationLabel?.trim() || form.displayLocation?.trim() || null,
+        arrivalInstructions: form.arrivalInstructions?.trim() || null,
+        directions: form.arrivalInstructions?.trim() || null,
+        latitude: normalizeOptionalNumber(form.latitude),
+        longitude: normalizeOptionalNumber(form.longitude),
       };
 
       // Remove sessionTypes from the profile payload — it's saved via studiosApi below
@@ -1077,6 +1107,62 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       {/* ── Contact tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'contact' ? (
         <div>
+          <SectionDivider title="Studio location (private address)" />
+          <p className="eyf-muted" style={{ fontSize: '0.85rem', lineHeight: 1.55, marginBottom: '0.8rem' }}>
+            Enter your full address for booking logistics and map placement. We only show the public location label before booking.
+          </p>
+          <FieldGroup label="Public location label" hint="Shown publicly (e.g. East Nashville, TN). Exact address stays private until booking is confirmed.">
+            <input
+              type="text"
+              value={form.publicLocationLabel || form.displayLocation || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm((prev) => ({ ...prev, publicLocationLabel: value, displayLocation: value }));
+                setSaveState('idle');
+              }}
+              placeholder="East Nashville, TN"
+            />
+          </FieldGroup>
+          <FieldGroup label="Address line 1">
+            <input type="text" value={form.addressLine1 || ''} onChange={set('addressLine1')} placeholder="123 Music Row" />
+          </FieldGroup>
+          <FieldGroup label="Address line 2 (optional)">
+            <input type="text" value={form.addressLine2 || ''} onChange={set('addressLine2')} placeholder="Suite 4B" />
+          </FieldGroup>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <FieldGroup label="City">
+              <input type="text" value={form.city || ''} onChange={set('city')} placeholder="Nashville" />
+            </FieldGroup>
+            <FieldGroup label="State / region">
+              <input type="text" value={form.state || ''} onChange={set('state')} placeholder="TN" />
+            </FieldGroup>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <FieldGroup label="Postal code">
+              <input type="text" value={form.postalCode || ''} onChange={set('postalCode')} placeholder="37203" />
+            </FieldGroup>
+            <FieldGroup label="Country">
+              <input type="text" value={form.country || ''} onChange={set('country')} placeholder="US" />
+            </FieldGroup>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <FieldGroup label="Latitude">
+              <input type="number" step="any" value={form.latitude ?? ''} onChange={set('latitude')} placeholder="36.1627" />
+            </FieldGroup>
+            <FieldGroup label="Longitude">
+              <input type="number" step="any" value={form.longitude ?? ''} onChange={set('longitude')} placeholder="-86.7816" />
+            </FieldGroup>
+          </div>
+          <FieldGroup label="Arrival instructions (private)" hint="Shown to clients after booking is confirmed.">
+            <textarea
+              rows={3}
+              value={form.arrivalInstructions || ''}
+              onChange={set('arrivalInstructions')}
+              placeholder="Use side entrance after 6pm. Call on arrival for gate access."
+            />
+          </FieldGroup>
+
+          <SectionDivider title="Public contact" />
           <FieldGroup label="Phone number">
             <input type="tel" value={form.contactInfo?.phone || ''} onChange={setContact('phone')} placeholder="+1 (555) 000-0000" />
           </FieldGroup>

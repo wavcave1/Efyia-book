@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getDisplayLocation } from '../../lib/location';
 
 function Stars({ rating }) {
   return (
@@ -56,6 +57,7 @@ function SocialRow({ links }) {
 }
 
 export default function LayoutMinimal({ studio }) {
+  const locationLabel = getDisplayLocation(studio);
   const {
     name,
     richDescription,
@@ -70,7 +72,6 @@ export default function LayoutMinimal({ studio }) {
     pricePerHour,
     city,
     state,
-    address,
     rating,
     reviewCount,
     services,
@@ -100,7 +101,7 @@ export default function LayoutMinimal({ studio }) {
           <div>
             <h1 className="sp-heading-xl">{name}</h1>
             <p className="sp-muted">
-              {city}, {state} · ${pricePerHour}/hr
+              {locationLabel || [city, state].filter(Boolean).join(', ')} · ${pricePerHour}/hr
             </p>
             {rating > 0 ? (
               <p className="sp-rating-row">

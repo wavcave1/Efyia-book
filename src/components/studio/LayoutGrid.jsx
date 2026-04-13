@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getDisplayLocation } from '../../lib/location';
 
 function Stars({ rating, accent }) {
   return (
@@ -11,6 +12,7 @@ function Stars({ rating, accent }) {
 }
 
 export default function LayoutGrid({ studio }) {
+  const locationLabel = getDisplayLocation(studio);
   const {
     name,
     richDescription,
@@ -47,7 +49,7 @@ export default function LayoutGrid({ studio }) {
         <div className="sp-grid-masthead-inner">
           {logoUrl ? <img src={logoUrl} alt={`${name} logo`} className="sp-logo" /> : null}
           <h1 className="sp-heading-xl">{name}</h1>
-          <p className="sp-muted">{city}, {state} · ${pricePerHour}/hr</p>
+          <p className="sp-muted">{locationLabel || [city, state].filter(Boolean).join(', ')} · ${pricePerHour}/hr</p>
           {rating > 0 ? (
             <p className="sp-rating-row">
               <Stars rating={rating} accent={accentColor} />

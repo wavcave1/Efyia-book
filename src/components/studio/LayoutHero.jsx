@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getDisplayLocation } from '../../lib/location';
 
 function Stars({ rating }) {
   return (
@@ -28,6 +29,7 @@ function SocialRow({ links }) {
 }
 
 export default function LayoutHero({ studio }) {
+  const locationLabel = getDisplayLocation(studio);
   const {
     name,
     richDescription,
@@ -66,7 +68,7 @@ export default function LayoutHero({ studio }) {
             {logoUrl ? <img src={logoUrl} alt={`${name} logo`} className="sp-logo sp-logo--light" /> : null}
             <h1 className="sp-heading-hero">{name}</h1>
             <p className="sp-hero-sub">
-              {city}, {state} · ${pricePerHour}/hr
+              {locationLabel || [city, state].filter(Boolean).join(', ')} · ${pricePerHour}/hr
             </p>
             {rating > 0 ? (
               <p className="sp-rating-row">

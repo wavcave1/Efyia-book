@@ -3,15 +3,21 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, Stars, StudioCard } from '../../components/efyia/ui';
+import { getCoordinates, getDisplayLocation } from '../../lib/location';
 
 // ─── Inline map helpers (canvas-based, no Mapbox required) ───────────────────
 function getCanvasPosition(studio, allStudios) {
-  const lats = allStudios.map((s) => s.lat).filter(Boolean);
-  const lngs = allStudios.map((s) => s.lng).filter(Boolean);
-  if (!lats.length || !studio.lat || !studio.lng) {
+  const points = allStudios
+    .map((s) => getCoordinates(s))
+    .filter((point) => point.lat != null && point.lng != null);
+
+  const current = getCoordinates(studio);
+  if (!points.length || current.lat == null || current.lng == null) {
     return { left: `${20 + Math.random() * 60}%`, top: `${20 + Math.random() * 60}%` };
   }
 
+  const lats = points.map((point) => point.lat);
+  const lngs = points.map((point) => point.lng);
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs);
@@ -20,8 +26,8 @@ function getCanvasPosition(studio, allStudios) {
   const lngRange = maxLng - minLng || 1;
 
   return {
-    left: `${(10 + ((studio.lng - minLng) / lngRange) * 80).toFixed(1)}%`,
-    top: `${(10 + ((maxLat - studio.lat) / latRange) * 70).toFixed(1)}%`,
+    left: `${(10 + ((current.lng - minLng) / lngRange) * 80).toFixed(1)}%`,
+    top: `${(10 + ((maxLat - current.lat) / latRange) * 70).toFixed(1)}%`,
   };
 }
 
@@ -39,7 +45,7 @@ function MapPanel({ studios, selected, onSelect }) {
             style={{ ...pos, background: studio.color || '#62f3d4' }}
             title={studio.name}
             onClick={() => onSelect(isSelected ? null : studio)}
-            aria-label={`${studio.name} — ${studio.city}, ${studio.state}`}
+            aria-label={`${studio.name} — ${getDisplayLocation(studio)}`}
           />
         );
       })}
@@ -49,7 +55,7 @@ function MapPanel({ studios, selected, onSelect }) {
           <div>
             <strong>{selected.name}</strong>
             <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
-              {selected.city}, {selected.state}
+              {getDisplayLocation(selected)}
             </p>
             <Stars rating={selected.rating || 0} />
           </div>

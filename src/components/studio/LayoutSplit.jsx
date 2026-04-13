@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getDisplayLocation } from '../../lib/location';
 
 function Stars({ rating, accent }) {
   return (
@@ -11,6 +12,7 @@ function Stars({ rating, accent }) {
 }
 
 export default function LayoutSplit({ studio }) {
+  const locationLabel = getDisplayLocation(studio);
   const {
     name,
     richDescription,
@@ -25,7 +27,6 @@ export default function LayoutSplit({ studio }) {
     pricePerHour,
     city,
     state,
-    address,
     rating,
     reviewCount,
     services,
@@ -49,7 +50,7 @@ export default function LayoutSplit({ studio }) {
           {logoUrl ? <img src={logoUrl} alt={`${name} logo`} className="sp-logo sp-logo--light" /> : null}
           <h1 className="sp-heading-split">{name}</h1>
           <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' }}>
-            {city}, {state}
+            {locationLabel || [city, state].filter(Boolean).join(', ')}
           </p>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '1rem' }}>
             ${pricePerHour}/hr

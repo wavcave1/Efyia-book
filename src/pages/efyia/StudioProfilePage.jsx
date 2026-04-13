@@ -4,6 +4,7 @@ import { reviewsApi, studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { Badge, EmptyState, ErrorMessage, GalleryCarousel, SectionHeading, Spinner, Stars } from '../../components/efyia/ui';
 import ProfileCustomizer from '../../components/studio/ProfileCustomizer';
+import { getDisplayLocation } from '../../lib/location';
 
 // ─── Review submission form ───────────────────────────────────────────────────
 function ReviewForm({ studioId, onSubmitted }) {
@@ -211,7 +212,7 @@ export default function StudioProfilePage() {
                 {studio.verified ? <Badge tone="sage">Verified</Badge> : null}
               </div>
               <h1>{studio.name}</h1>
-             <p className="eyf-muted">{studio.address || [studio.city, studio.state].filter(Boolean).join(', ') || null}</p>
+             <p className="eyf-muted">{getDisplayLocation(studio) || null}</p>
               {genres.length > 0 ? (
                 <div className="eyf-genre-chips" style={{ marginTop: '0.5rem' }}>
                   {genres.map((g) => <span key={g} className="eyf-genre-chip">{g}</span>)}
@@ -701,9 +702,9 @@ export default function StudioProfilePage() {
                {studio.reviewCount} reviews </h2>
           </div>
           
-          {(studio.city || studio.state) ? (
-        <p className="eyf-muted">{[studio.city, studio.state].filter(Boolean).join(', ')}</p>
-    ) : null}
+          {getDisplayLocation(studio) ? (
+        <p className="eyf-muted">{getDisplayLocation(studio)}</p>
+          ) : null}
 
           {/* Social links */}
           {studio.socialLinks && Object.entries(studio.socialLinks).some(([, v]) => v) ? (
