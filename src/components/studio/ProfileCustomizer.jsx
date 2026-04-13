@@ -7,6 +7,7 @@ import LayoutMinimal from './LayoutMinimal';
 import LayoutHero from './LayoutHero';
 import LayoutSplit from './LayoutSplit';
 import LayoutGrid from './LayoutGrid';
+import AvailabilityManager from './AvailabilityManager';
 import '../../styles/studio.css';
 
 const LAYOUT_COMPONENTS = {
@@ -77,7 +78,7 @@ function buildInitialForm(studio) {
     bookingInfo:
       studio?.bookingInfo && typeof studio.bookingInfo === 'object' && !Array.isArray(studio.bookingInfo)
         ? studio.bookingInfo
-        : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '' },
+        : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', depositPercent: '' },
     genres: asArray(studio?.genres),
     amenities: asArray(studio?.amenities),
     testimonials: asArray(studio?.testimonials),
@@ -209,6 +210,7 @@ const TABS = [
   { id: 'team', label: 'Team & Specs' },
   { id: 'discovery', label: 'Discovery' },
   { id: 'contact', label: 'Contact' },
+  { id: 'availability', label: 'Availability' },
 ];
 
 export default function ProfileCustomizer({ studio: initialStudio, onSaved, initialTab }) {
@@ -420,6 +422,8 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       maxHours: toNum(info.maxHours),
       advanceNoticeDays: toNum(info.advanceNoticeDays),
       notes: info.notes || null,
+      cancellationPolicy: info.cancellationPolicy || null,
+      depositPercent: toNum(info.depositPercent),
     };
     return Object.values(cleaned).some((v) => v !== null) ? cleaned : null;
   }
@@ -970,12 +974,25 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <FieldGroup label="Advance notice required (days)">
             <input type="number" min="0" value={form.bookingInfo.advanceNoticeDays || ''} onChange={setBookingInfo('advanceNoticeDays')} placeholder="1" />
           </FieldGroup>
-         <FieldGroup label="Availability notes / deposit policy">
+          <FieldGroup label="Availability notes / deposit policy">
             <textarea
               rows={3}
               value={form.bookingInfo.notes || ''}
               onChange={setBookingInfo('notes')}
               placeholder="Available Mon–Sat 10am–2am. 50% deposit required to confirm. 48hr cancellation policy."
+            />
+          </FieldGroup>
+          <FieldGroup
+            label="Deposit required (%)"
+            hint="Clients pay this percentage upfront to hold their session. Leave blank for full payment at booking."
+          >
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={form.bookingInfo.depositPercent || ''}
+              onChange={setBookingInfo('depositPercent')}
+              placeholder="e.g. 50"
             />
           </FieldGroup>
           
@@ -1081,6 +1098,23 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               />
             </FieldGroup>
           ))}
+        </div>
+      ) : null}
+
+      {activeTab === 'availability' ? (
+        <div>
+          {initialStudio?.id ? (
+            <AvailabilityManager
+              studioId={initialStudio.id}
+              onSaved={() => setSaveState('saved')}
+            />
+          ) : (
+            <div className="eyf-card">
+              <p className="eyf-muted" style={{ margin: 0 }}>
+                Save your studio profile first to manage availability.
+              </p>
+            </div>
+          )}
         </div>
       ) : null}
 

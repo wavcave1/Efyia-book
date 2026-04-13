@@ -248,8 +248,8 @@ function CancelBookingModal({
 }
 
 // ─── Main BookingPage ─────────────────────────────────────────────────────────
-export default function BookingPage() {
-  const { studioId } = useParams();
+export default function BookingDirectPage() {
+  const { slug } = useParams();
   const { showToast } = useAppContext();
 
   const [studio, setStudio] = useState(null);
@@ -277,16 +277,8 @@ export default function BookingPage() {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    const id = parseInt(studioId, 10);
-
-    if (isNaN(id)) {
-      setStudioError('Invalid studio ID.');
-      setStudioLoading(false);
-      return;
-    }
-
     studiosApi
-      .getById(id)
+      .getBySlug(slug)
       .then((data) => {
         setStudio(data);
 
@@ -302,7 +294,7 @@ export default function BookingPage() {
         setStudioError(err.message);
         setStudioLoading(false);
       });
-  }, [studioId]);
+  }, [slug]);
 
   if (studioLoading) {
     return (
@@ -400,7 +392,7 @@ export default function BookingPage() {
 
     try {
       created = await bookingsApi.create({
-        studioId: parseInt(studioId, 10),
+        studioId: studio.id,
         sessionType,
         date,
         time,
@@ -498,7 +490,31 @@ export default function BookingPage() {
         />
       ) : null}
 
-      <div className="eyf-page">
+      <div className="eyf-page" style={{ width: "min(900px, calc(100% - 2rem))" }}>
+        <header
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.75rem",
+            padding: "1rem",
+            borderBottom: "1px solid var(--border)",
+            marginTop: "1rem",
+          }}
+        >
+          {studio.logoUrl ? (
+            <img
+              src={studio.logoUrl}
+              style={{ height: 48, objectFit: "contain", borderRadius: 8 }}
+              alt={studio.name}
+            />
+          ) : null}
+          <div style={{ display: "grid", gap: "0.2rem" }}>
+            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{studio.name}</h2>
+            <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Powered by Efyia Book</span>
+          </div>
+        </header>
+
         <section className="eyf-section eyf-booking-flow">
           <div className="eyf-steps">
             {['Session details', 'Review & confirm', 'Payment', 'Done'].map(
