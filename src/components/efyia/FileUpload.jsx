@@ -178,12 +178,12 @@ export default function FileUpload({
               if (!uploading) inputRef.current?.click();
             }
           }}
-          aria-label={uploading ? 'Uploading…' : `Upload ${type} file${multiple ? 's' : ''}`}
+          aria-label={uploading ? 'Uploading...' : `Upload ${type} file${multiple ? 's' : ''}`}
         >
           {uploading ? (
             <div className="eyf-dropzone__uploading">
               <span className="eyf-spinner" />
-              <span>Uploading…</span>
+              <span>Uploading...</span>
             </div>
           ) : (
             <>

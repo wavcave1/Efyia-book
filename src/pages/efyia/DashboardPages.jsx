@@ -1,40 +1,40 @@
-import { useCallback, useEffect, useState } from ‘react’;
-import { bookingsApi, studioProfileApi, studiosApi, usersApi } from ‘../../lib/api’;
-import { useAppContext } from ‘../../context/AppContext’;
-import { EmptyState, ErrorMessage, SectionHeading, Spinner, StudioCard } from ‘../../components/efyia/ui’;
-import ProfileSetupWizard from ‘../../components/studio/ProfileSetupWizard’;
-import StudioStripeOnboarding from ‘../../components/stripe/StudioStripeOnboarding’;
+import { useCallback, useEffect, useState } from 'react';
+import { bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
+import { useAppContext } from '../../context/AppContext';
+import { EmptyState, ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
+import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
+import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
 
 // ─── Confirm action modal ─────────────────────────────────────────────────────
-function ConfirmModal({ title, description, confirmLabel = ‘Confirm’, danger = false, onConfirm, onClose, loading }) {
+function ConfirmModal({ title, description, confirmLabel = 'Confirm', danger = false, onConfirm, onClose, loading }) {
 return (
 <div
 style={{
-position: ‘fixed’, inset: 0, background: ‘rgba(0,0,0,0.65)’,
-backdropFilter: ‘blur(4px)’, zIndex: 200,
-display: ‘grid’, placeItems: ‘center’, padding: ‘1rem’,
+position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
+backdropFilter: 'blur(4px)', zIndex: 200,
+display: 'grid', placeItems: 'center', padding: '1rem',
 }}
-role=“dialog” aria-modal=“true”
+role="dialog" aria-modal="true"
 >
 <div style={{
-background: ‘var(–card)’, border: ‘1px solid var(–border)’,
-borderRadius: 20, padding: ‘2rem’, width: ‘min(420px, 100%)’,
-display: ‘grid’, gap: ‘1.25rem’,
+background: 'var(--card)', border: '1px solid var(--border)',
+borderRadius: 20, padding: '2rem', width: 'min(420px, 100%)',
+display: 'grid', gap: '1.25rem',
 }}>
 <h3 style={{ margin: 0 }}>{title}</h3>
-<p style={{ margin: 0, color: ‘var(–muted)’, lineHeight: 1.6 }}>{description}</p>
-<div style={{ display: ‘grid’, gridTemplateColumns: ‘1fr 1fr’, gap: ‘0.75rem’ }}>
+<p style={{ margin: 0, color: 'var(--muted)', lineHeight: 1.6 }}>{description}</p>
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
 <button type="button" className="eyf-button eyf-button--ghost" onClick={onClose} disabled={loading}>
 Go back
 </button>
 <button
-type=“button”
-className=“eyf-button”
+type="button"
+className="eyf-button"
 onClick={onConfirm}
 disabled={loading}
-style={danger ? { background: ‘transparent’, borderColor: ‘#f87171’, color: ‘#f87171’ } : {}}
+style={danger ? { background: 'transparent', borderColor: '#f87171', color: '#f87171' } : {}}
 >
-{loading ? ‘Please wait…’ : confirmLabel}
+{loading ? 'Please wait...' : confirmLabel}
 </button>
 </div>
 </div>
@@ -45,10 +45,10 @@ style={danger ? { background: ‘transparent’, borderColor: ‘#f87171’, col
 // ─── Booking status badge ─────────────────────────────────────────────────────
 function BookingStatusBadge({ status }) {
 const map = {
-PENDING: ‘pending’,
-CONFIRMED: ‘confirmed’,
-COMPLETED: ‘completed’,
-CANCELLED: ‘cancelled’,
+PENDING: 'pending',
+CONFIRMED: 'confirmed',
+COMPLETED: 'completed',
+CANCELLED: 'cancelled',
 };
 return (
 <span className={`eyf-badge eyf-badge--${map[status] || 'default'}`}>
@@ -77,9 +77,9 @@ return (
 <>
 {confirmCancel ? (
 <ConfirmModal
-title=“Cancel booking?”
+title="Cancel booking?"
 description={`Cancel your ${confirmCancel.sessionType} session at ${confirmCancel.studio?.name} on ${confirmCancel.date} at ${confirmCancel.time}? This cannot be undone.`}
-confirmLabel=“Yes, cancel booking”
+confirmLabel="Yes, cancel booking"
 danger
 loading={cancelling}
 onConfirm={handleConfirmCancel}
@@ -87,7 +87,6 @@ onClose={() => setConfirmCancel(null)}
 />
 ) : null}
 
-```
   <div className="eyf-stack">
     {bookings.map((booking) => (
       <article key={booking.id} className="eyf-card eyf-row eyf-row--between eyf-row--start">
@@ -116,7 +115,6 @@ onClose={() => setConfirmCancel(null)}
     ))}
   </div>
 </>
-```
 
 );
 }
@@ -141,27 +139,26 @@ return (
 <>
 {confirmAction ? (
 <ConfirmModal
-title={confirmAction.action === ‘CONFIRMED’ ? ‘Confirm booking?’ : confirmAction.action === ‘COMPLETED’ ? ‘Mark as completed?’ : ‘Cancel booking?’}
+title={confirmAction.action === 'CONFIRMED' ? 'Confirm booking?' : confirmAction.action === 'COMPLETED' ? 'Mark as completed?' : 'Cancel booking?'}
 description={
-confirmAction.action === ‘CONFIRMED’
+confirmAction.action === 'CONFIRMED'
 ? `Confirm the ${confirmAction.booking.sessionType} session on ${confirmAction.booking.date} at ${confirmAction.booking.time}? The client will be notified.`
-: confirmAction.action === ‘COMPLETED’
+: confirmAction.action === 'COMPLETED'
 ? `Mark this session as completed? This will finalize the booking.`
 : `Cancel this booking for ${confirmAction.booking.user?.name}? This cannot be undone.`
 }
 confirmLabel={
-confirmAction.action === ‘CONFIRMED’ ? ‘Confirm session’
-: confirmAction.action === ‘COMPLETED’ ? ‘Mark complete’
-: ‘Cancel booking’
+confirmAction.action === 'CONFIRMED' ? 'Confirm session'
+: confirmAction.action === 'COMPLETED' ? 'Mark complete'
+: 'Cancel booking'
 }
-danger={confirmAction.action === ‘CANCELLED’}
+danger={confirmAction.action === 'CANCELLED'}
 loading={acting}
 onConfirm={handleConfirm}
 onClose={() => setConfirmAction(null)}
 />
 ) : null}
 
-```
   <div className="eyf-stack">
     {bookings.map((booking) => (
       <article key={booking.id} className="eyf-card eyf-row eyf-row--between eyf-row--start">
@@ -219,7 +216,6 @@ onClose={() => setConfirmAction(null)}
     ))}
   </div>
 </>
-```
 
 );
 }
@@ -228,16 +224,16 @@ onClose={() => setConfirmAction(null)}
 function calcCompletion(studio) {
 if (!studio) return { pct: 0, checklist: [] };
 const checks = [
-{ label: ‘Studio name’,           done: !!(studio.name?.trim()) },
-{ label: ‘Profile picture (logo)’, done: !!studio.logoUrl },
-{ label: ‘Cover photo’,           done: !!studio.coverUrl },
-{ label: ‘Bio & story’,           done: !!(studio.richDescription?.trim()) },
-{ label: ‘At least 1 service’,    done: !!(studio.services?.length) },
-{ label: ‘Contact info’,          done: !!(studio.contactInfo?.email || studio.contactInfo?.phone) },
-{ label: ‘Gallery photos’,        done: !!(studio.gallery?.length) },
-{ label: ‘Genre tags’,            done: !!(studio.genres?.length) },
-{ label: ‘Credits’,               done: !!(studio.credits?.length) },
-{ label: ‘Social links’,          done: !!(studio.socialLinks && Object.values(studio.socialLinks).some(Boolean)) },
+{ label: 'Studio name',           done: !!(studio.name?.trim()) },
+{ label: 'Profile picture (logo)', done: !!studio.logoUrl },
+{ label: 'Cover photo',           done: !!studio.coverUrl },
+{ label: 'Bio & story',           done: !!(studio.richDescription?.trim()) },
+{ label: 'At least 1 service',    done: !!(studio.services?.length) },
+{ label: 'Contact info',          done: !!(studio.contactInfo?.email || studio.contactInfo?.phone) },
+{ label: 'Gallery photos',        done: !!(studio.gallery?.length) },
+{ label: 'Genre tags',            done: !!(studio.genres?.length) },
+{ label: 'Credits',               done: !!(studio.credits?.length) },
+{ label: 'Social links',          done: !!(studio.socialLinks && Object.values(studio.socialLinks).some(Boolean)) },
 ];
 const done = checks.filter((c) => c.done).length;
 return { pct: Math.round((done / checks.length) * 100), checklist: checks };
@@ -249,29 +245,29 @@ return (
 <div className="eyf-card eyf-stack">
 <div className="eyf-row eyf-row--between">
 <h3 style={{ margin: 0 }}>Profile completion</h3>
-<span style={{ fontSize: ‘0.875rem’, fontWeight: 700, color: pct === 100 ? ‘var(–sage)’ : ‘var(–muted)’ }}>
+<span style={{ fontSize: '0.875rem', fontWeight: 700, color: pct === 100 ? 'var(--sage)' : 'var(--muted)' }}>
 {pct}%
 </span>
 </div>
 <div className="eyf-completion-widget">
 <div className="eyf-completion-track">
-<div className=“eyf-completion-fill” style={{ width: `${pct}%` }} />
+<div className="eyf-completion-fill" style={{ width: `${pct}%` }} />
 </div>
 <div className="eyf-completion-checklist">
 {checklist.map((item) => (
 <div key={item.label} className={`eyf-completion-item${item.done ? ' is-done' : ''}`}>
-<span className="eyf-completion-dot">{item.done ? ‘✓’ : ‘’}</span>
+<span className="eyf-completion-dot">{item.done ? '✓' : ''}</span>
 <span>{item.label}</span>
 </div>
 ))}
 </div>
 </div>
 {pct < 100 ? (
-<button type=“button” className=“eyf-button eyf-button–secondary” style={{ justifySelf: ‘start’ }} onClick={onSetupClick}>
+<button type="button" className="eyf-button eyf-button--secondary" style={{ justifySelf: 'start' }} onClick={onSetupClick}>
 Complete setup
 </button>
 ) : (
-<p className=“eyf-muted” style={{ fontSize: ‘0.875rem’ }}>Your profile is complete! ✓</p>
+<p className="eyf-muted" style={{ fontSize: '0.875rem' }}>Your profile is complete! ✓</p>
 )}
 </div>
 );
@@ -311,18 +307,18 @@ useEffect(() => { fetchData(); }, [fetchData]);
 
 const handleCancel = async (bookingId) => {
 try {
-const updated = await bookingsApi.updateStatus(bookingId, ‘CANCELLED’);
+const updated = await bookingsApi.updateStatus(bookingId, 'CANCELLED');
 setBookings((prev) => prev.map((b) => b.id === bookingId ? updated : b));
-showToast(‘Booking cancelled.’);
+showToast('Booking cancelled.');
 } catch (err) {
-showToast(err.message || ‘Could not cancel booking.’);
+showToast(err.message || 'Could not cancel booking.');
 }
 };
 
 return (
 <div className="eyf-page">
 <section className="eyf-section eyf-stack">
-<SectionHeading eyebrow=“Client dashboard” title={`Welcome back, ${currentUser?.name}`} />
+<SectionHeading eyebrow="Client dashboard" title={`Welcome back, ${currentUser?.name}`} />
 {loading ? <Spinner /> : error ? <ErrorMessage message={error} onRetry={fetchData} /> : (
 <>
 <h3>Your bookings</h3>
@@ -395,30 +391,30 @@ const handleStatusChange = async (bookingId, status) => {
 try {
 const updated = await bookingsApi.updateStatus(bookingId, status);
 setBookings((prev) => prev.map((b) => b.id === bookingId ? updated : b));
-const label = status === ‘CONFIRMED’ ? ‘confirmed’ : status === ‘COMPLETED’ ? ‘marked complete’ : ‘cancelled’;
+const label = status === 'CONFIRMED' ? 'confirmed' : status === 'COMPLETED' ? 'marked complete' : 'cancelled';
 showToast(`Booking ${label}.`);
 } catch (err) {
-showToast(err.message || ‘Could not update booking status.’);
+showToast(err.message || 'Could not update booking status.');
 }
 };
 
 const handleWizardFinished = (updated) => {
 setStudio(updated);
 setShowWizard(false);
-if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, ‘1’);
-showToast(‘Profile set up successfully!’);
+if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, '1');
+showToast('Profile set up successfully!');
 };
 
 const handleWizardDismiss = () => {
 setShowWizard(false);
-if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, ‘1’);
+if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, '1');
 };
 
 const revenue = bookings
-.filter((b) => [‘CONFIRMED’, ‘COMPLETED’].includes(b.status))
+.filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
 .reduce((sum, b) => sum + (b.total || 0), 0);
 
-const pendingCount = bookings.filter((b) => b.status === ‘PENDING’).length;
+const pendingCount = bookings.filter((b) => b.status === 'PENDING').length;
 
 return (
 <>
@@ -426,7 +422,6 @@ return (
 <ProfileSetupWizard studio={studio} onFinished={handleWizardFinished} onDismiss={handleWizardDismiss} />
 ) : null}
 
-```
   <div className="eyf-page">
     <section className="eyf-section eyf-stack">
       <SectionHeading
@@ -513,7 +508,6 @@ return (
     </section>
   </div>
 </>
-```
 
 );
 }
@@ -550,13 +544,13 @@ setLoading(false);
 useEffect(() => { fetchData(); }, [fetchData]);
 
 const toggleUserStatus = async (user) => {
-const newStatus = user.status === ‘ACTIVE’ ? ‘SUSPENDED’ : ‘ACTIVE’;
+const newStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
 try {
 const updated = await usersApi.adminUpdate(user.id, { status: newStatus });
 setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
 showToast(`User ${updated.name} ${newStatus === 'SUSPENDED' ? 'suspended' : 'reactivated'}.`);
 } catch (err) {
-showToast(err.message || ‘Could not update user.’);
+showToast(err.message || 'Could not update user.');
 }
 };
 
@@ -571,7 +565,7 @@ return (
 <div className="eyf-card"><strong>{users.length}</strong><span>Users</span></div>
 <div className="eyf-card"><strong>{bookings.length}</strong><span>Bookings</span></div>
 <div className="eyf-card">
-<strong>{bookings.filter((b) => b.status === ‘PENDING’).length}</strong>
+<strong>{bookings.filter((b) => b.status === 'PENDING').length}</strong>
 <span>Pending</span>
 </div>
 </div>
@@ -582,8 +576,8 @@ return (
 <div key={s.id} className="eyf-row eyf-row--between">
 <div>
 <span>{s.name}</span>
-<span className=“eyf-muted” style={{ display: ‘block’, fontSize: ‘0.85rem’ }}>
-{[s.city, s.state].filter(Boolean).join(’, ’)}
+<span className="eyf-muted" style={{ display: 'block', fontSize: '0.85rem' }}>
+{[s.city, s.state].filter(Boolean).join(', ')}
 </span>
 </div>
 <span className="eyf-muted">${s.pricePerHour}/hr</span>
@@ -596,16 +590,16 @@ return (
 <div key={user.id} className="eyf-row eyf-row--between">
 <div>
 <span>{user.name}</span>
-<span className=“eyf-muted” style={{ display: ‘block’, fontSize: ‘0.85rem’ }}>
+<span className="eyf-muted" style={{ display: 'block', fontSize: '0.85rem' }}>
 {user.email} · {user.role.toLowerCase()}
 </span>
 </div>
 <button
-type=“button”
+type="button"
 className={`eyf-badge ${user.status === 'ACTIVE' ? 'eyf-badge--sage' : 'eyf-badge--earth'}`}
-style={{ border: ‘none’, cursor: ‘pointer’ }}
+style={{ border: 'none', cursor: 'pointer' }}
 onClick={() => toggleUserStatus(user)}
-title={user.status === ‘ACTIVE’ ? ‘Click to suspend’ : ‘Click to reactivate’}
+title={user.status === 'ACTIVE' ? 'Click to suspend' : 'Click to reactivate'}
 >
 {user.status.toLowerCase()}
 </button>

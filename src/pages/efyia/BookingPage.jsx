@@ -1,17 +1,17 @@
-import { useEffect, useState } from ‘react’;
-import { Link, useParams } from ‘react-router-dom’;
-import { bookingsApi, studiosApi, paymentsApi } from ‘../../lib/api’;
-import { useAppContext } from ‘../../context/AppContext’;
-import { ErrorMessage, Spinner } from ‘../../components/efyia/ui’;
-import BookingCheckout from ‘../../components/stripe/BookingCheckout’;
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { bookingsApi, studiosApi, paymentsApi } from '../../lib/api';
+import { useAppContext } from '../../context/AppContext';
+import { ErrorMessage, Spinner } from '../../components/efyia/ui';
+import BookingCheckout from '../../components/stripe/BookingCheckout';
 
 const TIMES = [
-‘8:00 AM’,‘9:00 AM’,‘10:00 AM’,‘11:00 AM’,‘12:00 PM’,
-‘1:00 PM’,‘2:00 PM’,‘3:00 PM’,‘4:00 PM’,‘5:00 PM’,
-‘6:00 PM’,‘7:00 PM’,‘8:00 PM’,‘9:00 PM’,‘10:00 PM’,
+'8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM',
+'1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM',
+'6:00 PM','7:00 PM','8:00 PM','9:00 PM','10:00 PM',
 ];
 const PLATFORM_FEE_RATE = (Number(import.meta.env.VITE_APP_FEE_PERCENT ?? 8) || 8) / 100;
-const DEFAULT_SESSION_TYPES = [‘Recording’, ‘Mixing’, ‘Mastering’, ‘Podcast’, ‘Production’];
+const DEFAULT_SESSION_TYPES = ['Recording', 'Mixing', 'Mastering', 'Podcast', 'Production'];
 
 function todayString() {
 return new Date().toISOString().slice(0, 10);
@@ -19,7 +19,7 @@ return new Date().toISOString().slice(0, 10);
 
 function studioLocation(studio) {
 const parts = [studio.city, studio.state].filter(Boolean);
-return parts.length ? parts.join(’, ’) : null;
+return parts.length ? parts.join(', ') : null;
 }
 
 // ─── Cancellation Policy Modal ────────────────────────────────────────────────
@@ -27,28 +27,27 @@ function CancellationPolicyModal({ policy, studioName, onAgree, onDecline }) {
 return (
 <div
 style={{
-position: ‘fixed’, inset: 0, background: ‘rgba(0,0,0,0.65)’,
-backdropFilter: ‘blur(4px)’, zIndex: 200,
-display: ‘grid’, placeItems: ‘center’, padding: ‘1rem’,
+position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
+backdropFilter: 'blur(4px)', zIndex: 200,
+display: 'grid', placeItems: 'center', padding: '1rem',
 }}
-role=“dialog”
-aria-modal=“true”
-aria-label=“Cancellation policy”
+role="dialog"
+aria-modal="true"
+aria-label="Cancellation policy"
 >
 <div style={{
-background: ‘var(–card)’, border: ‘1px solid var(–border)’,
-borderRadius: 20, padding: ‘2rem’, width: ‘min(520px, 100%)’,
-display: ‘grid’, gap: ‘1.25rem’,
+background: 'var(--card)', border: '1px solid var(--border)',
+borderRadius: 20, padding: '2rem', width: 'min(520px, 100%)',
+display: 'grid', gap: '1.25rem',
 }}>
 <div>
-<p style={{ margin: ‘0 0 0.35rem’, fontSize: ‘0.75rem’, fontWeight: 700, textTransform: ‘uppercase’, letterSpacing: ‘0.1em’, color: ‘var(–mint)’ }}>
+<p style={{ margin: '0 0 0.35rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--mint)' }}>
 Before you book
 </p>
-<h2 style={{ margin: 0, fontSize: ‘1.4rem’ }}>Cancellation Policy</h2>
-<p style={{ margin: ‘0.25rem 0 0’, color: ‘var(–muted)’, fontSize: ‘0.9rem’ }}>{studioName}</p>
+<h2 style={{ margin: 0, fontSize: '1.4rem' }}>Cancellation Policy</h2>
+<p style={{ margin: '0.25rem 0 0', color: 'var(--muted)', fontSize: '0.9rem' }}>{studioName}</p>
 </div>
 
-```
     <div style={{
       background: 'var(--bg-subtle)', border: '1px solid var(--border)',
       borderRadius: 12, padding: '1.25rem',
@@ -81,7 +80,6 @@ Before you book
     </div>
   </div>
 </div>
-```
 
 );
 }
@@ -91,36 +89,36 @@ function CancelBookingModal({ booking, studioName, onConfirm, onClose, cancellin
 return (
 <div
 style={{
-position: ‘fixed’, inset: 0, background: ‘rgba(0,0,0,0.65)’,
-backdropFilter: ‘blur(4px)’, zIndex: 200,
-display: ‘grid’, placeItems: ‘center’, padding: ‘1rem’,
+position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
+backdropFilter: 'blur(4px)', zIndex: 200,
+display: 'grid', placeItems: 'center', padding: '1rem',
 }}
-role=“dialog”
-aria-modal=“true”
+role="dialog"
+aria-modal="true"
 >
 <div style={{
-background: ‘var(–card)’, border: ‘1px solid var(–border)’,
-borderRadius: 20, padding: ‘2rem’, width: ‘min(440px, 100%)’,
-display: ‘grid’, gap: ‘1.25rem’,
+background: 'var(--card)', border: '1px solid var(--border)',
+borderRadius: 20, padding: '2rem', width: 'min(440px, 100%)',
+display: 'grid', gap: '1.25rem',
 }}>
 <h2 style={{ margin: 0 }}>Cancel booking?</h2>
-<p style={{ margin: 0, color: ‘var(–muted)’, lineHeight: 1.6 }}>
-You’re about to cancel your <strong>{booking.sessionType}</strong> session at{’ ’}
+<p style={{ margin: 0, color: 'var(--muted)', lineHeight: 1.6 }}>
+You're about to cancel your <strong>{booking.sessionType}</strong> session at{' '}
 <strong>{studioName}</strong> on <strong>{booking.date}</strong> at <strong>{booking.time}</strong>.
 This action cannot be undone.
 </p>
-<div style={{ display: ‘grid’, gridTemplateColumns: ‘1fr 1fr’, gap: ‘0.75rem’ }}>
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
 <button type="button" className="eyf-button eyf-button--ghost" onClick={onClose} disabled={cancelling}>
 Keep booking
 </button>
 <button
-type=“button”
-className=“eyf-button eyf-button–danger”
+type="button"
+className="eyf-button eyf-button--danger"
 onClick={onConfirm}
 disabled={cancelling}
-style={{ background: ‘transparent’, borderColor: ‘#f87171’, color: ‘#f87171’ }}
+style={{ background: 'transparent', borderColor: '#f87171', color: '#f87171' }}
 >
-{cancelling ? ‘Cancelling…’ : ‘Yes, cancel’}
+{cancelling ? 'Cancelling...' : 'Yes, cancel'}
 </button>
 </div>
 </div>
@@ -137,18 +135,18 @@ const [studio, setStudio] = useState(null);
 const [studioLoading, setStudioLoading] = useState(true);
 const [studioError, setStudioError] = useState(null);
 
-const [sessionType, setSessionType] = useState(’’);
-const [date, setDate] = useState(’’);
-const [time, setTime] = useState(‘10:00 AM’);
+const [sessionType, setSessionType] = useState('');
+const [date, setDate] = useState('');
+const [time, setTime] = useState('10:00 AM');
 const [hours, setHours] = useState(2);
 const [step, setStep] = useState(1);
 const [booking, setBooking] = useState(null);
 const [submitting, setSubmitting] = useState(false);
-const [submitError, setSubmitError] = useState(’’);
+const [submitError, setSubmitError] = useState('');
 const [fieldErrors, setFieldErrors] = useState({});
 const [paymentInfo, setPaymentInfo] = useState(null);
-const [paymentError, setPaymentError] = useState(’’);
-const [paymentIntentError, setPaymentIntentError] = useState(’’);
+const [paymentError, setPaymentError] = useState('');
+const [paymentIntentError, setPaymentIntentError] = useState('');
 
 // Policy modal
 const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -159,7 +157,7 @@ const [cancelling, setCancelling] = useState(false);
 useEffect(() => {
 const id = parseInt(studioId, 10);
 if (isNaN(id)) {
-setStudioError(‘Invalid studio ID.’);
+setStudioError('Invalid studio ID.');
 setStudioLoading(false);
 return;
 }
@@ -169,7 +167,7 @@ setStudio(data);
 const types = Array.isArray(data.sessionTypes) && data.sessionTypes.length
 ? data.sessionTypes
 : DEFAULT_SESSION_TYPES;
-setSessionType(types[0] || ‘’);
+setSessionType(types[0] || '');
 setStudioLoading(false);
 })
 .catch((err) => {
@@ -197,9 +195,9 @@ const cancellationPolicy = studio.bookingInfo?.cancellationPolicy
 
 const validateStep1 = () => {
 const errors = {};
-if (!date) errors.date = ‘Please select a date.’;
-else if (date < todayString()) errors.date = ‘Date cannot be in the past.’;
-if (!sessionType) errors.sessionType = ‘Please select a session type.’;
+if (!date) errors.date = 'Please select a date.';
+else if (date < todayString()) errors.date = 'Date cannot be in the past.';
+if (!sessionType) errors.sessionType = 'Please select a session type.';
 return errors;
 };
 
@@ -219,10 +217,9 @@ setStep(2);
 
 const confirmBooking = async () => {
 setSubmitting(true);
-setSubmitError(’’);
-setPaymentIntentError(’’);
+setSubmitError('');
+setPaymentIntentError('');
 
-```
 let created;
 try {
   created = await bookingsApi.create({
@@ -258,7 +255,6 @@ try {
 
 setStep(3);
 setSubmitting(false);
-```
 
 };
 
@@ -267,12 +263,12 @@ const handleCancelBooking = async () => {
 if (!booking) return;
 setCancelling(true);
 try {
-await bookingsApi.updateStatus(booking.id, ‘CANCELLED’);
-setBooking((prev) => ({ …prev, status: ‘CANCELLED’ }));
+await bookingsApi.updateStatus(booking.id, 'CANCELLED');
+setBooking((prev) => ({ ...prev, status: 'CANCELLED' }));
 setShowCancelModal(false);
-showToast(‘Booking cancelled.’);
+showToast('Booking cancelled.');
 } catch (err) {
-showToast(err.message || ‘Could not cancel booking.’);
+showToast(err.message || 'Could not cancel booking.');
 } finally {
 setCancelling(false);
 }
@@ -289,7 +285,6 @@ onDecline={() => setShowPolicyModal(false)}
 />
 ) : null}
 
-```
   {showCancelModal && booking ? (
     <CancelBookingModal
       booking={booking}
@@ -408,7 +403,7 @@ onDecline={() => setShowPolicyModal(false)}
             <div className="eyf-grid-2">
               <button type="button" className="eyf-button eyf-button--ghost" onClick={() => setStep(1)}>Back</button>
               <button type="button" className="eyf-button" onClick={confirmBooking} disabled={submitting}>
-                {submitting ? 'Confirming…' : 'Confirm & pay'}
+                {submitting ? 'Confirming...' : 'Confirm & pay'}
               </button>
             </div>
           </>
@@ -446,7 +441,7 @@ onDecline={() => setShowPolicyModal(false)}
                 onError={(msg) => setPaymentError(msg)}
               />
             ) : !paymentIntentError ? (
-              <div className="checkout-loading">Setting up secure checkout…</div>
+              <div className="checkout-loading">Setting up secure checkout...</div>
             ) : null}
 
             {/* Allow client to cancel even from payment step */}
@@ -500,7 +495,6 @@ onDecline={() => setShowPolicyModal(false)}
     </section>
   </div>
 </>
-```
 
 );
 }

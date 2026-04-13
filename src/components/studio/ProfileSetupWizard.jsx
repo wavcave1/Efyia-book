@@ -197,7 +197,7 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
                   rows={3}
                   value={form.description}
                   onChange={set('description')}
-                  placeholder="A sentence or two about what makes your studio special…"
+                  placeholder="A sentence or two about what makes your studio special..."
                 />
               </label>
               <div className="eyf-grid-2">
@@ -369,7 +369,7 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
                     rows={2}
                     value={form.services[0]?.description || ''}
                     onChange={setService(0, 'description')}
-                    placeholder="What's included, session length, engineer availability…"
+                    placeholder="What's included, session length, engineer availability..."
                   />
                 </label>
               </div>
@@ -427,7 +427,7 @@ export default function ProfileSetupWizard({ studio, onFinished, onDismiss }) {
               disabled={!canGoNext || saving}
             >
               {saving
-                ? 'Saving…'
+                ? 'Saving...'
                 : step === 0
                 ? 'Get started →'
                 : step === STEPS.length - 1

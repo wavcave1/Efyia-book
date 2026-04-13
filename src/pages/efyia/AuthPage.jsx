@@ -134,7 +134,7 @@ export default function AuthPage({ mode }) {
           ) : null}
 
           <button type="submit" className="eyf-button" disabled={loading}>
-            {loading ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}
+            {loading ? 'Please wait...' : isLogin ? 'Sign in' : 'Create account'}
           </button>
 
           <p className="eyf-muted" style={{ textAlign: 'center', fontSize: '0.9rem' }}>

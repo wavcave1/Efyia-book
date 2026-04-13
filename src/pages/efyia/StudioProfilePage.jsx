@@ -50,7 +50,7 @@ function ReviewForm({ studioId, onSubmitted }) {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="Share your experience — studio quality, engineer, booking process…"
+        placeholder="Share your experience — studio quality, engineer, booking process..."
         rows={4}
         style={{ marginTop: '0.75rem' }}
         required
@@ -62,7 +62,7 @@ function ReviewForm({ studioId, onSubmitted }) {
         disabled={submitting}
         style={{ marginTop: '0.75rem' }}
       >
-        {submitting ? 'Submitting…' : 'Submit review'}
+        {submitting ? 'Submitting...' : 'Submit review'}
       </button>
     </form>
   );
@@ -328,7 +328,7 @@ export default function StudioProfilePage() {
               ) : isOwner ? (
                 <button type="button" className="eyf-add-prompt" onClick={() => openDrawer('discovery')}>
                   <span className="eyf-add-prompt__label">+ Add amenities</span>
-                  <span className="eyf-add-prompt__sub">Parking, lounge, Wi-Fi, isolated booth…</span>
+                  <span className="eyf-add-prompt__sub">Parking, lounge, Wi-Fi, isolated booth...</span>
                 </button>
               ) : null}
 
@@ -370,7 +370,7 @@ export default function StudioProfilePage() {
               ) : isOwner ? (
                 <button type="button" className="eyf-add-prompt" onClick={() => openDrawer('services')}>
                   <span className="eyf-add-prompt__label">+ Add services</span>
-                  <span className="eyf-add-prompt__sub">Recording, mixing, mastering, podcast recording…</span>
+                  <span className="eyf-add-prompt__sub">Recording, mixing, mastering, podcast recording...</span>
                 </button>
               ) : null}
 

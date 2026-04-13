@@ -183,7 +183,7 @@ function EditStudioModal({ studio, accounts, onSave, onClose }) {
             View public profile ↗
           </a>
           <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>
       </form>
@@ -789,7 +789,7 @@ export default function AdminPanel() {
           {toast ? <div className="admin-toast">{toast}</div> : null}
         </header>
 
-        {loading ? <div className="admin-panel">Loading admin datasets…</div> : null}
+        {loading ? <div className="admin-panel">Loading admin datasets...</div> : null}
         {!loading && activeTab === 'Dashboard' ? renderDashboard() : null}
         {!loading && activeTab === 'Accounts' ? renderAccounts() : null}
         {!loading && activeTab === 'Studios' ? renderStudios() : null}
