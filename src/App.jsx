@@ -5,6 +5,7 @@ import Layout from './components/efyia/Layout';
 import ProtectedRoute from './components/efyia/ProtectedRoute';
 import AuthPage from './pages/efyia/AuthPage';
 import BookingPage from './pages/efyia/BookingPage';
+import BookingDirectPage from './pages/efyia/BookingDirectPage';
 import { ClientDashboard, StudioDashboard } from './pages/efyia/DashboardPages';
 import AdminPanel from './pages/efyia/AdminPanel';
 import HomePage from './pages/efyia/HomePage';
@@ -39,6 +40,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <BookingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="book/:slug"
+              element={
+                <ProtectedRoute>
+                  <BookingDirectPage />
                 </ProtectedRoute>
               }
             />

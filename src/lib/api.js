@@ -168,3 +168,53 @@ export const adminApi = {
   listPermissions: () => api.get('/api/admin/permissions'),
   updatePermission: (id, data) => api.patch(`/api/admin/permissions/${id}`, data),
 };
+
+export const availabilityApi = {
+  getSchedule: (studioId) => api.get('/api/availability/' + studioId + '/schedule'),
+  updateSchedule: (studioId, days) => api.post('/api/availability/' + studioId + '/schedule', days),
+  getBlocks: (studioId, from, to) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString();
+    return api.get('/api/availability/' + studioId + '/blocks' + (qs ? '?' + qs : ''));
+  },
+  addBlock: (studioId, data) => api.post('/api/availability/' + studioId + '/blocks', data),
+  deleteBlock: (studioId, blockId) => api.delete('/api/availability/' + studioId + '/blocks/' + blockId),
+  check: (studioId, date, time, hours) =>
+    api.get('/api/availability/' + studioId + '/check?date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time) + '&hours=' + hours),
+};
+
+export const bookingFilesApi = {
+  list: (bookingId) => api.get('/api/booking-files/' + bookingId + '/files'),
+  delete: (bookingId, fileId) => api.delete('/api/booking-files/' + bookingId + '/files/' + fileId),
+  upload: async (bookingId, file, onProgress) => {
+    const token = localStorage.getItem('efyia_token');
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const res = await fetch(BASE_URL + '/api/booking-files/' + bookingId + '/files', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token },
+      body: fd,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw Object.assign(new Error(data.error || 'Upload failed'), { status: res.status });
+    return data;
+  },
+};
+
+export const bookingMessagesApi = {
+  list: (bookingId) => api.get('/api/booking-messages/' + bookingId + '/messages'),
+  send: (bookingId, message) => api.post('/api/booking-messages/' + bookingId + '/messages', { message }),
+};
+
+export const analyticsApi = {
+  studio: () => api.get('/api/analytics/studio'),
+};
+
+export const depositApi = {
+  payDeposit: (bookingId) => api.post('/api/payments/deposit/' + bookingId, {}),
+  payFinal: (bookingId) => api.post('/api/payments/final/' + bookingId, {}),
+};

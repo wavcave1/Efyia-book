@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
-import { bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
+import { analyticsApi, bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import {
   EmptyState,
@@ -11,6 +11,10 @@ import {
 } from '../../components/efyia/ui';
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
+import MessageThread from '../../components/booking/MessageThread';
+import FileList from '../../components/booking/FileList';
+import RevenueChart from '../../components/studio/RevenueChart';
+import AvailabilityManager from '../../components/studio/AvailabilityManager';
 
 // ─── Confirm action modal ─────────────────────────────────────────────────────
 function ConfirmModal({
@@ -107,9 +111,10 @@ function BookingStatusBadge({ status }) {
 }
 
 // ─── Client booking rows ──────────────────────────────────────────────────────
-function ClientBookingRows({ bookings, onCancel }) {
+function ClientBookingRows({ bookings, onCancel, currentUserId }) {
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [expandedThread, setExpandedThread] = useState(null);
 
   if (!bookings.length) {
     return (
@@ -143,40 +148,48 @@ function ClientBookingRows({ bookings, onCancel }) {
 
       <div className="eyf-stack">
         {bookings.map((booking) => (
-        <article key={booking.id} className="eyf-card eyf-stack">
-  <div className="eyf-row eyf-row--between eyf-row--start">
-    <div>
-      <h3>{booking.studio?.name || 'Studio'}</h3>
-      <p className="eyf-muted">
-        {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
-      </p>
-    </div>
-    <div className="eyf-booking-meta">
-      <BookingStatusBadge status={booking.status} />
-      <strong>${booking.total?.toFixed(2)}</strong>
-      {['PENDING', 'CONFIRMED'].includes(booking.status) ? (
-        <button
-          type="button"
-          className="eyf-button eyf-button--ghost"
-          style={{ padding: '0.4rem 0.75rem', minHeight: 'unset', fontSize: '0.82rem', color: '#f87171', borderColor: '#f87171' }}
-          onClick={() => setConfirmCancel(booking)}
-        >
-          Cancel
-        </button>
-      ) : null}
-    </div>
-  </div>
-  {/* Book again button — shows on cancelled and completed bookings */}
-  {['CANCELLED', 'COMPLETED'].includes(booking.status) && booking.studio?.id ? (
-    <Link
-      to={`/booking/${booking.studio.id}`}
-      className="eyf-button eyf-button--secondary"
-      style={{ justifySelf: 'start', padding: '0.4rem 0.9rem', minHeight: 'unset', fontSize: '0.85rem' }}
-    >
-      Book again
-    </Link>
-  ) : null}
-</article>
+          <div key={booking.id} className="eyf-stack" style={{ gap: '0.55rem' }}>
+            <article className="eyf-card eyf-stack">
+              <div className="eyf-row eyf-row--between eyf-row--start">
+                <div>
+                  <h3>{booking.studio?.name || 'Studio'}</h3>
+                  <p className="eyf-muted">
+                    {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
+                  </p>
+                </div>
+                <div className="eyf-booking-meta">
+                  <BookingStatusBadge status={booking.status} />
+                  <strong>${booking.total?.toFixed(2)}</strong>
+                  {['PENDING', 'CONFIRMED'].includes(booking.status) ? (
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--ghost"
+                      style={{ padding: '0.4rem 0.75rem', minHeight: 'unset', fontSize: '0.82rem', color: '#f87171', borderColor: '#f87171' }}
+                      onClick={() => setConfirmCancel(booking)}
+                    >
+                      Cancel
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              {['CANCELLED', 'COMPLETED'].includes(booking.status) && booking.studio?.id ? (
+                <Link
+                  to={`/booking/${booking.studio.id}`}
+                  className="eyf-button eyf-button--secondary"
+                  style={{ justifySelf: 'start', padding: '0.4rem 0.9rem', minHeight: 'unset', fontSize: '0.85rem' }}
+                >
+                  Book again
+                </Link>
+              ) : null}
+            </article>
+
+            <MessageThread
+              bookingId={booking.id}
+              currentUserId={currentUserId}
+              isExpanded={expandedThread === booking.id}
+              onToggle={() => setExpandedThread(expandedThread === booking.id ? null : booking.id)}
+            />
+          </div>
         ))}
       </div>
     </>
@@ -184,9 +197,10 @@ function ClientBookingRows({ bookings, onCancel }) {
 }
 
 // ─── Studio owner booking rows ────────────────────────────────────────────────
-function OwnerBookingRows({ bookings, onStatusChange }) {
+function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [acting, setActing] = useState(false);
+  const [expandedThread, setExpandedThread] = useState(null);
 
   if (!bookings.length) {
     return (
@@ -238,92 +252,102 @@ function OwnerBookingRows({ bookings, onStatusChange }) {
 
       <div className="eyf-stack">
         {bookings.map((booking) => (
-          <article
-            key={booking.id}
-            className="eyf-card eyf-row eyf-row--between eyf-row--start"
-          >
-            <div>
-              <h3>{booking.user?.name || 'Client'}</h3>
-              <p className="eyf-muted">
-                {booking.date} · {booking.time} · {booking.sessionType} ·{' '}
-                {booking.hours}hr
-              </p>
-            </div>
-            <div className="eyf-booking-meta">
-              <BookingStatusBadge status={booking.status} />
-              <strong>${booking.total?.toFixed(2)}</strong>
+          <div key={booking.id} className="eyf-stack" style={{ gap: '0.55rem' }}>
+            <article className="eyf-card eyf-row eyf-row--between eyf-row--start">
+              <div>
+                <h3>{booking.user?.name || 'Client'}</h3>
+                <p className="eyf-muted">
+                  {booking.date} · {booking.time} · {booking.sessionType} ·{' '}
+                  {booking.hours}hr
+                </p>
+              </div>
+              <div className="eyf-booking-meta">
+                <BookingStatusBadge status={booking.status} />
+                <strong>${booking.total?.toFixed(2)}</strong>
 
-              {booking.status === 'PENDING' ? (
-                <>
-                  <button
-                    type="button"
-                    className="eyf-button eyf-button--secondary"
-                    style={{
-                      padding: '0.4rem 0.75rem',
-                      minHeight: 'unset',
-                      fontSize: '0.85rem',
-                    }}
-                    onClick={() =>
-                      setConfirmAction({ booking, action: 'CONFIRMED' })
-                    }
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    type="button"
-                    className="eyf-button eyf-button--ghost"
-                    style={{
-                      padding: '0.4rem 0.75rem',
-                      minHeight: 'unset',
-                      fontSize: '0.82rem',
-                      color: '#f87171',
-                      borderColor: '#f87171',
-                    }}
-                    onClick={() =>
-                      setConfirmAction({ booking, action: 'CANCELLED' })
-                    }
-                  >
-                    Decline
-                  </button>
-                </>
-              ) : null}
+                {booking.status === 'PENDING' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--secondary"
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        minHeight: 'unset',
+                        fontSize: '0.85rem',
+                      }}
+                      onClick={() =>
+                        setConfirmAction({ booking, action: 'CONFIRMED' })
+                      }
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--ghost"
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        minHeight: 'unset',
+                        fontSize: '0.82rem',
+                        color: '#f87171',
+                        borderColor: '#f87171',
+                      }}
+                      onClick={() =>
+                        setConfirmAction({ booking, action: 'CANCELLED' })
+                      }
+                    >
+                      Decline
+                    </button>
+                  </>
+                ) : null}
 
-              {booking.status === 'CONFIRMED' ? (
-                <>
-                  <button
-                    type="button"
-                    className="eyf-button eyf-button--ghost"
-                    style={{
-                      padding: '0.4rem 0.75rem',
-                      minHeight: 'unset',
-                      fontSize: '0.85rem',
-                    }}
-                    onClick={() =>
-                      setConfirmAction({ booking, action: 'COMPLETED' })
-                    }
-                  >
-                    Mark complete
-                  </button>
-                  <button
-                    type="button"
-                    className="eyf-button eyf-button--ghost"
-                    style={{
-                      padding: '0.4rem 0.75rem',
-                      minHeight: 'unset',
-                      fontSize: '0.82rem',
-                      color: '#f87171',
-                      borderColor: '#f87171',
-                    }}
-                    onClick={() =>
-                      setConfirmAction({ booking, action: 'CANCELLED' })
-                    }
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </article>
+                {booking.status === 'CONFIRMED' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--ghost"
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        minHeight: 'unset',
+                        fontSize: '0.85rem',
+                      }}
+                      onClick={() =>
+                        setConfirmAction({ booking, action: 'COMPLETED' })
+                      }
+                    >
+                      Mark complete
+                    </button>
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--ghost"
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        minHeight: 'unset',
+                        fontSize: '0.82rem',
+                        color: '#f87171',
+                        borderColor: '#f87171',
+                      }}
+                      onClick={() =>
+                        setConfirmAction({ booking, action: 'CANCELLED' })
+                      }
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </article>
+
+            <MessageThread
+              bookingId={booking.id}
+              currentUserId={currentUserId}
+              isExpanded={expandedThread === booking.id}
+              onToggle={() => setExpandedThread(expandedThread === booking.id ? null : booking.id)}
+            />
+
+            {['CONFIRMED', 'COMPLETED'].includes(booking.status) ? (
+              <FileList bookingId={booking.id} canUpload currentUserId={currentUserId} />
+            ) : null}
+          </div>
         ))}
       </div>
     </>
@@ -495,7 +519,7 @@ export function ClientDashboard() {
         ) : (
           <>
             <h3>Your bookings</h3>
-            <ClientBookingRows bookings={bookings} onCancel={handleCancel} />
+            <ClientBookingRows bookings={bookings} onCancel={handleCancel} currentUserId={currentUser?.id} />
 
             {favorites.length > 0 ? (
               <>
@@ -531,6 +555,7 @@ export function StudioDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -540,9 +565,11 @@ export function StudioDashboard() {
       bookingsApi.list().catch(() => []),
       studioProfileApi.get().catch(() => null),
       studiosApi.list({ limit: 50 }).catch(() => ({ studios: [] })),
+      analyticsApi.studio().catch(() => null),
     ])
-      .then(([bkgs, profile, { studios }]) => {
+      .then(([bkgs, profile, { studios }, analytics]) => {
         setBookings(bkgs);
+        setAnalyticsData(analytics);
 
         if (profile) {
           setStudio(profile);
@@ -680,7 +707,7 @@ export function StudioDashboard() {
               ) : null}
 
               <h3>Bookings</h3>
-              <OwnerBookingRows bookings={bookings} onStatusChange={handleStatusChange} />
+              <OwnerBookingRows bookings={bookings} onStatusChange={handleStatusChange} currentUserId={currentUser?.id} />
 
               {studio ? (
                 <>
@@ -733,6 +760,41 @@ export function StudioDashboard() {
                         A public studio URL is required to open the profile editor.
                       </p>
                     )}
+                  </div>
+
+                  <div className="eyf-card eyf-stack">
+                    <div className="eyf-row eyf-row--between">
+                      <h3 style={{ margin: 0 }}>Revenue</h3>
+                      <span className="eyf-muted" style={{ fontSize: '0.85rem' }}>Last 6 months</span>
+                    </div>
+                    <RevenueChart data={analyticsData?.monthlyRevenue || []} />
+                    {analyticsData ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div>
+                          <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Top session type</span>
+                          <p style={{ margin: '0.2rem 0 0', fontWeight: 700 }}>
+                            {analyticsData.topSessionTypes?.[0]?.type || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Avg session length</span>
+                          <p style={{ margin: '0.2rem 0 0', fontWeight: 700 }}>
+                            {analyticsData.averageSessionHours ? analyticsData.averageSessionHours.toFixed(1) + ' hrs' : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="eyf-card eyf-stack">
+                    <h3 style={{ margin: 0 }}>Availability</h3>
+                    <p className="eyf-muted" style={{ margin: 0, fontSize: '0.875rem' }}>
+                      Set your weekly schedule and block off unavailable times.
+                    </p>
+                    <AvailabilityManager
+                      studioId={studio?.id || null}
+                      onSaved={() => showToast('Availability updated.')}
+                    />
                   </div>
                 </>
               ) : (
@@ -884,7 +946,7 @@ export function AdminDashboard() {
             </div>
 
             <h3>All bookings</h3>
-            <OwnerBookingRows bookings={bookings} onStatusChange={async () => {}} />
+            <OwnerBookingRows bookings={bookings} onStatusChange={async () => {}} currentUserId={currentUser?.id} />
           </>
         )}
       </section>
