@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { availabilityApi, bookingsApi, studiosApi, paymentsApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { ErrorMessage, Spinner } from '../../components/efyia/ui';
+import { getDisplayLocation } from '../../lib/location';
 import BookingCheckout from '../../components/stripe/BookingCheckout';
 
 const TIMES = [
@@ -33,8 +34,7 @@ function todayString() {
 }
 
 function studioLocation(studio) {
-  const parts = [studio.city, studio.state].filter(Boolean);
-  return parts.length ? parts.join(', ') : null;
+  return getDisplayLocation(studio) || null;
 }
 
 // Match a session type name to a service and return its price

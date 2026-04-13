@@ -15,6 +15,7 @@ import MessageThread from '../../components/booking/MessageThread';
 import FileList from '../../components/booking/FileList';
 import RevenueChart from '../../components/studio/RevenueChart';
 import AvailabilityManager from '../../components/studio/AvailabilityManager';
+import { canRevealBookingAddress, getPrivateAddress } from '../../lib/location';
 
 // ─── Confirm action modal ─────────────────────────────────────────────────────
 function ConfirmModal({
@@ -110,6 +111,43 @@ function BookingStatusBadge({ status }) {
   );
 }
 
+function BookingLocationDetails({ booking }) {
+  const [open, setOpen] = useState(false);
+  if (!canRevealBookingAddress(booking)) return null;
+
+  const location = getPrivateAddress(booking?.locationDetails) || getPrivateAddress(booking?.studio);
+  if (!location) return null;
+
+  const cityLine = [location.city, location.state, location.postalCode].filter(Boolean).join(', ');
+
+  return (
+    <div className="eyf-stack" style={{ gap: '0.45rem', marginTop: '0.4rem' }}>
+      <button
+        type="button"
+        className="eyf-button eyf-button--ghost"
+        style={{ justifySelf: 'start', minHeight: 'unset', padding: '0.4rem 0.8rem', fontSize: '0.82rem' }}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        {open ? 'Hide location details' : 'View address'}
+      </button>
+      {open ? (
+        <div className="eyf-card" style={{ background: 'var(--bg-subtle)', padding: '0.8rem 0.9rem' }}>
+          {location.line1 ? <p style={{ margin: 0 }}>{location.line1}</p> : null}
+          {location.line2 ? <p style={{ margin: '0.2rem 0 0' }}>{location.line2}</p> : null}
+          {cityLine ? <p style={{ margin: '0.2rem 0 0' }}>{cityLine}</p> : null}
+          {location.country ? <p style={{ margin: '0.2rem 0 0' }}>{location.country}</p> : null}
+          {location.fallback && !location.line1 ? <p style={{ margin: '0.2rem 0 0' }}>{location.fallback}</p> : null}
+          {location.directions ? (
+            <p className="eyf-muted" style={{ margin: '0.5rem 0 0', whiteSpace: 'pre-wrap' }}>
+              {location.directions}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // ─── Client booking rows ──────────────────────────────────────────────────────
 function ClientBookingRows({ bookings, onCancel, currentUserId }) {
   const [confirmCancel, setConfirmCancel] = useState(null);
@@ -181,6 +219,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId }) {
                   Book again
                 </Link>
               ) : null}
+              <BookingLocationDetails booking={booking} />
             </article>
 
             <MessageThread
@@ -336,6 +375,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
                 ) : null}
               </div>
             </article>
+            <BookingLocationDetails booking={booking} />
 
             <MessageThread
               bookingId={booking.id}

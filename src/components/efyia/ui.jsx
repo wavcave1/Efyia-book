@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getDisplayLocation } from '../../lib/location';
 
 export function SectionHeading({ eyebrow, title, description, action }) {
 return (
@@ -175,6 +176,7 @@ aria-label={`Photo ${i + 1}`}
 
 export function StudioCard({ studio, onFavoriteToggle, isFavorite = false }) {
 const color = studio.color || studio.accentColor || '#62f3d4';
+const locationLabel = getDisplayLocation(studio);
 
 // Build image list from gallery, coverUrl, logoUrl in priority order
 const images = [];
@@ -214,7 +216,7 @@ style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: 2 }}
 <div>
 <h3>{studio.name}</h3>
 <p className="eyf-muted">
-{[studio.city, studio.state].filter(Boolean).join(', ')}
+{locationLabel}
 </p>
 </div>
 <div className="eyf-rating-wrap">

@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { studiosApi } from '../../lib/api';
 import { ErrorMessage, SectionHeading, Spinner, Stars } from '../../components/efyia/ui';
+import { getCoordinates, getDisplayLocation } from '../../lib/location';
 
 // Map positions are decorative until a Mapbox integration is added.
 // They are derived from normalized lat/lng values within the visible canvas.
 function getCanvasPosition(studio, allStudios) {
-  const lats = allStudios.map((s) => s.lat).filter(Boolean);
-  const lngs = allStudios.map((s) => s.lng).filter(Boolean);
-  if (!lats.length || !studio.lat || !studio.lng) return { left: '50%', top: '50%' };
+  const points = allStudios
+    .map((s) => getCoordinates(s))
+    .filter((point) => point.lat != null && point.lng != null);
+  const current = getCoordinates(studio);
+  if (!points.length || current.lat == null || current.lng == null) return { left: '50%', top: '50%' };
+
+  const lats = points.map((point) => point.lat);
+  const lngs = points.map((point) => point.lng);
 
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
@@ -18,8 +24,8 @@ function getCanvasPosition(studio, allStudios) {
   const latRange = maxLat - minLat || 1;
   const lngRange = maxLng - minLng || 1;
 
-  const left = 10 + ((studio.lng - minLng) / lngRange) * 80;
-  const top = 10 + ((maxLat - studio.lat) / latRange) * 70;
+  const left = 10 + ((current.lng - minLng) / lngRange) * 80;
+  const top = 10 + ((maxLat - current.lat) / latRange) * 70;
 
   return { left: `${left.toFixed(1)}%`, top: `${top.toFixed(1)}%` };
 }
@@ -71,7 +77,7 @@ export default function MapPage() {
                     style={{ ...pos, background: studio.color || '#62f3d4' }}
                     title={studio.name}
                     onClick={() => setSelected(selected?.id === studio.id ? null : studio)}
-                    aria-label={`View ${studio.name} — ${studio.city}, ${studio.state}`}
+                    aria-label={`View ${studio.name} — ${getDisplayLocation(studio)}`}
                   />
                 );
               })}
@@ -95,7 +101,7 @@ export default function MapPage() {
                   <div>
                     <strong>{selected.name}</strong>
                     <p className="eyf-muted" style={{ margin: '0.25rem 0 0' }}>
-                      {selected.city}, {selected.state} · ${selected.pricePerHour}/hr
+                      {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
                     </p>
                   </div>
                   <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
@@ -118,7 +124,7 @@ export default function MapPage() {
                   <div className="eyf-row eyf-row--between eyf-row--start">
                     <div>
                       <h3>{studio.name}</h3>
-                      <p className="eyf-muted">{studio.city}, {studio.state}</p>
+                      <p className="eyf-muted">{getDisplayLocation(studio)}</p>
                     </div>
                     <span className="eyf-price">${studio.pricePerHour}/hr</span>
                   </div>
