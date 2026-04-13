@@ -216,17 +216,24 @@ export const analyticsApi = {
 
 // ─── Email domains & forwarding aliases ─────────────────────────────────────
 export const emailDomainsApi = {
-  listDomains: () => api.get('/api/email-domains'),
-  createDomain: (data) => api.post('/api/email-domains', data),
-  getDomain: (domainId) => api.get(`/api/email-domains/${domainId}`),
-  refreshDomain: (domainId) => api.post(`/api/email-domains/${domainId}/refresh`, {}),
+  createDomain: (data) => api.post('/api/email/domains', data),
 
-  listAliases: (domainId) => api.get(`/api/email-domains/${domainId}/aliases`),
-  createAlias: (domainId, data) => api.post(`/api/email-domains/${domainId}/aliases`, data),
-  updateAlias: (domainId, aliasId, data) => api.patch(`/api/email-domains/${domainId}/aliases/${aliasId}`, data),
-  deleteAlias: (domainId, aliasId) => api.delete(`/api/email-domains/${domainId}/aliases/${aliasId}`),
+  getDnsRecords: (domainId) => api.get(`/api/email/domains/${domainId}/dns-records`),
+  verifyDomain: (domainId) => api.post(`/api/email/domains/${domainId}/verify`, {}),
 
-  transactionalActivity: (domainId) => api.get(`/api/email-domains/${domainId}/transactional-activity`),
+  listAliases: (domainId) => api.get(`/api/email/domains/${domainId}/aliases`),
+  createAlias: (domainId, data) => api.post(`/api/email/domains/${domainId}/aliases`, data),
+
+  updateAlias: (aliasId, data) => api.patch(`/api/email/aliases/${aliasId}`, data),
+  toggleAlias: (aliasId, enabled) => api.patch(`/api/email/aliases/${aliasId}/toggle`, { enabled }),
+  deleteAlias: (aliasId) => api.delete(`/api/email/aliases/${aliasId}`),
+
+  listEvents: (studioId) => {
+    const qs = studioId ? `?studioId=${encodeURIComponent(studioId)}` : '';
+    return api.get(`/api/email/events${qs}`);
+  },
+
+  sendTransactional: (data) => api.post('/api/email/transactional/send', data),
 };
 
 export const depositApi = {
