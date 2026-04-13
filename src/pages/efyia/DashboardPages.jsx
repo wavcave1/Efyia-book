@@ -607,11 +607,10 @@ export function StudioDashboard() {
     setShowWizard(false);
     if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, '1');
   };
-
-  const revenue = bookings
-    .filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
-    .reduce((sum, b) => sum + (b.total || 0), 0);
-
+  
+  const revenue = bookings.filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
+  .reduce((sum, b) => sum + (b.subtotal || 0), 0);
+  
   const pendingCount = bookings.filter((b) => b.status === 'PENDING').length;
 
   return (
