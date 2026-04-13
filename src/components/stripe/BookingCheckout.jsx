@@ -1,6 +1,6 @@
-import { useMemo, useState } from ‘react’;
-import { Elements, PaymentElement, useStripe, useElements } from ‘@stripe/react-stripe-js’;
-import { loadStripe } from ‘@stripe/stripe-js’;
+import { useMemo, useState } from 'react';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
@@ -30,7 +30,7 @@ Stripe is not configured. Please contact support.
 }
 
 if (!stripePromise || !clientSecret) {
-return <div className="checkout-loading">Preparing secure payment…</div>;
+return <div className="checkout-loading">Preparing secure payment...</div>;
 }
 
 return (
@@ -39,29 +39,29 @@ stripe={stripePromise}
 options={{
 clientSecret,
 appearance: {
-theme: ‘stripe’,
+theme: 'stripe',
 variables: {
-colorPrimary: ‘#62f3d4’,
-colorBackground: ‘#111820’,
-colorText: ‘#e8f4f0’,
-colorDanger: ‘#f87171’,
-borderRadius: ‘10px’,
-fontFamily: ‘Inter, system-ui, sans-serif’,
+colorPrimary: '#62f3d4',
+colorBackground: '#111820',
+colorText: '#e8f4f0',
+colorDanger: '#f87171',
+borderRadius: '10px',
+fontFamily: 'Inter, system-ui, sans-serif',
 },
 rules: {
-‘.Input’: {
-border: ‘1px solid #1e2d3a’,
-backgroundColor: ‘#0d1117’,
+'.Input': {
+border: '1px solid #1e2d3a',
+backgroundColor: '#0d1117',
 },
-‘.Input:focus’: {
-border: ‘1px solid #62f3d4’,
-boxShadow: ‘0 0 0 3px rgba(98,243,212,0.15)’,
+'.Input:focus': {
+border: '1px solid #62f3d4',
+boxShadow: '0 0 0 3px rgba(98,243,212,0.15)',
 },
-‘.Label’: { color: ‘#6b8f85’ },
+'.Label': { color: '#6b8f85' },
 },
 },
 // Enable all available payment methods including Apple Pay, Google Pay, Cash App
-paymentMethodCreation: ‘manual’,
+paymentMethodCreation: 'manual',
 }}
 >
 <CheckoutForm
@@ -88,7 +88,6 @@ async function handleSubmit(e) {
 e.preventDefault();
 if (!stripe || !elements) return;
 
-```
 setProcessing(true);
 setErrorMessage(null);
 
@@ -123,7 +122,6 @@ if (paymentIntent?.status === 'succeeded' || paymentIntent?.status === 'processi
 }
 
 setProcessing(false);
-```
 
 }
 
@@ -141,7 +139,6 @@ return (
 </div>
 </div>
 
-```
   {/* PaymentElement automatically shows Apple Pay, Google Pay, Cash App, card — whatever's available */}
   <PaymentElement
     options={{
@@ -171,14 +168,13 @@ return (
     className="pay-button eyf-button"
     style={{ width: '100%', marginTop: '1.25rem', justifyContent: 'center' }}
   >
-    {processing ? 'Processing…' : `Pay $${amountDollars}`}
+    {processing ? 'Processing...' : `Pay $${amountDollars}`}
   </button>
 
   <p className="secure-note" style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.75rem' }}>
     🔒 Payments processed securely by Stripe
   </p>
 </form>
-```
 
 );
 }

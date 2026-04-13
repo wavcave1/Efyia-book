@@ -86,7 +86,7 @@ function buildInitialForm(studio) {
 }
 
 // ─── TagInput ─────────────────────────────────────────────────────────────────
-function TagInput({ value = [], onChange, placeholder = 'Type and press Enter…', suggestions = [] }) {
+function TagInput({ value = [], onChange, placeholder = 'Type and press Enter...', suggestions = [] }) {
   const [inputValue, setInputValue] = useState('');
   const safeValue = Array.isArray(value) ? value : [];
 
@@ -673,7 +673,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               rows={10}
               value={form.richDescription}
               onChange={set('richDescription')}
-              placeholder="Tell your story, describe the vibe, list what makes your space special…"
+              placeholder="Tell your story, describe the vibe, list what makes your space special..."
             />
           </FieldGroup>
         </div>
@@ -742,7 +742,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Description</label>
-                <textarea rows={2} value={svc.description} onChange={setService(idx, 'description')} placeholder="What's included, session length, engineer availability…" />
+                <textarea rows={2} value={svc.description} onChange={setService(idx, 'description')} placeholder="What's included, session length, engineer availability..." />
               </div>
             </ArrayItemCard>
           ))}
@@ -763,15 +763,15 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Artist / Client *</label>
-                  <input value={credit.artistName} onChange={setCredit(idx, 'artistName')} placeholder="Drake, Taylor Swift…" />
+                  <input value={credit.artistName} onChange={setCredit(idx, 'artistName')} placeholder="Drake, Taylor Swift..." />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Project name</label>
-                  <input value={credit.projectName} onChange={setCredit(idx, 'projectName')} placeholder="Album, EP, Film title…" />
+                  <input value={credit.projectName} onChange={setCredit(idx, 'projectName')} placeholder="Album, EP, Film title..." />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Role</label>
-                  <input value={credit.role} onChange={setCredit(idx, 'role')} placeholder="Recorded at, Mixed at…" />
+                  <input value={credit.role} onChange={setCredit(idx, 'role')} placeholder="Recorded at, Mixed at..." />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Year</label>
@@ -780,7 +780,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Link (optional)</label>
-                <input type="url" value={credit.link} onChange={setCredit(idx, 'link')} placeholder="Spotify, Apple Music, YouTube…" />
+                <input type="url" value={credit.link} onChange={setCredit(idx, 'link')} placeholder="Spotify, Apple Music, YouTube..." />
               </div>
             </ArrayItemCard>
           ))}
@@ -815,12 +815,12 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Service type</label>
-                  <input value={item.serviceType} onChange={setPortfolio(idx, 'serviceType')} placeholder="Mixing, Mastering…" />
+                  <input value={item.serviceType} onChange={setPortfolio(idx, 'serviceType')} placeholder="Mixing, Mastering..." />
                 </div>
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Embed URL (YouTube / SoundCloud)</label>
-                <input type="url" value={item.embedUrl} onChange={setPortfolio(idx, 'embedUrl')} placeholder="https://www.youtube.com/watch?v=…" />
+                <input type="url" value={item.embedUrl} onChange={setPortfolio(idx, 'embedUrl')} placeholder="https://www.youtube.com/watch?v=..." />
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.4rem' }}>— or upload audio file —</label>
@@ -885,12 +885,12 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Role</label>
-                  <input value={member.role} onChange={setTeamMember(idx, 'role')} placeholder="Lead Engineer, Producer…" />
+                  <input value={member.role} onChange={setTeamMember(idx, 'role')} placeholder="Lead Engineer, Producer..." />
                 </div>
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Bio (optional)</label>
-                <textarea rows={2} value={member.bio} onChange={setTeamMember(idx, 'bio')} placeholder="Short bio about their background and specialty…" />
+                <textarea rows={2} value={member.bio} onChange={setTeamMember(idx, 'bio')} placeholder="Short bio about their background and specialty..." />
               </div>
               <div style={{ marginTop: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.4rem' }}>Photo (optional)</label>
@@ -925,7 +925,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, daws: tags } }));
                 setSaveState('idle');
               }}
-              placeholder="Pro Tools, Logic Pro, Ableton…"
+              placeholder="Pro Tools, Logic Pro, Ableton..."
               suggestions={['Pro Tools', 'Logic Pro', 'Ableton Live', 'FL Studio', 'Cubase', 'Studio One', 'Reason']}
             />
           </FieldGroup>
@@ -936,7 +936,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, mics: tags } }));
                 setSaveState('idle');
               }}
-              placeholder="Neumann U87, AKG C414…"
+              placeholder="Neumann U87, AKG C414..."
             />
           </FieldGroup>
           <FieldGroup label="Outboard gear">
@@ -946,7 +946,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 setForm((prev) => ({ ...prev, studioSpecs: { ...prev.studioSpecs, outboardGear: tags } }));
                 setSaveState('idle');
               }}
-              placeholder="API 2500, Neve 33609, Distressor…"
+              placeholder="API 2500, Neve 33609, Distressor..."
             />
           </FieldGroup>
           <FieldGroup label="Studio rooms / description">
@@ -1005,7 +1005,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             <TagInput
               value={form.genres}
               onChange={setTagField('genres')}
-              placeholder="Hip-Hop, R&B, Pop…"
+              placeholder="Hip-Hop, R&B, Pop..."
               suggestions={GENRE_SUGGESTIONS}
             />
           </div>
@@ -1018,7 +1018,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             <TagInput
               value={form.sessionTypes}
               onChange={setTagField('sessionTypes')}
-              placeholder="Recording, Mixing, Mastering…"
+              placeholder="Recording, Mixing, Mastering..."
             />
           </div>
 
@@ -1027,7 +1027,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             <TagInput
               value={form.amenities}
               onChange={setTagField('amenities')}
-              placeholder="Parking, Lounge, Wi-Fi…"
+              placeholder="Parking, Lounge, Wi-Fi..."
               suggestions={AMENITY_SUGGESTIONS}
             />
           </div>
@@ -1037,7 +1037,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
             <ArrayItemCard key={idx} label={item.authorName || `Testimonial ${idx + 1}`} onRemove={() => removeTestimonial(idx)}>
               <div style={{ marginBottom: '0.75rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.25rem' }}>Quote *</label>
-                <textarea rows={3} value={item.quote} onChange={setTestimonial(idx, 'quote')} placeholder='"Working at this studio was a game-changer…"' />
+                <textarea rows={3} value={item.quote} onChange={setTestimonial(idx, 'quote')} placeholder='"Working at this studio was a game-changer..."' />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
@@ -1103,7 +1103,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           disabled={saveState === 'saving'}
           style={{ background: form.accentColor, color: '#111', borderColor: form.accentColor }}
         >
-          {saveState === 'saving' ? 'Saving…' : 'Save changes'}
+          {saveState === 'saving' ? 'Saving...' : 'Save changes'}
         </button>
         <button
           type="button"
@@ -1123,7 +1123,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           </Link>
         ) : null}
         <span className={`eyf-save-indicator eyf-save-indicator--${saveState}`} aria-live="polite">
-          {saveState === 'saved' ? 'All changes saved' : saveState === 'error' ? (saveError || 'Save failed') : saveState === 'saving' ? 'Saving…' : ''}
+          {saveState === 'saved' ? 'All changes saved' : saveState === 'error' ? (saveError || 'Save failed') : saveState === 'saving' ? 'Saving...' : ''}
         </span>
       </div>
 
