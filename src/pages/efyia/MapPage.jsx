@@ -6,6 +6,7 @@ import { studiosApi } from '../../lib/api';
 import { ErrorMessage, SectionHeading, Spinner, Stars } from '../../components/efyia/ui';
 import { getCoordinates, getDisplayLocation } from '../../lib/location';
 
+
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export default function MapPage() {
@@ -40,11 +41,11 @@ export default function MapPage() {
     if (mapRef.current) return; // already initialized
 
     mapRef.current = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [-98.5795, 39.8283], // center of US as fallback
-      zoom: 3,
-    });
+  container: mapContainerRef.current,
+  style: 'mapbox://styles/mapbox/standard',
+  center: [-98.5795, 39.8283],
+  zoom: 3,
+});
 
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
