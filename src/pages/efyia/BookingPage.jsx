@@ -49,8 +49,8 @@ function getPriceForSession(studio, sessionType) {
     lower.includes(s.name?.toLowerCase())
   );
 
-  return match?.price || studio.pricePerHour;
-}
+  return match?.price || studio.pricePerHour || 0;
+} 
 
 function getServiceForSession(studio, sessionType) {
   if (!sessionType) return null;
@@ -327,7 +327,7 @@ export default function BookingPage() {
       ? studio.sessionTypes
       : DEFAULT_SESSION_TYPES;
 
-  const pricePerHour = getPriceForSession(studio, sessionType);
+  const pricePerHour = getPriceForSession(studio, sessionType) || studio.pricePerHour || 0;
   const selectedService = getServiceForSession(studio, sessionType);
 
   const subtotal = pricePerHour * hours;
@@ -589,7 +589,7 @@ export default function BookingPage() {
                     className="eyf-muted"
                     style={{ fontSize: '0.85rem' }}
                   >
-                    Estimated total: ${(pricePerHour * hours + calcFee(pricePerHour * hours)).toFixed(0)}
+                   Estimated total: ${pricePerHour ? (pricePerHour * hours + calcFee(pricePerHour * hours)).toFixed(0) : '...'}
                   </span>
                 </label>
 
