@@ -216,6 +216,8 @@ export const analyticsApi = {
 
 // ─── Email domains & forwarding aliases ─────────────────────────────────────
 export const emailDomainsApi = {
+  listDomains: () => api.get('/api/email/domains'),
+  getDomain: (domainId) => api.get(`/api/email/domains/${domainId}`),
   createDomain: (data) => api.post('/api/email/domains', data),
 
   getDnsRecords: (domainId) => api.get(`/api/email/domains/${domainId}/dns-records`),

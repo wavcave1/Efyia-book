@@ -47,7 +47,7 @@ function DomainRow({ domain, selected, onSelect }) {
   );
 }
 
-export default function EmailDomainManager() {
+export default function EmailDomainManager({ studioId }) {
   const [domains, setDomains] = useState([]);
   const [loadingDomains, setLoadingDomains] = useState(true);
   const [domainError, setDomainError] = useState(null);
@@ -58,7 +58,7 @@ export default function EmailDomainManager() {
   const [logs, setLogs] = useState([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState(null);
-  const [newAlias, setNewAlias] = useState({ localPart: '', destination: '' });
+  const [newAlias, setNewAlias] = useState({ localPart: '', forwardTo: '' });
   const [aliasSaving, setAliasSaving] = useState(false);
   const [editingAliasId, setEditingAliasId] = useState(null);
   const [refreshingStatus, setRefreshingStatus] = useState(false);
@@ -94,7 +94,7 @@ export default function EmailDomainManager() {
       const [domainPayload, aliasesPayload, logsPayload] = await Promise.all([
         emailDomainsApi.getDomain(domainId),
         emailDomainsApi.listAliases(domainId).catch(() => ({ aliases: [] })),
-        emailDomainsApi.transactionalActivity(domainId).catch(() => ({ events: [] })),
+        emailDomainsApi.listEvents(studioId).catch(() => ({ events: [] })),
       ]);
 
       const merged = domainPayload?.domain || domainPayload;
@@ -124,7 +124,7 @@ export default function EmailDomainManager() {
     setConnecting(true);
     setDomainError(null);
     try {
-      const created = await emailDomainsApi.createDomain({ domain: connectDomain.trim() });
+      const created = await emailDomainsApi.createDomain({ domain: connectDomain.trim(), studioId });
       const next = created?.domain || created;
       setDomains((prev) => [next, ...prev]);
       setSelectedDomainId(next?.id || null);
@@ -140,7 +140,7 @@ export default function EmailDomainManager() {
     if (!selectedDomainId) return;
     setRefreshingStatus(true);
     try {
-      await emailDomainsApi.refreshDomain(selectedDomainId);
+      await emailDomainsApi.verifyDomain(selectedDomainId);
       await loadDomainDetail(selectedDomainId);
       await loadDomains();
     } catch (error) {
@@ -157,9 +157,9 @@ export default function EmailDomainManager() {
     try {
       await emailDomainsApi.createAlias(selectedDomainId, {
         localPart: newAlias.localPart.trim(),
-        destination: newAlias.destination.trim(),
+        forwardTo: newAlias.forwardTo.trim(),
       });
-      setNewAlias({ localPart: '', destination: '' });
+      setNewAlias({ localPart: '', forwardTo: '' });
       await loadDomainDetail(selectedDomainId);
     } catch (error) {
       setDetailError(error.message || 'Could not create alias.');
@@ -169,10 +169,9 @@ export default function EmailDomainManager() {
   };
 
   const handleAliasUpdate = async (aliasId, updates) => {
-    if (!selectedDomainId) return;
     setEditingAliasId(aliasId);
     try {
-      await emailDomainsApi.updateAlias(selectedDomainId, aliasId, updates);
+      await emailDomainsApi.updateAlias(aliasId, updates);
       await loadDomainDetail(selectedDomainId);
     } catch (error) {
       setDetailError(error.message || 'Could not update alias.');
@@ -181,11 +180,22 @@ export default function EmailDomainManager() {
     }
   };
 
-  const handleAliasDelete = async (aliasId) => {
-    if (!selectedDomainId) return;
+  const handleAliasToggle = async (aliasId, enabled) => {
     setEditingAliasId(aliasId);
     try {
-      await emailDomainsApi.deleteAlias(selectedDomainId, aliasId);
+      await emailDomainsApi.toggleAlias(aliasId, enabled);
+      await loadDomainDetail(selectedDomainId);
+    } catch (error) {
+      setDetailError(error.message || 'Could not toggle alias.');
+    } finally {
+      setEditingAliasId(null);
+    }
+  };
+
+  const handleAliasDelete = async (aliasId) => {
+    setEditingAliasId(aliasId);
+    try {
+      await emailDomainsApi.deleteAlias(aliasId);
       await loadDomainDetail(selectedDomainId);
     } catch (error) {
       setDetailError(error.message || 'Could not delete alias.');
@@ -338,8 +348,8 @@ export default function EmailDomainManager() {
                 <input
                   type="email"
                   placeholder="you@inbox.com"
-                  value={newAlias.destination}
-                  onChange={(event) => setNewAlias((prev) => ({ ...prev, destination: event.target.value }))}
+                  value={newAlias.forwardTo}
+                  onChange={(event) => setNewAlias((prev) => ({ ...prev, forwardTo: event.target.value }))}
                   required
                 />
                 <button className="eyf-button" type="submit" disabled={aliasSaving}>{aliasSaving ? 'Saving…' : 'Create alias'}</button>
@@ -367,7 +377,7 @@ export default function EmailDomainManager() {
                         <tr key={alias.id || fullAddress}>
                           <td>{alias.localPart || alias.sourceLocalPart || '—'}</td>
                           <td>{fullAddress}</td>
-                          <td>{alias.destination || alias.forwardTo || '—'}</td>
+                          <td>{alias.forwardTo || alias.destination || '—'}</td>
                           <td><StatusBadge label={alias.enabled ? 'Enabled' : 'Disabled'} /></td>
                           <td>
                             <div className="eyf-row" style={{ gap: '0.45rem', flexWrap: 'wrap' }}>
@@ -376,7 +386,7 @@ export default function EmailDomainManager() {
                                 type="button"
                                 style={{ minHeight: 'unset', padding: '0.35rem 0.65rem' }}
                                 disabled={editingAliasId === alias.id}
-                                onClick={() => handleAliasUpdate(alias.id, { enabled: !alias.enabled })}
+                                onClick={() => handleAliasToggle(alias.id, !alias.enabled)}
                               >
                                 {alias.enabled ? 'Disable' : 'Enable'}
                               </button>
@@ -386,8 +396,8 @@ export default function EmailDomainManager() {
                                 style={{ minHeight: 'unset', padding: '0.35rem 0.65rem' }}
                                 disabled={editingAliasId === alias.id}
                                 onClick={() => {
-                                  const destination = window.prompt('New forwarding destination', alias.destination || alias.forwardTo || '');
-                                  if (destination) handleAliasUpdate(alias.id, { destination });
+                                  const forwardTo = window.prompt('New forwarding destination', alias.forwardTo || alias.destination || '');
+                                  if (forwardTo) handleAliasUpdate(alias.id, { forwardTo });
                                 }}
                               >
                                 Edit destination

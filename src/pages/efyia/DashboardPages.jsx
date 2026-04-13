@@ -838,7 +838,7 @@ export function StudioDashboard() {
                     />
                   </div>
 
-                  <EmailDomainManager />
+                  <EmailDomainManager studioId={studio?.id} />
                 </>
               ) : (
                 <EmptyState
