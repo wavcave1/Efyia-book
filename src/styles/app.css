@@ -506,11 +506,6 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-map-canvas {
   min-height: 480px;
   position: relative;
-  background:
-    linear-gradient(var(--map-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--map-grid) 1px, transparent 1px),
-    var(--card);
-  background-size: 36px 36px, 36px 36px, auto;
   overflow: hidden;
 }
 .eyf-map-pin {
