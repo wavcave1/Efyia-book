@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { reviewsApi, studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
-import { Badge, EmptyState, ErrorMessage, Spinner, Stars } from '../../components/efyia/ui';
+import { Badge, EmptyState, ErrorMessage, GalleryCarousel, SectionHeading, Spinner, Stars } from '../../components/efyia/ui';
 import ProfileCustomizer from '../../components/studio/ProfileCustomizer';
 
 // ─── Review submission form ───────────────────────────────────────────────────
@@ -238,20 +238,34 @@ export default function StudioProfilePage() {
           </div>
 
           {/* Gallery strip */}
-          {gallery.length > 0 ? (
+                    {gallery.length > 0 ? (
             <div className="eyf-editable-section">
-              <div className="eyf-gallery-strip">
-                {gallery.map((item, i) => (
-                  <div key={i} className="eyf-gallery-item">
-                    <img src={item.url} alt={item.caption || `Studio photo ${i + 1}`} loading="lazy" />
-                  </div>
-                ))}
-              </div>
+              <GalleryCarousel
+                images={gallery}
+                accentColor={studio.accentColor}
+              />
               {isOwner ? (
-                <button type="button" className="eyf-edit-trigger" style={{ position: 'absolute', top: '0.5rem', right: 0 }} onClick={() => openDrawer('gallery')}>
+                <button
+                  type="button"
+                  className="eyf-edit-trigger"
+                  style={{ marginTop: '-1rem', marginBottom: '1rem' }}
+                  onClick={() => openDrawer('gallery')}
+                >
                   Edit gallery
                 </button>
               ) : null}
+            </div>
+          ) : isOwner ? (
+            <button
+              type="button"
+              className="eyf-add-prompt"
+              onClick={() => openDrawer('gallery')}
+              style={{ marginBottom: '1rem' }}
+            >
+              <span className="eyf-add-prompt__label">+ Add studio photos</span>
+              <span className="eyf-add-prompt__sub">Control room, live room, equipment — give clients a feel for the space</span>
+            </button>
+          ) : null}
             </div>
           ) : isOwner ? (
             <button
