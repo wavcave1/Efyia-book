@@ -11,12 +11,13 @@ const TIMES = [
   '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM',
 ];
 
-const FLAT_FEE = Number(import.meta.env.VITE_FLAT_FEE ?? 2);
-const FEE_CAP = Number(import.meta.env.VITE_FEE_CAP ?? 15);
-const FEE_PERCENT = Number(import.meta.env.VITE_FEE_PERCENT ?? 2) / 100;
+const FLAT_FEE = Number(import.meta.env.VITE_FLAT_FEE) || 2;
+const FEE_CAP = Number(import.meta.env.VITE_FEE_CAP) || 15;
+const FEE_PERCENT = (Number(import.meta.env.VITE_FEE_PERCENT) || 2) / 100;
 
-function calcFee(subtotal) {
-  const pct = Math.round(subtotal * FEE_PERCENT * 100) / 100;
+function calcFee(sub) {
+  if (!sub || isNaN(sub)) return 2;
+  const pct = Math.round(sub * FEE_PERCENT * 100) / 100;
   return Math.min(Math.max(FLAT_FEE, pct), FEE_CAP);
 }
 const DEFAULT_SESSION_TYPES = [
