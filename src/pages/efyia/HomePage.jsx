@@ -178,8 +178,8 @@ export default function HomePage() {
             <span>Average rating</span>
           </div>
           <div className="eyf-home-stats__item">
-            <strong className="eyf-home-stats__num">8%</strong>
-            <span>Platform fee</span>
+            <strong className="eyf-home-stats__num">$2</strong>
+              <span>Booking fee</span>
           </div>
           <div className="eyf-home-stats__item">
             <strong className="eyf-home-stats__num">24/7</strong>
