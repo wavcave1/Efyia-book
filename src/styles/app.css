@@ -2275,3 +2275,14 @@ input[type="range"] { padding: 0; background: none; border: none; }
   background-image: none !important;
 }
 
+.eyf-map-canvas {
+  height: 520px;
+  padding: 0 !important;
+}
+
+.eyf-map-canvas > div {
+  width: 100%;
+  height: 100%;
+}
+
+
