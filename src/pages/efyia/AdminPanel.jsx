@@ -74,38 +74,19 @@ function CreateModal({ open, title, fields, values, onChange, onCancel, onSubmit
 function EditStudioModal({ studio, accounts, onSave, onClose }) {
   const [form, setForm] = useState({
     name: studio.name || '',
-    pricePerHour: studio.pricePerHour || 75,
-    city: studio.city || '',
-    state: studio.state || '',
-    featured: !!studio.featured,
-    verified: !!studio.verified,
     ownerAccountId: studio.owner?.id || studio.ownerId || '',
-    sessionTypes: Array.isArray(studio.sessionTypes) ? studio.sessionTypes.join(', ') : '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
-  const setCheck = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.checked }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     try {
-      const sessionTypes = form.sessionTypes
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
       const updated = await adminApi.updateStudio(studio.id, {
         name: form.name,
-        pricePerHour: Number(form.pricePerHour),
-        city: form.city || undefined,
-        state: form.state || undefined,
-        featured: form.featured,
-        verified: form.verified,
         ownerAccountId: form.ownerAccountId ? Number(form.ownerAccountId) : undefined,
-        sessionTypes,
       });
       onSave(updated);
     } catch (err) {
@@ -116,74 +97,58 @@ function EditStudioModal({ studio, accounts, onSave, onClose }) {
 
   return (
     <div className="admin-modal-backdrop" role="presentation">
-      <form className="admin-modal" onSubmit={handleSubmit} style={{ maxWidth: 580 }}>
+      <form className="admin-modal" onSubmit={handleSubmit} style={{ maxWidth: 440 }}>
         <h3 style={{ marginTop: 0 }}>Edit Studio</h3>
+        <p className="admin-subtle" style={{ marginTop: 0, marginBottom: '1.25rem' }}>
+          Prices, location, session types, and services are managed by the studio owner in their profile editor.
+        </p>
+
         <div className="admin-form-grid">
           <label className="full">
             <span className="admin-subtle">Studio name *</span>
-            <input value={form.name} onChange={set('name')} required />
-          </label>
-          <label>
-            <span className="admin-subtle">Price per hour ($)</span>
-            <input type="number" min="0" value={form.pricePerHour} onChange={set('pricePerHour')} />
-          </label>
-          <label>
-            <span className="admin-subtle">Owner account ID</span>
             <input
-              value={form.ownerAccountId}
-              onChange={set('ownerAccountId')}
-              placeholder="Leave blank to keep current owner"
-              list="admin-accounts-list"
+              value={form.name}
+              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              required
             />
-            {accounts.length > 0 ? (
-              <datalist id="admin-accounts-list">
-                {accounts.filter((a) => a.role === 'OWNER' || a.role === 'owner').map((a) => (
-                  <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
-                ))}
-              </datalist>
-            ) : null}
-          </label>
-          <label>
-            <span className="admin-subtle">City</span>
-            <input value={form.city} onChange={set('city')} placeholder="Atlanta" />
-          </label>
-          <label>
-            <span className="admin-subtle">State</span>
-            <input value={form.state} onChange={set('state')} placeholder="GA" maxLength={4} />
           </label>
           <label className="full">
-            <span className="admin-subtle">Session types (comma-separated)</span>
+            <span className="admin-subtle">Reassign owner</span>
             <input
-              value={form.sessionTypes}
-              onChange={set('sessionTypes')}
-              placeholder="Recording, Mixing, Mastering, Podcast"
+              value={form.ownerAccountId}
+              onChange={(e) => setForm((p) => ({ ...p, ownerAccountId: e.target.value }))}
+              placeholder="Account ID -- leave blank to keep current"
+              list="admin-owners-list"
             />
+            <datalist id="admin-owners-list">
+              {accounts
+                .filter((a) => String(a.role).toUpperCase() === 'OWNER')
+                .map((a) => (
+                  <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
+                ))}
+            </datalist>
           </label>
         </div>
-        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.featured} onChange={setCheck('featured')} />
-            <span>Featured</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.verified} onChange={setCheck('verified')} />
-            <span>Verified</span>
-          </label>
-        </div>
-        {error ? <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: '0.5rem 0 0' }}>{error}</p> : null}
-        <div className="admin-actions" style={{ marginTop: '1rem' }}>
+
+        {error ? (
+          <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: '0.75rem 0 0' }}>{error}</p>
+        ) : null}
+
+        <div className="admin-actions" style={{ marginTop: '1.25rem' }}>
           <button type="button" className="admin-btn" onClick={onClose}>Cancel</button>
-          <a
-            href={`/studios/${studio.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="admin-btn"
-            style={{ textDecoration: 'none' }}
-          >
-            View public profile ↗
-          </a>
+          {studio.slug ? (
+            <a
+              href={`/studios/${studio.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-btn"
+              style={{ textDecoration: 'none' }}
+            >
+              View profile &#8599;
+            </a>
+          ) : null}
           <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </form>
