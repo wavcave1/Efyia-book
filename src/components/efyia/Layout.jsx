@@ -100,7 +100,7 @@ export default function Layout() {
               <NavLink className="eyf-button eyf-button--ghost" to="/login">
                 Log in
               </NavLink>
-              <NavLink className="eyf-button eyf-button--secondary" to="/signup" style={{ fontSize: '0.875rem' }}>
+              <NavLink className="eyf-button eyf-button--secondary eyf-nav__list-cta" to="/signup" style={{ fontSize: '0.875rem' }}>
                 List your studio
               </NavLink>
               <NavLink className="eyf-button" to="/signup">

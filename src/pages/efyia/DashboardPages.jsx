@@ -547,42 +547,44 @@ export function ClientDashboard() {
 
   return (
     <div className="eyf-page">
-      <section className="eyf-section eyf-stack">
-        <SectionHeading
-          eyebrow="Client dashboard"
-          title={`Welcome back, ${currentUser?.name}`}
-        />
+      <div className="eyf-client-dashboard">
+        <section className="eyf-section eyf-stack">
+          <SectionHeading
+            eyebrow="Client dashboard"
+            title={`Welcome back, ${currentUser?.name}`}
+          />
 
-        {loading ? (
-          <Spinner />
-        ) : error ? (
-          <ErrorMessage message={error} onRetry={fetchData} />
-        ) : (
-          <>
-            <h3>Your bookings</h3>
-            <ClientBookingRows bookings={bookings} onCancel={handleCancel} currentUserId={currentUser?.id} />
+          {loading ? (
+            <Spinner />
+          ) : error ? (
+            <ErrorMessage message={error} onRetry={fetchData} />
+          ) : (
+            <>
+              <h3>Your bookings</h3>
+              <ClientBookingRows bookings={bookings} onCancel={handleCancel} currentUserId={currentUser?.id} />
 
-            {favorites.length > 0 ? (
-              <>
-                <SectionHeading
-                  eyebrow="Saved studios"
-                  title="Quick access to your saved rooms"
-                />
-                <div className="eyf-card-grid">
-                  {favorites.map((studio) => (
-                    <StudioCard
-                      key={studio.id}
-                      studio={studio}
-                      isFavorite={favoriteStudioIds.includes(studio.id)}
-                      onFavoriteToggle={toggleFavorite}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </>
-        )}
-      </section>
+              {favorites.length > 0 ? (
+                <>
+                  <SectionHeading
+                    eyebrow="Saved studios"
+                    title="Quick access to your saved rooms"
+                  />
+                  <div className="eyf-card-grid">
+                    {favorites.map((studio) => (
+                      <StudioCard
+                        key={studio.id}
+                        studio={studio}
+                        isFavorite={favoriteStudioIds.includes(studio.id)}
+                        onFavoriteToggle={toggleFavorite}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
@@ -695,7 +697,7 @@ export function StudioDashboard() {
       ) : null}
 
       <div className="eyf-page">
-        <section className="eyf-section eyf-stack">
+        <section className="eyf-section eyf-stack" style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
