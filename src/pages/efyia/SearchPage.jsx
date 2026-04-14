@@ -1,55 +1,92 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, Stars, StudioCard } from '../../components/efyia/ui';
 import { getCoordinates, getDisplayLocation } from '../../lib/location';
 
-// ─── Inline map helpers (canvas-based, no Mapbox required) ───────────────────
-function getCanvasPosition(studio, allStudios) {
-  const points = allStudios
-    .map((s) => getCoordinates(s))
-    .filter((point) => point.lat != null && point.lng != null);
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-  const current = getCoordinates(studio);
-  if (!points.length || current.lat == null || current.lng == null) {
-    return { left: `${20 + Math.random() * 60}%`, top: `${20 + Math.random() * 60}%` };
-  }
+function MapboxPanel({ studios, selected, onSelect }) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef([]); // [{ marker, el, id }]
 
-  const lats = points.map((point) => point.lat);
-  const lngs = points.map((point) => point.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const latRange = maxLat - minLat || 1;
-  const lngRange = maxLng - minLng || 1;
+  // Initialize map once
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    mapRef.current = new mapboxgl.Map({
+      container: containerRef.current,
+      style: 'mapbox://styles/mapbox/standard',
+      center: [-98.5795, 39.8283],
+      zoom: 3,
+    });
+    mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
 
-  return {
-    left: `${(10 + ((current.lng - minLng) / lngRange) * 80).toFixed(1)}%`,
-    top: `${(10 + ((maxLat - current.lat) / latRange) * 70).toFixed(1)}%`,
-  };
-}
+  // Rebuild markers whenever the studios list changes
+  useEffect(() => {
+    if (!mapRef.current || !studios.length) return;
 
-function MapPanel({ studios, selected, onSelect }) {
+    const addMarkers = () => {
+      markersRef.current.forEach(({ marker }) => marker.remove());
+      markersRef.current = [];
+
+      const bounds = new mapboxgl.LngLatBounds();
+      let hasCoords = false;
+
+      studios.forEach((studio) => {
+        const { lat, lng } = getCoordinates(studio);
+        if (lat == null || lng == null) return;
+        hasCoords = true;
+        bounds.extend([lng, lat]);
+
+        const el = document.createElement('button');
+        el.className = 'eyf-map-pin';
+        el.style.background = studio.color || '#62f3d4';
+        el.setAttribute('aria-label', `${studio.name} — ${getDisplayLocation(studio)}`);
+        el.title = studio.name;
+        el.addEventListener('click', () => {
+          onSelect((prev) => (prev?.id === studio.id ? null : studio));
+        });
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([lng, lat])
+          .addTo(mapRef.current);
+        markersRef.current.push({ marker, el, id: studio.id });
+      });
+
+      if (hasCoords) {
+        mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 12, duration: 800 });
+      }
+    };
+
+    if (mapRef.current.isStyleLoaded()) addMarkers();
+    else mapRef.current.once('load', addMarkers);
+  }, [studios]);
+
+  // Sync pin highlight + fly to selected studio
+  useEffect(() => {
+    markersRef.current.forEach(({ el, id }) => {
+      el.classList.toggle('is-selected', selected?.id === id);
+    });
+    if (selected && mapRef.current) {
+      const { lat, lng } = getCoordinates(selected);
+      if (lat != null && lng != null) {
+        mapRef.current.flyTo({ center: [lng, lat], zoom: 12, duration: 800 });
+      }
+    }
+  }, [selected]);
+
   return (
     <div className="eyf-discover-map-canvas">
-      {studios.map((studio) => {
-        const pos = getCanvasPosition(studio, studios);
-        const isSelected = selected?.id === studio.id;
-        return (
-          <button
-            key={studio.id}
-            type="button"
-            className={`eyf-map-pin${isSelected ? ' is-selected' : ''}`}
-            style={{ ...pos, background: studio.color || '#62f3d4' }}
-            title={studio.name}
-            onClick={() => onSelect(isSelected ? null : studio)}
-            aria-label={`${studio.name} — ${getDisplayLocation(studio)}`}
-          />
-        );
-      })}
-
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {selected ? (
         <div className="eyf-discover-map-preview">
           <div>
@@ -220,7 +257,7 @@ export default function SearchPage() {
                 <p className="eyf-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>
                   {studios.length} result{studios.length !== 1 ? 's' : ''} on map
                 </p>
-                <MapPanel
+                <MapboxPanel
                   studios={studios}
                   selected={selectedStudio}
                   onSelect={setSelectedStudio}
