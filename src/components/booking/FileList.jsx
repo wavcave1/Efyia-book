@@ -114,6 +114,14 @@ export default function FileList({ bookingId, canUpload, currentUserId }) {
                   Delete
                 </button>
               ) : null}
+              {file.mimeType?.startsWith('audio/') && file.fileUrl ? (
+                <audio
+                  src={file.fileUrl}
+                  controls
+                  style={{ width: '100%', marginTop: '0.4rem', borderRadius: 6 }}
+                  aria-label={file.fileName}
+                />
+              ) : null}
             </div>
           ))}
         </div>
