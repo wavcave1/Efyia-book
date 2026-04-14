@@ -5,13 +5,13 @@ import { useAppContext } from '../../context/AppContext';
 import { ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
 
 const CATEGORIES = [
-  { icon: '🎙', label: 'Recording' },
-  { icon: '🎛', label: 'Mixing' },
-  { icon: '💿', label: 'Mastering' },
-  { icon: '🎹', label: 'Production' },
-  { icon: '🎙', label: 'Podcast' },
-  { icon: '🎬', label: 'Voiceover' },
-  { icon: '🥁', label: 'Rehearsal' },
+  { icon: '♪', label: 'Recording' },
+  { icon: '⊞', label: 'Mixing' },
+  { icon: '◈', label: 'Mastering' },
+  { icon: '♫', label: 'Production' },
+  { icon: '◎', label: 'Podcast' },
+  { icon: '▷', label: 'Voiceover' },
+  { icon: '◉', label: 'Rehearsal' },
 ];
 
 const CITIES = ['Los Angeles', 'New York', 'Atlanta', 'Nashville', 'Miami'];
@@ -86,7 +86,7 @@ export default function HomePage() {
         <div className="eyf-home-hero__content">
           <p className="eyf-home-hero__eyebrow">Studio Booking Marketplace</p>
           <h1 className="eyf-home-hero__heading">
-            Book your next<br />recording session.
+            Book your next<br /><span className="eyf-gradient-text">recording session.</span>
           </h1>
           <p className="eyf-home-hero__sub">
             Discover, compare, and book recording studios across major music cities.
@@ -187,6 +187,31 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* ── How it works ──────────────────────────────────────────────────── */}
+        <section className="eyf-section eyf-how-it-works">
+          <SectionHeading
+            eyebrow="Simple process"
+            title="Book in three steps"
+          />
+          <div className="eyf-how-steps">
+            <div className="eyf-how-step">
+              <div className="eyf-how-step__num">01</div>
+              <h4>Search &amp; filter</h4>
+              <p className="eyf-muted">Browse studios by city, session type, price, and rating to find the perfect fit.</p>
+            </div>
+            <div className="eyf-how-step">
+              <div className="eyf-how-step__num">02</div>
+              <h4>Compare &amp; save</h4>
+              <p className="eyf-muted">View detailed profiles, equipment lists, verified reviews, and portfolio samples.</p>
+            </div>
+            <div className="eyf-how-step">
+              <div className="eyf-how-step__num">03</div>
+              <h4>Book instantly</h4>
+              <p className="eyf-muted">Confirm your session and pay securely — all through the platform.</p>
+            </div>
+          </div>
+        </section>
+
         {/* ── Featured studios ─────────────────────────────────────────────── */}
         <section className="eyf-section">
           <SectionHeading
@@ -229,13 +254,16 @@ export default function HomePage() {
         {!currentUser ? (
           <section className="eyf-home-cta">
             <div className="eyf-home-cta__inner">
-              <h2>Own a studio?</h2>
+              <p className="eyf-eyebrow">For studio owners</p>
+              <h2>Reach artists who are ready to book</h2>
               <p className="eyf-muted">
-                List your space on Efyia Book and reach artists, producers, and engineers looking to book.
+                List your space on Efyia Book. Set your rates, manage availability, and get discovered by artists, producers, and engineers in your city.
               </p>
-              <Link className="eyf-button" to="/signup">
-                List your studio
-              </Link>
+              <div className="eyf-row eyf-row--center">
+                <Link className="eyf-button" to="/signup">
+                  List your studio — it's free
+                </Link>
+              </div>
             </div>
           </section>
         ) : null}

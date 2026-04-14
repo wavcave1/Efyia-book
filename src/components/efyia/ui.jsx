@@ -177,6 +177,7 @@ aria-label={`Photo ${i + 1}`}
 export function StudioCard({ studio, onFavoriteToggle, isFavorite = false }) {
 const color = studio.color || studio.accentColor || '#62f3d4';
 const locationLabel = getDisplayLocation(studio);
+const hourlyRate = studio.hourlyRate || studio.pricePerHour || studio.basePrice || null;
 
 // Build image list from gallery, coverUrl, logoUrl in priority order
 const images = [];
@@ -209,27 +210,37 @@ style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: 2 }}
 {isFavorite ? '♥' : '♡'}
 </button>
 ) : null}
+
+{hourlyRate ? (
+<div className="eyf-studio-card__price" aria-label={`$${hourlyRate} per hour`}>
+${hourlyRate}<span style={{ fontWeight: 500, opacity: 0.75 }}>/hr</span>
+</div>
+) : null}
 </div>
 
 <div className="eyf-studio-card__body">
 <div className="eyf-row eyf-row--between eyf-row--start">
 <div>
-<h3>{studio.name}</h3>
-<p className="eyf-muted">
+<h3 style={{ fontSize: '1rem', margin: '0 0 0.2rem', letterSpacing: '-0.01em' }}>{studio.name}</h3>
+<p className="eyf-muted" style={{ margin: 0, fontSize: '0.82rem' }}>
 {locationLabel}
 </p>
 </div>
-<div className="eyf-rating-wrap">
+{(studio.rating > 0) ? (
+<div className="eyf-rating-wrap" style={{ textAlign: 'right' }}>
 <Stars rating={studio.rating || 0} />
-<span className="eyf-muted">{studio.rating} ({studio.reviewCount})</span>
+<span className="eyf-muted" style={{ fontSize: '0.78rem' }}>{studio.rating} ({studio.reviewCount || 0})</span>
 </div>
+) : null}
 </div>
 <div className="eyf-tags">
 {(studio.tags || studio.sessionTypes || []).slice(0, 3).map((tag) => (
 <span key={tag} className="eyf-tag">{tag}</span>
 ))}
 </div>
-<p className="eyf-muted">{studio.description}</p>
+{studio.description ? (
+<p className="eyf-muted" style={{ fontSize: '0.875rem', margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{studio.description}</p>
+) : null}
 <div className="eyf-row eyf-row--between">
 <Link className="eyf-link-button" to={`/studios/${studio.slug}`}>
 View profile

@@ -22,14 +22,30 @@ function ThemeToggle() {
 function Footer() {
   return (
     <footer className="eyf-footer">
-      <div>
-        <strong>Efyia Book</strong>
-        <p>The studio booking marketplace for artists, engineers, and studio owners.</p>
+      <div className="eyf-footer__grid">
+        <div className="eyf-footer__brand">
+          <strong className="eyf-footer__brand-name">Efyia <em>Book</em></strong>
+          <p>The studio booking marketplace for artists, engineers, and studio owners across major music cities.</p>
+        </div>
+        <div className="eyf-footer__col">
+          <span className="eyf-footer__col-heading">Platform</span>
+          <a href="/discover">Find Studios</a>
+          <a href="/map">Map View</a>
+          <a href="/signup">List Your Studio</a>
+        </div>
+        <div className="eyf-footer__col">
+          <span className="eyf-footer__col-heading">Company</span>
+          <a href="/terms">Terms of Service</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="mailto:support@efyia.com">Support</a>
+        </div>
       </div>
-      <div className="eyf-footer__links">
-        <a href="/terms">Terms</a>
-        <a href="/privacy">Privacy</a>
-        <a href="mailto:support@efyia.com">Support</a>
+      <div className="eyf-footer__bottom">
+        <span className="eyf-muted">© {new Date().getFullYear()} Efyia Book. All rights reserved.</span>
+        <div className="eyf-footer__links">
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+        </div>
       </div>
     </footer>
   );
@@ -83,6 +99,9 @@ export default function Layout() {
             <>
               <NavLink className="eyf-button eyf-button--ghost" to="/login">
                 Log in
+              </NavLink>
+              <NavLink className="eyf-button eyf-button--secondary" to="/signup" style={{ fontSize: '0.875rem' }}>
+                List your studio
               </NavLink>
               <NavLink className="eyf-button" to="/signup">
                 Get started
