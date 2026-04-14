@@ -13,6 +13,8 @@ import SearchPage from './pages/efyia/SearchPage';
 import StudioProfilePage from './pages/efyia/StudioProfilePage';
 import StudioPublicPage from './pages/efyia/StudioPublicPage';
 import MapPage from './pages/efyia/MapPage';
+import TermsPage from './pages/efyia/TermsPage';
+import PrivacyPage from './pages/efyia/PrivacyPage';
 
 export default function App() {
   return (
@@ -36,6 +38,8 @@ export default function App() {
             <Route path="discover" element={<SearchPage />} />
             <Route path="map" element={<MapPage />} />
             <Route path="studios/:slug" element={<StudioProfilePage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
             <Route
               path="booking/:studioId"
               element={
