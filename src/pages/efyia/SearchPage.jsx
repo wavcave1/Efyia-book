@@ -180,7 +180,6 @@ export default function SearchPage() {
         <SectionHeading
           eyebrow="Find Studios"
           title="Discover your perfect recording space"
-          description="Filter by city, rating, and price to find the right fit for your session."
         />
 
         <div className="eyf-search-layout">
@@ -235,9 +234,9 @@ export default function SearchPage() {
                 <ErrorMessage message={error} onRetry={() => fetchStudios()} />
               ) : (
                 <>
-                  <p className="eyf-muted">
-                    {total} studio{total !== 1 ? 's' : ''} found
-                  </p>
+                  <div className="eyf-results-count">
+                    <strong>{total}</strong> studio{total !== 1 ? 's' : ''} found
+                  </div>
                   {studios.length > 0 ? (
                     <div className={`eyf-card-grid${showMap ? ' eyf-card-grid--compact' : ''}`}>
                       {studios.map((studio) => (

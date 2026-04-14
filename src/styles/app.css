@@ -38,6 +38,10 @@
   --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
   --toggle-icon: "☀";
+
+  /* ── Typography ─── */
+  --font-display: 'Syne', Inter, system-ui, sans-serif;
+  --font-body: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* ─── Theme tokens: light ───────────────────────────────────────────────────── */
@@ -91,10 +95,11 @@ body {
     radial-gradient(circle at right, var(--body-gradient-2), transparent 24%),
     var(--bg);
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   transition: background-color 0.2s, color 0.2s;
 }
 a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4 { font-family: var(--font-display); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 input, select, textarea {
@@ -120,11 +125,12 @@ textarea { resize: vertical; }
 input[type="range"] { padding: 0; background: none; border: none; }
 
 /* ─── Layout shell ───────────────────────────────────────────────────────────── */
-.eyf-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.eyf-main { flex: 1; padding-bottom: 3rem; }
+.eyf-shell { min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+.eyf-main { flex: 1; padding-bottom: 3rem; min-width: 0; }
 .eyf-page,
 .eyf-nav,
 .eyf-footer { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; }
+html { overflow-x: hidden; }
 
 /* ─── Nav ─────────────────────────────────────────────────────────────────────── */
 .eyf-nav {
@@ -586,7 +592,6 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-step.is-done span { background: var(--sage); color: var(--bg); }
 .eyf-summary-list { display: grid; gap: 0.85rem; }
 .eyf-summary-list > div,
-.eyf-footer,
 .eyf-booking-meta { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
 .eyf-summary-list .total-row { border-top: 1px solid var(--border); padding-top: 0.85rem; font-size: 1.1rem; }
 
@@ -647,11 +652,7 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-stars { letter-spacing: 0.1em; }
 
 /* ─── Footer ─────────────────────────────────────────────────────────────────── */
-.eyf-footer {
-  margin: 3rem auto 2rem;
-  padding: 1.5rem 0 0;
-  border-top: 1px solid var(--border);
-}
+/* Footer layout moved to redesign section below */
 .eyf-footer__links a { color: var(--muted); transition: color 0.15s; }
 .eyf-footer__links a:hover { color: var(--mint); }
 
@@ -686,9 +687,45 @@ input[type="range"] { padding: 0; background: none; border: none; }
   .eyf-search-layout,
   .eyf-map-layout,
   .eyf-profile-layout,
-  .eyf-footer,
   .eyf-grid-2 { grid-template-columns: 1fr; }
   .eyf-booking-sidebar { position: static; }
+}
+
+/* ─── Nav: compact on small screens ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Hide "List your studio" — it also lives in the footer */
+  .eyf-nav__list-cta { display: none !important; }
+
+  .eyf-nav {
+    padding: 0.65rem 0.9rem;
+    gap: 0.5rem;
+  }
+
+  .eyf-nav__actions { gap: 0.35rem; }
+
+  /* Make action buttons smaller so they fit in one row */
+  .eyf-nav__actions .eyf-button {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.82rem;
+    min-height: 38px;
+  }
+
+  .eyf-brand {
+    font-size: 1rem;
+    gap: 0.55rem;
+  }
+
+  .eyf-brand__mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.8rem;
+  }
+
+  .eyf-theme-toggle {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1233,11 +1270,12 @@ input[type="range"] { padding: 0; background: none; border: none; }
 }
 
 .eyf-home-hero__heading {
-  font-size: clamp(2rem, 5.5vw, 3.5rem);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   margin: 0 0 0.75rem;
+  font-family: var(--font-display);
 }
 
 .eyf-home-hero__sub {
@@ -2283,6 +2321,584 @@ input[type="range"] { padding: 0; background: none; border: none; }
 .eyf-map-canvas > div {
   width: 100%;
   height: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VISUAL REDESIGN — Premium competitor upgrade
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Gradient text utility ──────────────────────────────────────────────── */
+.eyf-gradient-text {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--sage) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Centered row helper ────────────────────────────────────────────────── */
+.eyf-row--center { justify-content: center; }
+
+/* ─── How it works section ───────────────────────────────────────────────── */
+.eyf-how-it-works { padding-bottom: 0.5rem; }
+
+.eyf-how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.eyf-how-step {
+  padding: 2rem 1.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.eyf-how-step:hover {
+  border-color: rgba(98, 243, 212, 0.3);
+  transform: translateY(-3px);
+}
+
+.eyf-how-step__num {
+  font-size: 2.75rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+  line-height: 1;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--mint), var(--sage));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.7;
+}
+
+.eyf-how-step h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.eyf-how-step p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 768px) {
+  .eyf-how-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Studio card hover lift ─────────────────────────────────────────────── */
+.eyf-card.eyf-studio-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  will-change: transform;
+}
+
+.eyf-card.eyf-studio-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 28px 56px rgba(0, 0, 0, 0.45);
+  border-color: rgba(98, 243, 212, 0.2);
+}
+
+[data-theme="light"] .eyf-card.eyf-studio-card:hover {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* ─── Studio card — image height bump ───────────────────────────────────── */
+.eyf-card-carousel { height: 220px; }
+
+/* ─── Studio card — price display ───────────────────────────────────────── */
+.eyf-studio-card__price {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  background: rgba(8, 12, 16, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(98, 243, 212, 0.25);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--mint);
+}
+
+[data-theme="light"] .eyf-studio-card__price {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--sage);
+  border-color: rgba(26, 138, 106, 0.3);
+}
+
+/* ─── Improved CTA section ───────────────────────────────────────────────── */
+.eyf-home-cta__inner {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 3.5rem 2.5rem;
+  text-align: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.eyf-home-cta__inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(98, 243, 212, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(109, 194, 163, 0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.eyf-home-cta__inner h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  letter-spacing: -0.03em;
+}
+
+.eyf-home-cta__inner .eyf-muted { max-width: 480px; }
+
+/* ─── Footer redesign ────────────────────────────────────────────────────── */
+.eyf-footer {
+  display: block !important;
+  margin: 3rem auto 0;
+  padding: 3rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.eyf-footer__grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.eyf-footer__brand-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.eyf-footer__brand-name em {
+  color: var(--mint);
+  font-style: normal;
+}
+
+.eyf-footer__brand p {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 280px;
+}
+
+.eyf-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.eyf-footer__col-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.eyf-footer__col a {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  transition: color 0.15s;
+}
+
+.eyf-footer__col a:hover { color: var(--mint); }
+
+.eyf-footer__bottom {
+  border-top: 1px solid var(--border-subtle);
+  padding: 1.25rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 768px) {
+  .eyf-footer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .eyf-footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .eyf-footer__grid {
+    grid-template-columns: 1fr;
+  }
+  .eyf-footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+/* ─── Nav link hover underline ───────────────────────────────────────────── */
+.eyf-nav__links a {
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.eyf-nav__links a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  right: 50%;
+  height: 1.5px;
+  background: var(--mint);
+  transition: left 0.2s ease, right 0.2s ease;
+  border-radius: 999px;
+}
+
+.eyf-nav__links a:hover::after,
+.eyf-nav__links a.active::after {
+  left: 0;
+  right: 0;
+}
+
+/* ─── Review card with avatars ───────────────────────────────────────────── */
+.eyf-review-card {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.eyf-review-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.eyf-review-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mint), var(--sage));
+  color: var(--bg);
+  display: inline-grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.eyf-review-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.eyf-review-card__date {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  padding-top: 0.15rem;
+}
+
+/* ─── Search results count badge ─────────────────────────────────────────── */
+.eyf-results-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.35rem 0.85rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.eyf-results-count strong {
+  color: var(--mint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Filter panel improvements ──────────────────────────────────────────── */
+.eyf-filter-panel {
+  align-content: start;
+  display: grid;
+  gap: 1.25rem;
+  position: sticky;
+  top: 6rem;
+}
+
+.eyf-filter-panel h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ─── Profile booking sidebar — price prominence ─────────────────────────── */
+.eyf-booking-sidebar__price {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.eyf-booking-sidebar__price span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+/* ─── Fade-in-up animation ───────────────────────────────────────────────── */
+@keyframes eyf-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.eyf-section,
+.eyf-home-hero__content {
+  animation: eyf-fade-up 0.45s ease both;
+}
+
+.eyf-how-step:nth-child(1) { animation: eyf-fade-up 0.4s 0.05s ease both; }
+.eyf-how-step:nth-child(2) { animation: eyf-fade-up 0.4s 0.12s ease both; }
+.eyf-how-step:nth-child(3) { animation: eyf-fade-up 0.4s 0.19s ease both; }
+
+/* ─── Toast slide-in from right ──────────────────────────────────────────── */
+.eyf-toast {
+  animation: eyf-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes eyf-toast-in {
+  from { opacity: 0; transform: translateX(1rem); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Button active press state ──────────────────────────────────────────── */
+.eyf-button:active,
+.eyf-link-button:active {
+  transform: scale(0.97);
+}
+
+/* ─── Section heading: display font ─────────────────────────────────────── */
+.eyf-section-heading h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+/* ─── Booking sidebar rating display ─────────────────────────────────────── */
+.eyf-booking-sidebar .efy-muted {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* ─── Homepage category icon refinement ──────────────────────────────────── */
+.eyf-home-category__icon {
+  font-size: 1rem;
+  line-height: 1;
+  font-style: normal;
+  color: var(--mint);
+  opacity: 0.8;
+}
+
+.eyf-home-category.is-active .eyf-home-category__icon { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE FIXES — overflow, nav, dashboards
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Prevent ALL horizontal overflow globally ───────────────────────────── */
+html, body { overflow-x: hidden; max-width: 100%; }
+.eyf-shell { overflow-x: hidden; }
+img, video, iframe { max-width: 100%; }
+
+/* Ensure flex/grid children never force width past their container */
+.eyf-row, .eyf-nav__actions, .eyf-nav__links { min-width: 0; }
+.eyf-card, .eyf-section, .eyf-page { min-width: 0; }
+
+/* ─── Nav: tighten on mobile so all buttons fit in one row ───────────────── */
+@media (max-width: 620px) {
+  /* Drop "List your studio" — it lives in the footer too */
+  .eyf-nav__list-cta { display: none !important; }
+
+  .eyf-nav {
+    padding: 0.6rem 0.85rem;
+    gap: 0.4rem;
+    /* Keep it as a single row: brand | actions */
+    flex-wrap: nowrap;
+  }
+
+  /* Nav links go BELOW as a second row */
+  .eyf-nav__links {
+    order: 3;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+  }
+
+  .eyf-nav__actions {
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  /* Compact buttons: smaller padding + font */
+  .eyf-nav__actions .eyf-button {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+
+  .eyf-brand {
+    font-size: 0.95rem;
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+
+  .eyf-brand__mark {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .eyf-theme-toggle {
+    width: 1.9rem;
+    height: 1.9rem;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Dashboard: client dashboard — centered readable width ──────────────── */
+.eyf-client-dashboard {
+  width: min(720px, 100%);
+  margin: 0 auto;
+}
+
+/* ─── Studio dashboard — booking card mobile stack ───────────────────────── */
+@media (max-width: 640px) {
+  /* Booking card rows: stack info + actions vertically */
+  .eyf-booking-card-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  /* Generic eyf-row cards inside eyf-card (owner booking rows) */
+  article.eyf-card.eyf-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  /* Booking action buttons: left-align, wrap */
+  .eyf-booking-meta {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  /* Booking info: full width */
+  article.eyf-card.eyf-row > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Availability day grid: stack on small screens */
+  .eyf-availability-day {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+  }
+
+  .eyf-availability-day label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .eyf-availability-day input[type="checkbox"],
+  .eyf-availability-day > input[type="checkbox"] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .eyf-availability-day input[type="time"] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  /* Filter panel: not sticky on small screens */
+  .eyf-filter-panel {
+    position: static;
+  }
+}
+
+/* ─── Booking rows: prevent text overflow on narrow screens ──────────────── */
+@media (max-width: 480px) {
+  /* Client booking article — full width stack */
+  article.eyf-card.eyf-stack .eyf-row.eyf-row--between.eyf-row--start {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  article.eyf-card.eyf-stack .eyf-booking-meta {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  /* Prevent long booking date strings from overflowing */
+  article.eyf-card.eyf-stack .eyf-muted {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Stats grid: 2 columns on small screens */
+  .eyf-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* How it works: single column */
+  .eyf-how-steps {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hero search: tighter padding */
+  .eyf-home-hero {
+    padding: 4rem 1rem 3rem;
+  }
 }
 
 

@@ -658,18 +658,23 @@ export default function StudioProfilePage() {
 
               {reviews.length > 0 ? (
                 reviews.map((review) => (
-                  <article key={review.id} className="eyf-card eyf-stack">
-                    <div className="eyf-row eyf-row--between eyf-row--start">
-                      <div className="eyf-row">
-                        <strong>{review.user?.name || 'Client'}</strong>
-                        <Badge tone="sage">Verified</Badge>
+                  <article key={review.id} className="eyf-card eyf-review-card">
+                    <div className="eyf-review-card__header">
+                      <div className="eyf-review-avatar" aria-hidden="true">
+                        {(review.user?.name || 'C').charAt(0).toUpperCase()}
                       </div>
-                      <span className="eyf-muted">
+                      <div className="eyf-review-card__meta">
+                        <div className="eyf-row" style={{ gap: '0.5rem' }}>
+                          <strong style={{ fontSize: '0.95rem' }}>{review.user?.name || 'Client'}</strong>
+                          <Badge tone="sage">Verified</Badge>
+                        </div>
+                        <Stars rating={review.rating} />
+                      </div>
+                      <span className="eyf-review-card__date">
                         {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </span>
                     </div>
-                    <Stars rating={review.rating} />
-                    <p>{review.content}</p>
+                    <p style={{ margin: 0, lineHeight: 1.7 }}>{review.content}</p>
                     {review.ownerReply ? (
                       <div className="eyf-reply">
                         <strong>Studio reply: </strong>{review.ownerReply}
@@ -693,17 +698,29 @@ export default function StudioProfilePage() {
             <img
               src={studio.logoUrl}
               alt={`${studio.name} logo`}
-              style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 8, marginBottom: '0.25rem' }}
+              style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8 }}
               onError={(e) => { e.target.style.display = 'none'; }}
             />
           ) : null}
-          <div className="eyf-row eyf-row--between">
-            <h2 className="efy-muted"> {studio.rating} ★ 
-               {studio.reviewCount} reviews </h2>
-          </div>
-          
+
+          {(studio.hourlyRate || studio.pricePerHour || studio.basePrice) ? (
+            <div className="eyf-booking-sidebar__price">
+              ${studio.hourlyRate || studio.pricePerHour || studio.basePrice}
+              <span> / hour</span>
+            </div>
+          ) : null}
+
+          {studio.rating > 0 ? (
+            <div className="eyf-row" style={{ gap: '0.4rem' }}>
+              <Stars rating={studio.rating} />
+              <span className="eyf-muted" style={{ fontSize: '0.85rem' }}>
+                {studio.rating} · {studio.reviewCount} review{studio.reviewCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          ) : null}
+
           {getDisplayLocation(studio) ? (
-        <p className="eyf-muted">{getDisplayLocation(studio)}</p>
+            <p className="eyf-muted" style={{ fontSize: '0.875rem', margin: 0 }}>{getDisplayLocation(studio)}</p>
           ) : null}
 
           {/* Social links */}
