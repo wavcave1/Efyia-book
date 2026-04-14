@@ -5,14 +5,15 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, Stars, StudioCard } from '../../components/efyia/ui';
-import { getCoordinates, getDisplayLocation } from '../../lib/location';
+import { getDisplayLocation } from '../../lib/location';
+import { resolveStudioCoords } from '../../lib/geocode';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 function MapboxPanel({ studios, selected, onSelect }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
-  const markersRef = useRef([]); // [{ marker, el, id }]
+  const markersRef = useRef([]); // [{ marker, el, id, lat, lng }]
 
   // Initialize map once
   useEffect(() => {
@@ -34,15 +35,22 @@ function MapboxPanel({ studios, selected, onSelect }) {
   useEffect(() => {
     if (!mapRef.current || !studios.length) return;
 
-    const addMarkers = () => {
+    const addMarkers = async () => {
       markersRef.current.forEach(({ marker }) => marker.remove());
       markersRef.current = [];
+
+      const token = mapboxgl.accessToken;
+      const resolved = await Promise.all(
+        studios.map(async (studio) => ({
+          studio,
+          ...(await resolveStudioCoords(studio, token)),
+        })),
+      );
 
       const bounds = new mapboxgl.LngLatBounds();
       let hasCoords = false;
 
-      studios.forEach((studio) => {
-        const { lat, lng } = getCoordinates(studio);
+      resolved.forEach(({ studio, lat, lng }) => {
         if (lat == null || lng == null) return;
         hasCoords = true;
         bounds.extend([lng, lat]);
@@ -59,7 +67,7 @@ function MapboxPanel({ studios, selected, onSelect }) {
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
-        markersRef.current.push({ marker, el, id: studio.id });
+        markersRef.current.push({ marker, el, id: studio.id, lat, lng });
       });
 
       if (hasCoords) {
@@ -77,9 +85,9 @@ function MapboxPanel({ studios, selected, onSelect }) {
       el.classList.toggle('is-selected', selected?.id === id);
     });
     if (selected && mapRef.current) {
-      const { lat, lng } = getCoordinates(selected);
-      if (lat != null && lng != null) {
-        mapRef.current.flyTo({ center: [lng, lat], zoom: 12, duration: 800 });
+      const entry = markersRef.current.find((m) => m.id === selected.id);
+      if (entry) {
+        mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12, duration: 800 });
       }
     }
   }, [selected]);

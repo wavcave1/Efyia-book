@@ -4,7 +4,8 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { studiosApi } from '../../lib/api';
 import { ErrorMessage, SectionHeading, Spinner, Stars } from '../../components/efyia/ui';
-import { getCoordinates, getDisplayLocation } from '../../lib/location';
+import { getDisplayLocation } from '../../lib/location';
+import { resolveStudioCoords } from '../../lib/geocode';
 
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -59,22 +60,27 @@ export default function MapPage() {
   useEffect(() => {
     if (!mapRef.current || !studios.length) return;
 
-    const addMarkers = () => {
-      // Clear existing markers
-      markersRef.current.forEach((m) => m.remove());
+    const addMarkers = async () => {
+      markersRef.current.forEach((m) => m.marker.remove());
       markersRef.current = [];
+
+      const token = mapboxgl.accessToken;
+      const resolved = await Promise.all(
+        studios.map(async (studio) => ({
+          studio,
+          ...(await resolveStudioCoords(studio, token)),
+        })),
+      );
 
       const bounds = new mapboxgl.LngLatBounds();
       let hasValidCoords = false;
 
-      studios.forEach((studio) => {
-        const { lat, lng } = getCoordinates(studio);
+      resolved.forEach(({ studio, lat, lng }) => {
         if (lat == null || lng == null) return;
 
         hasValidCoords = true;
         bounds.extend([lng, lat]);
 
-        // Custom marker element
         const el = document.createElement('button');
         el.className = 'eyf-map-pin';
         el.style.background = studio.color || '#62f3d4';
@@ -90,7 +96,7 @@ export default function MapPage() {
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
 
-        markersRef.current.push(marker);
+        markersRef.current.push({ marker, el, id: studio.id, lat, lng });
       });
 
       if (hasValidCoords) {
@@ -127,10 +133,10 @@ export default function MapPage() {
                   className="eyf-card eyf-map-card"
                   style={{ borderColor: selected?.id === studio.id ? 'var(--mint)' : undefined, cursor: 'pointer' }}
                   onClick={() => {
-                    const { lat, lng } = getCoordinates(studio);
                     setSelected((prev) => (prev?.id === studio.id ? null : studio));
-                    if (lat != null && lng != null && mapRef.current) {
-                      mapRef.current.flyTo({ center: [lng, lat], zoom: 12, duration: 800 });
+                    const entry = markersRef.current.find((m) => m.id === studio.id);
+                    if (entry && mapRef.current) {
+                      mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12, duration: 800 });
                     }
                   }}
                 >
