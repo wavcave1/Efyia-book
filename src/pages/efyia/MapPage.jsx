@@ -119,6 +119,41 @@ export default function MapPage() {
           <ErrorMessage message={error} onRetry={fetchStudios} />
         ) : (
           <div className="eyf-map-layout">
+            {/* Sidebar */}
+            <div className="eyf-map-sidebar">
+              {studios.map((studio) => (
+                <article
+                  key={studio.id}
+                  className="eyf-card eyf-map-card"
+                  style={{ borderColor: selected?.id === studio.id ? 'var(--mint)' : undefined, cursor: 'pointer' }}
+                  onClick={() => {
+                    const { lat, lng } = getCoordinates(studio);
+                    setSelected((prev) => (prev?.id === studio.id ? null : studio));
+                    if (lat != null && lng != null && mapRef.current) {
+                      mapRef.current.flyTo({ center: [lng, lat], zoom: 12, duration: 800 });
+                    }
+                  }}
+                >
+                  <div className="eyf-row eyf-row--between eyf-row--start">
+                    <div>
+                      <h3>{studio.name}</h3>
+                      <p className="eyf-muted">{getDisplayLocation(studio)}</p>
+                    </div>
+                    <span className="eyf-price">${studio.pricePerHour}/hr</span>
+                  </div>
+                  <Stars rating={studio.rating || 0} />
+                  <p className="eyf-muted">{studio.description}</p>
+                  <Link
+                    className="eyf-link-button"
+                    to={`/studios/${studio.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View profile
+                  </Link>
+                </article>
+              ))}
+            </div>
+
             {/* Mapbox map */}
             <div className="eyf-card eyf-map-canvas" style={{ position: 'relative', overflow: 'hidden' }}>
               <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
@@ -153,41 +188,6 @@ export default function MapPage() {
                   </Link>
                 </div>
               )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="eyf-map-sidebar">
-              {studios.map((studio) => (
-                <article
-                  key={studio.id}
-                  className="eyf-card eyf-map-card"
-                  style={{ borderColor: selected?.id === studio.id ? 'var(--mint)' : undefined, cursor: 'pointer' }}
-                  onClick={() => {
-                    const { lat, lng } = getCoordinates(studio);
-                    setSelected((prev) => (prev?.id === studio.id ? null : studio));
-                    if (lat != null && lng != null && mapRef.current) {
-                      mapRef.current.flyTo({ center: [lng, lat], zoom: 12, duration: 800 });
-                    }
-                  }}
-                >
-                  <div className="eyf-row eyf-row--between eyf-row--start">
-                    <div>
-                      <h3>{studio.name}</h3>
-                      <p className="eyf-muted">{getDisplayLocation(studio)}</p>
-                    </div>
-                    <span className="eyf-price">${studio.pricePerHour}/hr</span>
-                  </div>
-                  <Stars rating={studio.rating || 0} />
-                  <p className="eyf-muted">{studio.description}</p>
-                  <Link
-                    className="eyf-link-button"
-                    to={`/studios/${studio.slug}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    View profile
-                  </Link>
-                </article>
-              ))}
             </div>
           </div>
         )}
