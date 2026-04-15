@@ -11,6 +11,7 @@
   color: var(--text);
   background: var(--bg);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ─── Typography ─────────────────────────────────────────────────────────── */
@@ -213,7 +214,7 @@
 
 .sp-services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -281,7 +282,7 @@
 
 .sp-reviews-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -359,6 +360,15 @@
   margin-left: auto;
 }
 
+@media (max-width: 600px) {
+  .sp-nav {
+    padding: 0.6rem 1rem;
+    gap: 0.5rem;
+  }
+  .sp-nav a { font-size: 0.8rem; }
+  .sp-nav-title { font-size: 0.85rem; }
+}
+
 /* ─── LAYOUT: Minimal ────────────────────────────────────────────────────── */
 .sp-minimal {}
 
@@ -390,6 +400,7 @@
 @media (max-width: 600px) {
   .sp-minimal-header { flex-direction: column; }
   .sp-minimal-cover { height: 200px; }
+  .sp-minimal-body { padding: 1.5rem 1rem 3rem; }
 }
 
 /* ─── LAYOUT: Hero ───────────────────────────────────────────────────────── */
@@ -440,6 +451,7 @@
 @media (max-width: 600px) {
   .sp-hero-inner { padding: 2rem 1.25rem; }
   .sp-hero-banner { min-height: 70vh; }
+  .sp-hero-content { padding: 1.5rem 1rem 3rem; }
 }
 
 /* ─── LAYOUT: Split ──────────────────────────────────────────────────────── */
@@ -480,6 +492,9 @@
   .sp-split-aside {
     position: static;
     height: 50vh;
+  }
+  .sp-split-main {
+    padding: 2rem 1.25rem 4rem;
   }
 }
 
@@ -539,6 +554,7 @@
 @media (max-width: 600px) {
   .sp-grid-cols-3 { grid-template-columns: 1fr; }
   .sp-grid-masthead { height: 240px; }
+  .sp-grid-masthead-inner { padding: 1.5rem 1rem; }
   .sp-grid-body { padding: 1.5rem 1rem 3rem; }
 }
 
