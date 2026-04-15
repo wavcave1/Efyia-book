@@ -36,22 +36,12 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
 
-    studiosApi.list({ featured: true, limit: 6 })
+    studiosApi.list({ limit: 12 })
       .then(({ studios, pagination }) => {
         if (cancelled) return;
-        if (studios.length > 0) {
-          setFeatured(studios);
-          setStats({ studios: pagination.total });
-          setLoading(false);
-        } else {
-          // No featured studios yet — fall back to top-rated
-          return studiosApi.list({ limit: 6 }).then(({ studios: all, pagination: pg }) => {
-            if (cancelled) return;
-            setFeatured(all);
-            setStats({ studios: pg.total });
-            setLoading(false);
-          });
-        }
+        setFeatured(studios);
+        setStats({ studios: pagination.total });
+        setLoading(false);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -227,7 +217,7 @@ export default function HomePage() {
               onRetry={() => {
                 setError(null);
                 setLoading(true);
-                studiosApi.list({ featured: true, limit: 6 })
+                studiosApi.list({ limit: 12 })
                   .then(({ studios }) => { setFeatured(studios); setLoading(false); })
                   .catch((err) => { setError(err.message); setLoading(false); });
               }}

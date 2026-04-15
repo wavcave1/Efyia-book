@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
-import { analyticsApi, bookingsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
+import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import {
   EmptyState,
@@ -150,7 +150,7 @@ function BookingLocationDetails({ booking }) {
 }
 
 // ─── Client booking rows ──────────────────────────────────────────────────────
-function ClientBookingRows({ bookings, onCancel, currentUserId }) {
+function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioIds = new Set() }) {
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [expandedThread, setExpandedThread] = useState(null);
@@ -219,6 +219,24 @@ function ClientBookingRows({ bookings, onCancel, currentUserId }) {
                 >
                   Book again
                 </Link>
+              ) : null}
+              {booking.status === 'COMPLETED' && booking.studio?.slug ? (
+                reviewedStudioIds.has(booking.studio.id) ? (
+                  <span
+                    className="eyf-badge eyf-badge--sage"
+                    style={{ justifySelf: 'start', fontSize: '0.82rem', padding: '0.3rem 0.7rem' }}
+                  >
+                    Reviewed ✓
+                  </span>
+                ) : (
+                  <Link
+                    to={`/studios/${booking.studio.slug}?tab=reviews`}
+                    className="eyf-button"
+                    style={{ justifySelf: 'start', padding: '0.4rem 0.9rem', minHeight: 'unset', fontSize: '0.85rem' }}
+                  >
+                    Leave a Review
+                  </Link>
+                )
               ) : null}
               <BookingLocationDetails booking={booking} />
             </article>
@@ -492,30 +510,47 @@ export function ClientDashboard() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reviewedStudioIds, setReviewedStudioIds] = useState(new Set());
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    Promise.all([
-      bookingsApi.list().catch(() => []),
-      studiosApi
-        .list({ limit: 50 })
-        .catch(() => ({ studios: [] }))
-        .then(({ studios }) =>
-          studios.filter((s) => favoriteStudioIds.includes(s.id))
-        ),
-    ])
-      .then(([bkgs, favs]) => {
-        setBookings(bkgs);
-        setFavorites(favs);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [favoriteStudioIds]);
+    try {
+      const [bkgs, { studios }] = await Promise.all([
+        bookingsApi.list().catch(() => []),
+        studiosApi.list({ limit: 50 }).catch(() => ({ studios: [] })),
+      ]);
+
+      setBookings(bkgs);
+      setFavorites(studios.filter((s) => favoriteStudioIds.includes(s.id)));
+
+      // Check which studios the current user has already reviewed
+      const completedStudioIds = [...new Set(
+        bkgs
+          .filter((b) => b.status === 'COMPLETED' && b.studio?.id)
+          .map((b) => b.studio.id),
+      )];
+
+      if (completedStudioIds.length > 0 && currentUser?.id) {
+        const reviewResults = await Promise.all(
+          completedStudioIds.map((id) => reviewsApi.listByStudio(id).catch(() => [])),
+        );
+        const reviewed = new Set();
+        reviewResults.forEach((reviews, i) => {
+          if (reviews.some((r) => r.user?.id === currentUser.id || r.userId === currentUser.id)) {
+            reviewed.add(completedStudioIds[i]);
+          }
+        });
+        setReviewedStudioIds(reviewed);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [favoriteStudioIds, currentUser?.id]);
 
   useEffect(() => {
     fetchData();
@@ -561,7 +596,12 @@ export function ClientDashboard() {
           ) : (
             <>
               <h3>Your bookings</h3>
-              <ClientBookingRows bookings={bookings} onCancel={handleCancel} currentUserId={currentUser?.id} />
+              <ClientBookingRows
+                bookings={bookings}
+                onCancel={handleCancel}
+                currentUserId={currentUser?.id}
+                reviewedStudioIds={reviewedStudioIds}
+              />
 
               {favorites.length > 0 ? (
                 <>
@@ -680,10 +720,10 @@ export function StudioDashboard() {
     setShowWizard(false);
     if (studio?.id) localStorage.setItem(`efyia_wizard_seen_${studio.id}`, '1');
   };
-  
+
   const revenue = bookings.filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
-  .reduce((sum, b) => sum + (b.subtotal || 0), 0);
-  
+    .reduce((sum, b) => sum + (b.subtotal || 0), 0);
+
   const pendingCount = bookings.filter((b) => b.status === 'PENDING').length;
 
   return (
@@ -810,13 +850,13 @@ export function StudioDashboard() {
                       <h3 style={{ margin: 0 }}>Revenue</h3>
                       <span className="eyf-muted" style={{ fontSize: '0.85rem' }}>Last 6 months</span>
                     </div>
-                    <RevenueChart data={analyticsData?.monthlyRevenue || []} />
+                    <RevenueChart data={analyticsData?.monthly || []} />
                     {analyticsData ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                         <div>
                           <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Top session type</span>
                           <p style={{ margin: '0.2rem 0 0', fontWeight: 700 }}>
-                            {analyticsData.topSessionTypes?.[0]?.type || 'N/A'}
+                            {analyticsData.topSessionTypes?.[0]?.sessionType || 'N/A'}
                           </p>
                         </div>
                         <div>
@@ -856,7 +896,7 @@ export function StudioDashboard() {
   );
 }
 
-// ─── Admin dashboard (unchanged) ─────────────────────────────────────────────
+// ─── Admin dashboard ─────────────────────────────────────────────────────────
 export function AdminDashboard() {
   const { showToast } = useAppContext();
   const [bookings, setBookings] = useState([]);
@@ -991,7 +1031,7 @@ export function AdminDashboard() {
             </div>
 
             <h3>All bookings</h3>
-            <OwnerBookingRows bookings={bookings} onStatusChange={async () => {}} currentUserId={currentUser?.id} />
+            <OwnerBookingRows bookings={bookings} onStatusChange={async () => {}} currentUserId={null} />
           </>
         )}
       </section>
