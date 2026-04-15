@@ -590,7 +590,6 @@ export default function BookingDirectPage() {
                   ) : null}
                 </div>
 
-                <div className="eyf-grid-2">
                 {(() => {
                   let dayEntry = null;
                   let closedDay = false;
