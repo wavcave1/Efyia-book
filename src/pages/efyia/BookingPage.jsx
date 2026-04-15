@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { availabilityApi, bookingsApi, studiosApi, paymentsApi } from '../../lib/api';
+import { availabilityApi, bookingsApi, paymentsApi, studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { ErrorMessage, Spinner } from '../../components/efyia/ui';
 import { getDisplayLocation } from '../../lib/location';
@@ -21,6 +21,23 @@ function calcFee(sub) {
   const pct = Math.round(sub * FEE_PERCENT * 100) / 100;
   return Math.min(Math.max(FLAT_FEE, pct), FEE_CAP);
 }
+
+// Parse "8:00 AM" or "08:00" → minutes since midnight
+function parseToMinutes(t) {
+  if (!t) return 0;
+  const ampm = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (ampm) {
+    let h = parseInt(ampm[1], 10);
+    const m = parseInt(ampm[2], 10);
+    if (ampm[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (ampm[3].toUpperCase() === 'AM' && h === 12) h = 0;
+    return h * 60 + m;
+  }
+  const parts = t.split(':').map(Number);
+  return (parts[0] || 0) * 60 + (parts[1] || 0);
+}
+
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -252,6 +269,7 @@ export default function BookingPage() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('10:00 AM');
   const [hours, setHours] = useState(2);
+  const [schedule, setSchedule] = useState([]);
   const [step, setStep] = useState(1);
 
   const [booking, setBooking] = useState(null);
@@ -290,6 +308,7 @@ export default function BookingPage() {
 
         setSessionType(types[0] || '');
         setStudioLoading(false);
+        availabilityApi.getSchedule(id).then(setSchedule).catch(() => {});
       })
       .catch((err) => {
         setStudioError(err.message);
@@ -555,37 +574,83 @@ export default function BookingPage() {
                   ) : null}
                 </div>
 
-                <div className="eyf-grid-2">
-                  <div>
-                    <label>
-                      Date
-                      <input
-                        type="date"
-                        value={date}
-                        min={todayString()}
-                        onChange={(e) => setDate(e.target.value)}
-                      />
-                    </label>
+                {(() => {
+                  // Determine studio hours for the selected date
+                  let dayEntry = null;
+                  let closedDay = false;
+                  if (date && schedule.length) {
+                    const dow = new Date(date + 'T12:00:00').getDay();
+                    dayEntry = schedule.find((s) => s.dayOfWeek === dow);
+                    closedDay = dayEntry ? !dayEntry.isOpen : false;
+                  }
+                  const openMin = dayEntry?.isOpen ? parseToMinutes(dayEntry.openTime) : 0;
+                  const closeMin = dayEntry?.isOpen ? parseToMinutes(dayEntry.closeTime) : 24 * 60;
 
-                    {fieldErrors.date ? (
-                      <p className="eyf-field-error">{fieldErrors.date}</p>
-                    ) : null}
-                  </div>
+                  const availableTimes = TIMES.filter((t) => {
+                    if (!dayEntry) return true; // no schedule loaded yet — show all
+                    if (!dayEntry.isOpen) return false;
+                    const tMin = parseToMinutes(t);
+                    return tMin >= openMin && tMin < closeMin;
+                  });
 
-                  <label>
-                    Start time
-                    <select
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                    >
-                      {TIMES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+                  return (
+                    <div className="eyf-grid-2">
+                      <div>
+                        <label>
+                          Date
+                          <input
+                            type="date"
+                            value={date}
+                            min={todayString()}
+                            onChange={(e) => {
+                              const newDate = e.target.value;
+                              setDate(newDate);
+                              // Clear time if it falls outside new day's hours
+                              if (newDate && schedule.length) {
+                                const dow = new Date(newDate + 'T12:00:00').getDay();
+                                const entry = schedule.find((s) => s.dayOfWeek === dow);
+                                if (entry && entry.isOpen) {
+                                  const tMin = parseToMinutes(time);
+                                  const oMin = parseToMinutes(entry.openTime);
+                                  const cMin = parseToMinutes(entry.closeTime);
+                                  if (tMin < oMin || tMin >= cMin) setTime('');
+                                } else if (entry && !entry.isOpen) {
+                                  setTime('');
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                        {closedDay && date ? (
+                          <p className="eyf-field-error">
+                            Studio is closed on {DAY_NAMES[new Date(date + 'T12:00:00').getDay()]}s
+                          </p>
+                        ) : fieldErrors.date ? (
+                          <p className="eyf-field-error">{fieldErrors.date}</p>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <label>
+                          Start time
+                          <select
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
+                            disabled={closedDay}
+                          >
+                            {closedDay ? (
+                              <option value="">Studio closed</option>
+                            ) : availableTimes.length ? (
+                              availableTimes.map((t) => <option key={t} value={t}>{t}</option>)
+                            ) : (
+                              TIMES.map((t) => <option key={t} value={t}>{t}</option>)
+                            )}
+                          </select>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <label>
                   Duration: {hours} hour{hours !== 1 ? 's' : ''}

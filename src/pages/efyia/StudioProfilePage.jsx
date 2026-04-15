@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { reviewsApi, studiosApi } from '../../lib/api';
+import { availabilityApi, reviewsApi, studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { Badge, EmptyState, ErrorMessage, GalleryCarousel, SectionHeading, Spinner, Stars } from '../../components/efyia/ui';
 import ProfileCustomizer from '../../components/studio/ProfileCustomizer';
@@ -92,6 +92,7 @@ export default function StudioProfilePage() {
   const { favoriteStudioIds, toggleFavorite, currentUser } = useAppContext();
 
   const [studio, setStudio] = useState(null);
+  const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('overview');
@@ -100,6 +101,15 @@ export default function StudioProfilePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState('content');
 
+  // Convert "HH:MM" 24-hr to "h AM/PM" for display
+  const fmt24 = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const h12 = h % 12 || 12;
+    return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+
   const fetchStudio = () => {
     setLoading(true);
     setError(null);
@@ -107,6 +117,8 @@ export default function StudioProfilePage() {
       .then((data) => {
         setStudio(data);
         setLoading(false);
+        // Fetch schedule in parallel after we have the studioId
+        availabilityApi.getSchedule(data.id).then(setSchedule).catch(() => {});
       })
       .catch((err) => {
         if (err.status === 404) {
@@ -756,6 +768,24 @@ export default function StudioProfilePage() {
             <button type="button" className="eyf-add-prompt" onClick={() => openDrawer('contact')} style={{ padding: '0.6rem 0.75rem', fontSize: '0.82rem' }}>
               <span className="eyf-add-prompt__label" style={{ fontSize: '0.82rem' }}>+ Add social links</span>
             </button>
+          ) : null}
+
+          {/* Hours */}
+          {schedule.length > 0 ? (
+            <div style={{ display: 'grid', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--muted)' }}>Hours</span>
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day, i) => {
+                const entry = schedule.find((s) => s.dayOfWeek === i);
+                return (
+                  <div key={day} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', minWidth: 32 }}>{day}</span>
+                    {entry?.isOpen
+                      ? <span style={{ color: 'var(--text)' }}>{fmt24(entry.openTime)} – {fmt24(entry.closeTime)}</span>
+                      : <span style={{ color: 'var(--muted)' }}>Closed</span>}
+                  </div>
+                );
+              })}
+            </div>
           ) : null}
 
           {currentUser && !isOwner ? (
