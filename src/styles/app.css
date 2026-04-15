@@ -697,7 +697,7 @@ html { overflow-x: hidden; }
   .eyf-search-layout,
   .eyf-map-layout,
   .eyf-profile-layout,
-  .eyf-grid-2 { grid-template-columns: 1fr; }
+  .eyf-grid-2 { grid-template-columns: minmax(0, 1fr); }
   .eyf-booking-sidebar { position: static; }
 }
 
@@ -735,6 +735,12 @@ html { overflow-x: hidden; }
     width: 2rem;
     height: 2rem;
     font-size: 0.9rem;
+  }
+
+  /* Studio profile hero: wrap title + actions vertically on small screens */
+  .eyf-profile-hero {
+    flex-wrap: wrap;
+    align-items: flex-start;
   }
 }
 
@@ -2128,6 +2134,11 @@ html { overflow-x: hidden; }
   .eyf-tabs::-webkit-scrollbar {
     display: none;
   }
+
+  /* Studio profile — reduce oversized heading on mobile */
+  .eyf-profile-main h1 {
+    font-size: clamp(1.5rem, 5vw, 2.4rem);
+  }
 }
 
 @media (min-width: 640px) {
@@ -2756,6 +2767,7 @@ img, video, iframe { max-width: 100%; }
 /* Ensure flex/grid children never force width past their container */
 .eyf-row, .eyf-nav__actions, .eyf-nav__links { min-width: 0; }
 .eyf-card, .eyf-section, .eyf-page { min-width: 0; }
+.eyf-profile-main { min-width: 0; }
 
 /* ─── Nav: tighten on mobile so all buttons fit in one row ───────────────── */
 @media (max-width: 620px) {
