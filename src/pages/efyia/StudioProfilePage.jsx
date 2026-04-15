@@ -703,12 +703,21 @@ export default function StudioProfilePage() {
             />
           ) : null}
 
-          {(studio.hourlyRate || studio.pricePerHour || studio.basePrice) ? (
-            <div className="eyf-booking-sidebar__price">
-              ${studio.hourlyRate || studio.pricePerHour || studio.basePrice}
-              <span> / hour</span>
-            </div>
-          ) : null}
+          {(() => {
+            const svcPrices = (studio.services || []).map((s) => Number(s.price)).filter((p) => p > 0);
+            const lowestSvcPrice = svcPrices.length ? Math.min(...svcPrices) : null;
+            const displayPrice = lowestSvcPrice || studio.hourlyRate || studio.pricePerHour || studio.basePrice;
+            const showStartingAt = svcPrices.length > 0;
+            return displayPrice ? (
+              <div className="eyf-booking-sidebar__price">
+                {showStartingAt ? (
+                  <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', color: 'var(--muted)', marginBottom: '0.2rem' }}>Starting at</span>
+                ) : null}
+                ${displayPrice}
+                <span> / hour</span>
+              </div>
+            ) : null;
+          })()}
 
           {studio.rating > 0 ? (
             <div className="eyf-row" style={{ gap: '0.4rem' }}>

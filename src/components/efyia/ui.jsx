@@ -178,6 +178,9 @@ export function StudioCard({ studio, onFavoriteToggle, isFavorite = false }) {
 const color = studio.color || studio.accentColor || '#62f3d4';
 const locationLabel = getDisplayLocation(studio);
 const hourlyRate = studio.hourlyRate || studio.pricePerHour || studio.basePrice || null;
+const svcPrices = (studio.services || []).map((s) => Number(s.price)).filter((p) => p > 0);
+const lowestPrice = svcPrices.length ? Math.min(...svcPrices) : hourlyRate;
+const isFromPrice = svcPrices.length > 0 && lowestPrice !== hourlyRate;
 
 // Build image list from gallery, coverUrl, logoUrl in priority order
 const images = [];
@@ -211,9 +214,10 @@ style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: 2 }}
 </button>
 ) : null}
 
-{hourlyRate ? (
-<div className="eyf-studio-card__price" aria-label={`$${hourlyRate} per hour`}>
-${hourlyRate}<span style={{ fontWeight: 500, opacity: 0.75 }}>/hr</span>
+{lowestPrice ? (
+<div className="eyf-studio-card__price" aria-label={`${isFromPrice ? 'from ' : ''}$${lowestPrice} per hour`}>
+{isFromPrice ? <span style={{ fontSize: '0.72em', fontWeight: 500, opacity: 0.85 }}>from </span> : null}
+${lowestPrice}<span style={{ fontWeight: 500, opacity: 0.75 }}>/hr</span>
 </div>
 ) : null}
 </div>

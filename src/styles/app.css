@@ -148,6 +148,13 @@ html { overflow-x: hidden; }
   backdrop-filter: blur(18px);
   border-radius: 18px;
 }
+/* ─── Nav left group (brand + discovery links) ───────────────────────────────── */
+.eyf-nav__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
 [data-theme="light"] .eyf-nav {
   border-color: var(--border);
 }
@@ -160,6 +167,7 @@ html { overflow-x: hidden; }
   color: var(--text);
   font-size: 1.2rem;
   font-weight: 800;
+  font-family: var(--font-display);
 }
 .eyf-brand em { color: var(--mint); font-style: normal; }
 .eyf-brand__mark {
@@ -192,11 +200,12 @@ html { overflow-x: hidden; }
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--muted);
-  display: inline-grid;
-  place-items: center;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: border-color 0.15s, color 0.15s;
 }
+.eyf-theme-toggle svg { display: block; flex-shrink: 0; }
 .eyf-theme-toggle:hover { border-color: var(--mint); color: var(--mint); }
 
 /* ─── Buttons ─────────────────────────────────────────────────────────────────── */
@@ -681,8 +690,9 @@ html { overflow-x: hidden; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .eyf-nav { flex-wrap: wrap; }
-  .eyf-nav__links { order: 3; width: 100%; }
+  .eyf-nav { flex-wrap: wrap; align-items: center; }
+  .eyf-nav__left { flex-direction: row; flex-wrap: wrap; flex: 1; gap: 0.5rem; align-items: center; }
+  .eyf-nav__links { width: 100%; }
   .eyf-hero,
   .eyf-search-layout,
   .eyf-map-layout,
@@ -1475,7 +1485,6 @@ html { overflow-x: hidden; }
   position: absolute;
   bottom: 0.75rem;
   left: 0.75rem;
-  right: 0.75rem;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -1485,6 +1494,8 @@ html { overflow-x: hidden; }
   align-items: center;
   gap: 0.75rem;
   box-shadow: var(--shadow-sm);
+  max-width: 320px;
+  width: calc(100% - 1.5rem);
 }
 
 .eyf-map-pin.is-selected {

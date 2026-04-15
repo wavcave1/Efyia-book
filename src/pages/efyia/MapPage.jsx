@@ -42,13 +42,20 @@ export default function MapPage() {
     if (mapRef.current) return; // already initialized
 
     mapRef.current = new mapboxgl.Map({
-  container: mapContainerRef.current,
-  style: 'mapbox://styles/mapbox/standard',
-  center: [-98.5795, 39.8283],
-  zoom: 3,
-});
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/standard',
+      center: [-98.5795, 39.8283],
+      zoom: 3,
+    });
 
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Clicking the map background (not a pin) dismisses the preview
+    mapRef.current.on('click', (e) => {
+      if (!e.originalEvent.target.closest('.eyf-map-pin')) {
+        setSelected(null);
+      }
+    });
 
     return () => {
       mapRef.current?.remove();
@@ -164,30 +171,50 @@ export default function MapPage() {
             <div className="eyf-card eyf-map-canvas" style={{ position: 'relative', overflow: 'hidden' }}>
               <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
 
-              {/* Selected studio overlay */}
+              {/* Selected studio overlay — compact card, bottom-left, with close button */}
               {selected && (
                 <div
                   style={{
                     position: 'absolute',
                     bottom: '1rem',
                     left: '1rem',
-                    right: '1rem',
                     background: 'var(--card)',
                     border: '1px solid var(--border)',
                     borderRadius: '14px',
                     padding: '1rem',
+                    maxWidth: '320px',
+                    width: 'calc(100% - 2rem)',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '1rem',
+                    flexDirection: 'column',
+                    gap: '0.6rem',
                     zIndex: 10,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
                   }}
                 >
-                  <div>
-                    <strong>{selected.name}</strong>
-                    <p className="eyf-muted" style={{ margin: '0.25rem 0 0' }}>
-                      {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
-                    </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.95rem' }}>{selected.name}</strong>
+                      <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
+                        {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(null)}
+                      aria-label="Close studio preview"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--muted)',
+                        fontSize: '1.1rem',
+                        lineHeight: 1,
+                        padding: '0',
+                        flexShrink: 0,
+                      }}
+                    >
+                      ✕
+                    </button>
                   </div>
                   <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
                     View profile

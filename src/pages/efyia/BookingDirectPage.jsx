@@ -21,14 +21,6 @@ function calcFee(sub) {
   const pct = Math.round(sub * FEE_PERCENT * 100) / 100;
   return Math.min(Math.max(FLAT_FEE, pct), FEE_CAP);
 }
-const DEFAULT_SESSION_TYPES = [
-  'Recording',
-  'Mixing',
-  'Mastering',
-  'Podcast',
-  'Production',
-];
-
 function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -282,10 +274,11 @@ export default function BookingDirectPage() {
       .then((data) => {
         setStudio(data);
 
+        const serviceTypes = (data.services || []).map((s) => s.name).filter(Boolean);
         const types =
           Array.isArray(data.sessionTypes) && data.sessionTypes.length
             ? data.sessionTypes
-            : DEFAULT_SESSION_TYPES;
+            : serviceTypes;
 
         setSessionType(types[0] || '');
         setStudioLoading(false);
@@ -319,7 +312,7 @@ export default function BookingDirectPage() {
   const availableSessionTypes =
     Array.isArray(studio.sessionTypes) && studio.sessionTypes.length
       ? studio.sessionTypes
-      : DEFAULT_SESSION_TYPES;
+      : (studio.services || []).map((s) => s.name).filter(Boolean);
 
   const pricePerHour = getPriceForSession(studio, sessionType) || studio.pricePerHour || 0;
   const selectedService = getServiceForSession(studio, sessionType);
