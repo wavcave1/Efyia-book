@@ -13,6 +13,7 @@ import SearchPage from './pages/efyia/SearchPage';
 import StudioProfilePage from './pages/efyia/StudioProfilePage';
 import StudioPublicPage from './pages/efyia/StudioPublicPage';
 import MapPage from './pages/efyia/MapPage';
+import MessagesPage from './pages/efyia/MessagesPage';
 import TermsPage from './pages/efyia/TermsPage';
 import PrivacyPage from './pages/efyia/PrivacyPage';
 
@@ -38,6 +39,14 @@ export default function App() {
             <Route path="discover" element={<SearchPage />} />
             <Route path="map" element={<MapPage />} />
             <Route path="studios/:slug" element={<StudioProfilePage />} />
+            <Route
+              path="messages"
+              element={
+                <ProtectedRoute>
+                  <MessagesPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="terms" element={<TermsPage />} />
             <Route path="privacy" element={<PrivacyPage />} />
             <Route

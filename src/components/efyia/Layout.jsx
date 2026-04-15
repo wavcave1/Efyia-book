@@ -109,6 +109,9 @@ export default function Layout() {
           <ThemeToggle />
           {currentUser ? (
             <>
+              <NavLink to="/messages" className="eyf-button eyf-button--ghost" style={{ fontSize: '0.875rem' }}>
+                Messages
+              </NavLink>
               <span className="eyf-muted">{currentUser.name}</span>
               <button
                 type="button"
