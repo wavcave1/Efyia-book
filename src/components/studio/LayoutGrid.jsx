@@ -31,6 +31,7 @@ export default function LayoutGrid({ studio }) {
     services,
     socialLinks,
     contactInfo,
+    gallery,
     reviews,
     id,
   } = studio;
@@ -73,6 +74,27 @@ export default function LayoutGrid({ studio }) {
             </div>
           ) : null}
         </section>
+
+        {/* Gallery */}
+        {gallery?.length ? (
+          <section className="sp-section">
+            <h2 className="sp-heading-md">Gallery</h2>
+            <div className="sp-gallery">
+              {gallery.map((img, i) => (
+                <div key={i} className="sp-gallery-item">
+                  <img
+                    src={img.url}
+                    alt={img.caption || `Studio photo ${i + 1}`}
+                    loading="lazy"
+                  />
+                  {img.caption ? (
+                    <span className="sp-gallery-item__caption">{img.caption}</span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {/* Services grid */}
         {services?.length ? (

@@ -181,6 +181,52 @@
   opacity: 0.9;
 }
 
+/* ─── Gallery ──────────────────────────────────────────────────────────── */
+.sp-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.sp-gallery-item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.sp-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.sp-gallery-item:hover img {
+  transform: scale(1.04);
+}
+
+.sp-gallery-item__caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.4rem 0.65rem;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  transform: translateY(100%);
+  transition: transform 0.2s ease;
+}
+
+.sp-gallery-item:hover .sp-gallery-item__caption {
+  transform: translateY(0);
+}
+
 /* ─── Services ───────────────────────────────────────────────────────────── */
 .sp-services-list {
   display: flex;
