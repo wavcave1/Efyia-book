@@ -1,8 +1,68 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Toast } from './ui';
+import { bookingsApi, bookingMessagesApi } from '../../lib/api';
+
+function MessagesFab() {
+  const { currentUser } = useAppContext();
+  const location = useLocation();
+  const [unread, setUnread] = useState(0);
+
+  const fetchUnread = useCallback(() => {
+    if (!currentUser) return;
+    bookingsApi.list().then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      const seen = JSON.parse(localStorage.getItem('efyia_msg_seen') || '{}');
+      let count = 0;
+      Promise.all(
+        list.map((b) =>
+          bookingMessagesApi.list(b.id).then((msgs) => {
+            const total = Array.isArray(msgs) ? msgs.length : 0;
+            const lastSeen = seen[b.id] ?? 0;
+            if (total > lastSeen) count += total - lastSeen;
+          }).catch(() => {}),
+        ),
+      ).then(() => setUnread(count));
+    }).catch(() => {});
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (location.pathname !== '/messages') return;
+    bookingsApi.list().then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      Promise.all(
+        list.map((b) =>
+          bookingMessagesApi.list(b.id).then((msgs) => {
+            const total = Array.isArray(msgs) ? msgs.length : 0;
+            return [b.id, total];
+          }).catch(() => [b.id, 0]),
+        ),
+      ).then((entries) => {
+        localStorage.setItem('efyia_msg_seen', JSON.stringify(Object.fromEntries(entries)));
+        setUnread(0);
+      });
+    }).catch(() => {});
+  }, [location.pathname]);
+
+  useEffect(() => { fetchUnread(); }, [fetchUnread]);
+
+  if (!currentUser) return null;
+
+  return (
+    <NavLink to="/messages" className="eyf-msg-fab" aria-label="Messages">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+      {unread > 0 && (
+        <span className="eyf-msg-fab__badge" aria-label={`${unread} unread messages`}>
+          {unread > 99 ? '99+' : unread}
+        </span>
+      )}
+    </NavLink>
+  );
+}
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -109,9 +169,6 @@ export default function Layout() {
           <ThemeToggle />
           {currentUser ? (
             <>
-              <NavLink to="/messages" className="eyf-button eyf-button--ghost" style={{ fontSize: '0.875rem' }}>
-                Messages
-              </NavLink>
               <span className="eyf-muted">{currentUser.name}</span>
               <button
                 type="button"
@@ -143,6 +200,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      <MessagesFab />
       <Toast message={toast} onClose={() => setToast('')} />
     </div>
   );
