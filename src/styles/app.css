@@ -720,6 +720,11 @@ html { overflow-x: hidden; }
   transform: scale(0.96);
 }
 
+.eyf-msg-fab--open {
+  background: linear-gradient(135deg, var(--forest), var(--sage), var(--mint));
+  box-shadow: 0 4px 24px rgba(98, 243, 212, 0.5);
+}
+
 @keyframes eyf-fab-shimmer {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
