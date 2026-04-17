@@ -1817,6 +1817,25 @@ html { overflow-x: hidden; }
   justify-content: flex-end;
 }
 
+/* ─── Booking card — compact variant ────────────────────────────────────── */
+.eyf-card--booking {
+  padding: 0.75rem 1rem;
+}
+
+.eyf-card--booking.eyf-stack {
+  gap: 0.5rem;
+}
+
+.eyf-card--booking h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.eyf-card--booking .eyf-muted {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
 /* ─── Carousel: studio cards ──────────────────────────────────────────────── */
 .eyf-card-carousel {
   position: relative;

@@ -151,9 +151,11 @@ function BookingLocationDetails({ booking }) {
 
 // ─── Client booking rows ──────────────────────────────────────────────────────
 function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioIds = new Set() }) {
+  const PAGE = 5;
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [expandedThread, setExpandedThread] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE);
 
   if (!bookings.length) {
     return (
@@ -186,9 +188,9 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
       ) : null}
 
       <div className="eyf-stack">
-        {bookings.map((booking) => (
+        {bookings.slice(0, visibleCount).map((booking) => (
           <div key={booking.id} className="eyf-stack" style={{ gap: '0.55rem' }}>
-            <article className="eyf-card eyf-stack">
+            <article className="eyf-card eyf-card--booking eyf-stack">
               <div className="eyf-row eyf-row--between eyf-row--start">
                 <div>
                   <h3>{booking.studio?.name || 'Studio'}</h3>
@@ -250,6 +252,16 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           </div>
         ))}
       </div>
+      {bookings.length > visibleCount && (
+        <button
+          type="button"
+          className="eyf-button eyf-button--ghost"
+          style={{ justifySelf: 'center', marginTop: '0.25rem' }}
+          onClick={() => setVisibleCount((n) => n + PAGE)}
+        >
+          Show more ({bookings.length - visibleCount} remaining)
+        </button>
+      )}
     </>
   );
 }
