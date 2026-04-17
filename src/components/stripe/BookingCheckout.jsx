@@ -13,6 +13,7 @@ amountCents,
 bookingDetails,
 onSuccess,
 onError,
+isDepositPayment,
 }) {
 const stripePromise = useMemo(() => {
 if (!publishableKey) return null;
@@ -71,12 +72,13 @@ amountCents={amountCents}
 bookingDetails={bookingDetails}
 onSuccess={onSuccess}
 onError={onError}
+isDepositPayment={isDepositPayment}
 />
 </Elements>
 );
 }
 
-function CheckoutForm({ bookingId, studioName, amountCents, bookingDetails, onSuccess, onError }) {
+function CheckoutForm({ bookingId, studioName, amountCents, bookingDetails, onSuccess, onError, isDepositPayment }) {
 const stripe = useStripe();
 const elements = useElements();
 const [processing, setProcessing] = useState(false);
@@ -134,7 +136,7 @@ return (
 <span>{bookingDetails.duration}</span>
 </div>
 <div className="amount-row">
-<span>Total due</span>
+<span>{isDepositPayment ? 'Deposit due' : 'Total due'}</span>
 <strong>${amountDollars}</strong>
 </div>
 </div>

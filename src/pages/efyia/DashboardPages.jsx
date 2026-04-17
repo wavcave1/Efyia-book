@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
-import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi } from '../../lib/api';
+import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import {
   EmptyState,
@@ -156,6 +156,8 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   const [cancelling, setCancelling] = useState(false);
   const [expandedThread, setExpandedThread] = useState(null);
   const [visibleCount, setVisibleCount] = useState(PAGE);
+  const [finalPaymentBooking, setFinalPaymentBooking] = useState(null);
+  const [processingFinalPayment, setProcessingFinalPayment] = useState(false);
 
   if (!bookings.length) {
     return (
@@ -173,6 +175,16 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
     setConfirmCancel(null);
   };
 
+  const handleFinalPaymentSuccess = () => {
+    // Reload to refresh booking status
+    window.location.reload();
+  };
+
+  const calculateRemainingBalance = (booking) => {
+    if (!booking.depositAmount || !booking.total) return 0;
+    return booking.total - booking.depositAmount;
+  };
+
   return (
     <>
       {confirmCancel ? (
@@ -185,6 +197,116 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           onConfirm={handleConfirmCancel}
           onClose={() => setConfirmCancel(null)}
         />
+      ) : null}
+
+      {finalPaymentBooking ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 200,
+            display: 'grid',
+            placeItems: 'center',
+            padding: '1rem',
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Final payment"
+        >
+          <div
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 20,
+              padding: '2rem',
+              width: 'min(520px, 100%)',
+              display: 'grid',
+              gap: '1.25rem',
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  margin: '0 0 0.35rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: 'var(--mint)',
+                }}
+              >
+                Payment due
+              </p>
+              <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Pay Remaining Balance</h2>
+              <p
+                style={{
+                  margin: '0.25rem 0 0',
+                  color: 'var(--muted)',
+                  fontSize: '0.9rem',
+                }}
+              >
+                {finalPaymentBooking.studio?.name}
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <span style={{ color: 'var(--muted)' }}>Session</span>
+                <strong>{finalPaymentBooking.date} at {finalPaymentBooking.time}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <span style={{ color: 'var(--muted)' }}>Total session cost</span>
+                <strong>${finalPaymentBooking.total?.toFixed(2)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                <span style={{ color: 'var(--muted)' }}>Deposit paid</span>
+                <strong style={{ color: 'var(--mint)' }}>−${finalPaymentBooking.depositAmount?.toFixed(2)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem' }}>
+                <strong>Balance due</strong>
+                <strong style={{ color: 'var(--mint)' }}>${calculateRemainingBalance(finalPaymentBooking).toFixed(2)}</strong>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>
+              Payment will be processed securely by Stripe.
+            </p>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem',
+              }}
+            >
+              <button
+                type="button"
+                className="eyf-button eyf-button--ghost"
+                onClick={() => setFinalPaymentBooking(null)}
+                disabled={processingFinalPayment}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="eyf-button"
+                onClick={handleFinalPaymentSuccess}
+                disabled={processingFinalPayment}
+              >
+                {processingFinalPayment ? 'Processing...' : 'Proceed to Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <div className="eyf-stack">
@@ -200,8 +322,28 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
                 </div>
                 <div className="eyf-booking-meta">
                   <BookingStatusBadge status={booking.status} />
+                  {booking.depositPaid && !booking.finalPaymentDate && (
+                    <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                      FINAL PAYMENT DUE
+                    </span>
+                  )}
+                  {booking.finalPaymentDate && (
+                    <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                      PAID
+                    </span>
+                  )}
                   <strong>${booking.total?.toFixed(2)}</strong>
-                  {['PENDING', 'CONFIRMED'].includes(booking.status) ? (
+                  {booking.depositPaid && !booking.finalPaymentDate && booking.status === 'CONFIRMED' ? (
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--secondary"
+                      style={{ padding: '0.4rem 0.75rem', minHeight: 'unset', fontSize: '0.82rem' }}
+                      onClick={() => setFinalPaymentBooking(booking)}
+                    >
+                      Pay Balance
+                    </button>
+                  ) : null}
+                  {['PENDING', 'CONFIRMED'].includes(booking.status) && !booking.depositPaid ? (
                     <button
                       type="button"
                       className="eyf-button eyf-button--ghost"
@@ -271,6 +413,8 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [acting, setActing] = useState(false);
   const [expandedThread, setExpandedThread] = useState(null);
+  const [finalPaymentLoading, setFinalPaymentLoading] = useState(null);
+  const [finalPaymentError, setFinalPaymentError] = useState(null);
 
   if (!bookings.length) {
     return (
@@ -286,6 +430,23 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
     await onStatusChange(confirmAction.booking.id, confirmAction.action);
     setActing(false);
     setConfirmAction(null);
+  };
+
+  const handleRequestFinalPayment = async (bookingId) => {
+    setFinalPaymentLoading(bookingId);
+    setFinalPaymentError(null);
+    try {
+      await depositApi.payFinal(bookingId);
+      // Refresh bookings or show success message
+      if (onStatusChange) {
+        // Refetch bookings to update the UI
+        window.location.reload();
+      }
+    } catch (err) {
+      setFinalPaymentError(err.message || 'Failed to request final payment');
+    } finally {
+      setFinalPaymentLoading(null);
+    }
   };
 
   return (
@@ -333,6 +494,16 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
               </div>
               <div className="eyf-booking-meta">
                 <BookingStatusBadge status={booking.status} />
+                {booking.depositPaid && !booking.finalPaymentDate && (
+                  <span className="eyf-badge eyf-badge--mint" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                    DEPOSIT PAID · FINAL DUE
+                  </span>
+                )}
+                {booking.finalPaymentDate && (
+                  <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                    FULLY PAID
+                  </span>
+                )}
                 <strong>${booking.total?.toFixed(2)}</strong>
 
                 {booking.status === 'PENDING' ? (
@@ -372,6 +543,21 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
 
                 {booking.status === 'CONFIRMED' ? (
                   <>
+                    {booking.depositPaid && !booking.finalPaymentDate ? (
+                      <button
+                        type="button"
+                        className="eyf-button eyf-button--secondary"
+                        style={{
+                          padding: '0.4rem 0.75rem',
+                          minHeight: 'unset',
+                          fontSize: '0.85rem',
+                        }}
+                        onClick={() => handleRequestFinalPayment(booking.id)}
+                        disabled={finalPaymentLoading === booking.id}
+                      >
+                        {finalPaymentLoading === booking.id ? 'Requesting...' : 'Request Final Payment'}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="eyf-button eyf-button--ghost"

@@ -79,7 +79,7 @@ function buildInitialForm(studio) {
     bookingInfo:
       studio?.bookingInfo && typeof studio.bookingInfo === 'object' && !Array.isArray(studio.bookingInfo)
         ? studio.bookingInfo
-        : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', depositPercent: '' },
+        : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', requireDeposit: false, depositPercent: '' },
     genres: asArray(studio?.genres),
     amenities: asArray(studio?.amenities),
     testimonials: asArray(studio?.testimonials),
@@ -273,6 +273,11 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     setSaveState('idle');
   }, []);
 
+  const setBookingInfoBool = useCallback((field) => (e) => {
+    setForm((prev) => ({ ...prev, bookingInfo: { ...prev.bookingInfo, [field]: e.target.checked } }));
+    setSaveState('idle');
+  }, []);
+
   const setTagField = useCallback((field) => (tags) => {
     setForm((prev) => ({ ...prev, [field]: Array.isArray(tags) ? tags : [] }));
     setSaveState('idle');
@@ -435,9 +440,10 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       advanceNoticeDays: toNum(info.advanceNoticeDays),
       notes: info.notes || null,
       cancellationPolicy: info.cancellationPolicy || null,
-      depositPercent: toNum(info.depositPercent),
+      requireDeposit: info.requireDeposit === true ? true : null,
+      depositPercent: info.requireDeposit ? toNum(info.depositPercent) : null,
     };
-    return Object.values(cleaned).some((v) => v !== null) ? cleaned : null;
+    return Object.values(cleaned).some((v) => v !== null && v !== false) ? cleaned : null;
   }
 
   function normalizeOptionalNumber(value) {
@@ -1012,19 +1018,39 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               placeholder="Available Mon–Sat 10am–2am. 50% deposit required to confirm. 48hr cancellation policy."
             />
           </FieldGroup>
-          <FieldGroup
-            label="Deposit required (%)"
-            hint="Clients pay this percentage upfront to hold their session. Leave blank for full payment at booking."
-          >
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={form.bookingInfo.depositPercent || ''}
-              onChange={setBookingInfo('depositPercent')}
-              placeholder="e.g. 50"
-            />
+
+          <SectionDivider title="Deposit Policy" />
+          <FieldGroup>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <input
+                type="checkbox"
+                id="require-deposit"
+                checked={form.bookingInfo.requireDeposit || false}
+                onChange={setBookingInfoBool('requireDeposit')}
+                style={{ width: 18, height: 18, cursor: 'pointer' }}
+              />
+              <label htmlFor="require-deposit" style={{ cursor: 'pointer', flex: 1, margin: 0 }}>
+                Require a deposit to confirm bookings
+              </label>
+            </div>
           </FieldGroup>
+
+          {form.bookingInfo.requireDeposit && (
+            <FieldGroup
+              label="Deposit percentage"
+              hint="Clients will pay this percentage upfront. You request the remaining balance when ready."
+            >
+              <input
+                type="number"
+                min="10"
+                max="100"
+                step="5"
+                value={form.bookingInfo.depositPercent || '50'}
+                onChange={setBookingInfo('depositPercent')}
+                placeholder="50"
+              />
+            </FieldGroup>
+          )}
           
          <FieldGroup
   label="Cancellation policy"
