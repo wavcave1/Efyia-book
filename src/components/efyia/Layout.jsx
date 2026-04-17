@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Toast } from './ui';
@@ -8,7 +8,16 @@ import { bookingsApi, bookingMessagesApi } from '../../lib/api';
 function MessagesFab() {
   const { currentUser } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
+  const returnPath = useRef(null);
+
+  const isOpen = location.pathname === '/messages';
+
+  const dashboardPath =
+    currentUser?.role === 'ADMIN' ? '/dashboard/admin'
+    : currentUser?.role === 'OWNER' ? '/dashboard/studio'
+    : '/dashboard/client';
 
   const fetchUnread = useCallback(() => {
     if (!currentUser) return;
@@ -29,7 +38,7 @@ function MessagesFab() {
   }, [currentUser]);
 
   useEffect(() => {
-    if (location.pathname !== '/messages') return;
+    if (!isOpen) return;
     bookingsApi.list().then((data) => {
       const list = Array.isArray(data) ? data : [];
       Promise.all(
@@ -44,23 +53,45 @@ function MessagesFab() {
         setUnread(0);
       });
     }).catch(() => {});
-  }, [location.pathname]);
+  }, [isOpen]);
 
   useEffect(() => { fetchUnread(); }, [fetchUnread]);
 
   if (!currentUser) return null;
 
+  const handleClick = () => {
+    if (isOpen) {
+      navigate(returnPath.current || dashboardPath);
+      returnPath.current = null;
+    } else {
+      returnPath.current = location.pathname;
+      navigate('/messages');
+    }
+  };
+
   return (
-    <NavLink to="/messages" className="eyf-msg-fab" aria-label="Messages">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-      {unread > 0 && (
+    <button
+      type="button"
+      className={`eyf-msg-fab${isOpen ? ' eyf-msg-fab--open' : ''}`}
+      aria-label={isOpen ? 'Close messages' : 'Open messages'}
+      onClick={handleClick}
+    >
+      {isOpen ? (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      ) : (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      )}
+      {!isOpen && unread > 0 && (
         <span className="eyf-msg-fab__badge" aria-label={`${unread} unread messages`}>
           {unread > 99 ? '99+' : unread}
         </span>
       )}
-    </NavLink>
+    </button>
   );
 }
 
