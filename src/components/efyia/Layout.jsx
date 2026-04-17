@@ -12,6 +12,11 @@ function MessagesFab() {
   const [unread, setUnread] = useState(0);
   const isOpen = location.pathname === '/messages';
 
+  const closePath =
+    currentUser?.role === 'ADMIN' ? '/dashboard/admin'
+    : currentUser?.role === 'OWNER' ? '/dashboard/studio'
+    : '/dashboard/client';
+
   const fetchUnread = useCallback(() => {
     if (!currentUser) return;
     bookingsApi.list().then((data) => {
@@ -57,14 +62,7 @@ function MessagesFab() {
       type="button"
       className={`eyf-msg-fab${isOpen ? ' eyf-msg-fab--open' : ''}`}
       aria-label={isOpen ? 'Close messages' : 'Messages'}
-      onClick={() => {
-        if (isOpen) {
-          if (window.history.length > 1) navigate(-1);
-          else navigate('/');
-        } else {
-          navigate('/messages');
-        }
-      }}
+      onClick={() => navigate(isOpen ? closePath : '/messages')}
     >
       {isOpen ? (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
