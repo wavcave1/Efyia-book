@@ -8,7 +8,9 @@ import { bookingsApi, bookingMessagesApi } from '../../lib/api';
 function MessagesFab() {
   const { currentUser } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
+  const isOpen = location.pathname === '/messages';
 
   const fetchUnread = useCallback(() => {
     if (!currentUser) return;
@@ -51,16 +53,28 @@ function MessagesFab() {
   if (!currentUser) return null;
 
   return (
-    <NavLink to="/messages" className="eyf-msg-fab" aria-label="Messages">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-      {unread > 0 && (
+    <button
+      type="button"
+      className={`eyf-msg-fab${isOpen ? ' eyf-msg-fab--open' : ''}`}
+      aria-label={isOpen ? 'Close messages' : 'Messages'}
+      onClick={() => (isOpen ? navigate(-1) : navigate('/messages'))}
+    >
+      {isOpen ? (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      ) : (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      )}
+      {!isOpen && unread > 0 && (
         <span className="eyf-msg-fab__badge" aria-label={`${unread} unread messages`}>
           {unread > 99 ? '99+' : unread}
         </span>
       )}
-    </NavLink>
+    </button>
   );
 }
 
