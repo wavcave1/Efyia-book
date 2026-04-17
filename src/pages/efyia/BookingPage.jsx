@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { availabilityApi, bookingsApi, paymentsApi, studiosApi } from '../../lib/api';
+import { availabilityApi, bookingsApi, paymentsApi, studiosApi, depositApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { ErrorMessage, Spinner } from '../../components/efyia/ui';
 import { getDisplayLocation } from '../../lib/location';
@@ -348,6 +348,13 @@ export default function BookingPage() {
   const fee = calcFee(subtotal);
   const total = subtotal + fee;
 
+  // Deposit calculations
+  const requiresDeposit = studio.bookingInfo?.requireDeposit === true;
+  const depositPercent = requiresDeposit ? (studio.bookingInfo?.depositPercent || 50) : 0;
+  const depositAmount = requiresDeposit ? Math.round((total * depositPercent) / 100 * 100) / 100 : 0;
+  const remainingBalance = requiresDeposit ? total - depositAmount : 0;
+  const paymentAmount = requiresDeposit ? depositAmount : total;
+
   const location = studioLocation(studio);
   const cancellationPolicy =
     studio.bookingInfo?.cancellationPolicy ||
@@ -427,16 +434,19 @@ export default function BookingPage() {
     }
 
     try {
-      const intent = await paymentsApi.createIntent(created.id);
+      const intent = requiresDeposit
+        ? await depositApi.payDeposit(created.id)
+        : await paymentsApi.createIntent(created.id);
 
       setPaymentInfo({
         clientSecret: intent.clientSecret,
         connectedAccountId: intent.connectedAccountId,
         paymentIntentId: intent.paymentIntentId,
-        amountCents: Math.round(total * 100),
+        amountCents: Math.round(paymentAmount * 100),
+        isDepositPayment: requiresDeposit,
       });
 
-      showToast('Booking created. Complete payment to finalize.');
+      showToast(requiresDeposit ? 'Booking created. Pay your deposit to confirm.' : 'Booking created. Complete payment to finalize.');
     } catch (err) {
       setPaymentIntentError(
         err.message?.includes('not yet set up')
@@ -756,6 +766,29 @@ export default function BookingPage() {
                       ${total.toFixed(2)}
                     </strong>
                   </div>
+
+                  {requiresDeposit ? (
+                    <div
+                      style={{
+                        marginTop: '1.25rem',
+                        paddingTop: '1rem',
+                        borderTop: '1px solid var(--border-subtle)',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        <span style={{ color: 'var(--muted)' }}>Deposit Due Now</span>
+                        <strong style={{ float: 'right', color: 'var(--mint)' }}>
+                          ${depositAmount.toFixed(2)} ({depositPercent}%)
+                        </strong>
+                      </div>
+                      <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        <span style={{ color: 'var(--muted)' }}>Remaining Balance</span>
+                        <strong style={{ float: 'right' }}>
+                          ${remainingBalance.toFixed(2)} (paid later)
+                        </strong>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div
@@ -800,10 +833,11 @@ export default function BookingPage() {
 
             {step === 3 && booking ? (
               <div className="eyf-stack">
-                <h2>Complete payment</h2>
+                <h2>{requiresDeposit ? 'Pay deposit' : 'Complete payment'}</h2>
                 <p className="eyf-muted">
-                  Secure checkout for <strong>{studio.name}</strong>. Total due:{' '}
-                  <strong>${total.toFixed(2)}</strong>
+                  Secure checkout for <strong>{studio.name}</strong>. {requiresDeposit ? 'Deposit due: ' : 'Total due: '}
+                  <strong>${paymentAmount.toFixed(2)}</strong>
+                  {requiresDeposit && <> ({depositPercent}% of ${total.toFixed(2)})</>}
                 </p>
 
                 {paymentIntentError ? (
@@ -844,6 +878,7 @@ export default function BookingPage() {
                     }}
                     onSuccess={() => setStep(4)}
                     onError={(msg) => setPaymentError(msg)}
+                    isDepositPayment={paymentInfo.isDepositPayment}
                   />
                 ) : !paymentIntentError ? (
                   <div className="checkout-loading">
@@ -881,7 +916,7 @@ export default function BookingPage() {
             {step === 4 && booking ? (
               <div className="eyf-stack" style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2.5rem' }}>✓</div>
-                <h2>Payment received</h2>
+                <h2>{requiresDeposit ? 'Deposit received' : 'Payment received'}</h2>
                 <p className="eyf-muted">
                   Your session at <strong>{studio.name}</strong> on{' '}
                   {new Date(booking.date + 'T12:00:00').toLocaleDateString(
@@ -905,7 +940,7 @@ export default function BookingPage() {
                   }}
                 >
                   <strong style={{ color: '#fbbf24' }}>
-                    ⏳ Awaiting studio confirmation
+                    {requiresDeposit ? '💰 Deposit confirmed' : '⏳ Awaiting studio confirmation'}
                   </strong>
                   <p
                     style={{
@@ -913,8 +948,9 @@ export default function BookingPage() {
                       color: 'var(--muted)',
                     }}
                   >
-                    Your booking is <strong>Pending</strong>. The studio will
-                    confirm and you'll see the update in your dashboard.
+                    {requiresDeposit
+                      ? `Your deposit of $${depositAmount.toFixed(2)} has been secured. The studio will request your remaining balance ($${remainingBalance.toFixed(2)}) when ready to finalize your booking.`
+                      : 'Your booking is Pending. The studio will confirm and you\'ll see the update in your dashboard.'}
                   </p>
                 </div>
 
