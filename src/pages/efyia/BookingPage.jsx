@@ -303,11 +303,9 @@ export default function BookingPage() {
       .then((data) => {
         setStudio(data);
 
-        const serviceTypes = (data.services || []).map((s) => s.name).filter(Boolean);
-        const types =
-          Array.isArray(data.sessionTypes) && data.sessionTypes.length
-            ? data.sessionTypes
-            : serviceTypes;
+        const types = Array.isArray(data.sessionTypes) && data.sessionTypes.length
+          ? data.sessionTypes
+          : [];
 
         setSessionType(types[0] || '');
         setStudioLoading(false);
@@ -342,7 +340,7 @@ export default function BookingPage() {
   const availableSessionTypes =
     Array.isArray(studio.sessionTypes) && studio.sessionTypes.length
       ? studio.sessionTypes
-      : (studio.services || []).map((s) => s.name).filter(Boolean);
+      : [];
 
   const pricePerHour = getPriceForSession(studio, sessionType) || studio.pricePerHour || 0;
   const selectedService = getServiceForSession(studio, sessionType);
@@ -430,9 +428,9 @@ export default function BookingPage() {
         date,
         time,
         hours,
-        depositAmount: requiresDeposit ? depositAmount : null,
-        depositPercent: requiresDeposit ? depositPercent : null,
-        isDepositPayment: requiresDeposit,
+        depositAmount: isDepositPayment ? depositAmount : null,
+        depositPercent: isDepositPayment ? depositPercent : null,
+        isDepositPayment,
       });
 
       setBooking(created);
