@@ -286,6 +286,9 @@ export default function BookingPage() {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
+  // Client's choice: 'deposit' or 'full'
+  const [paymentChoice, setPaymentChoice] = useState('deposit');
+
   useEffect(() => {
     const id = parseInt(studioId, 10);
 
@@ -349,11 +352,14 @@ export default function BookingPage() {
   const total = subtotal + fee;
 
   // Deposit calculations
-  const requiresDeposit = studio.bookingInfo?.requireDeposit === true;
-  const depositPercent = requiresDeposit ? (studio.bookingInfo?.depositPercent || 50) : 0;
-  const depositAmount = requiresDeposit ? Math.round((total * depositPercent) / 100 * 100) / 100 : 0;
-  const remainingBalance = requiresDeposit ? total - depositAmount : 0;
-  const paymentAmount = requiresDeposit ? depositAmount : total;
+  const studioAllowsDeposit = studio.bookingInfo?.requireDeposit === true;
+  const depositPercent = studioAllowsDeposit ? (studio.bookingInfo?.depositPercent || 50) : 0;
+  const depositAmount = studioAllowsDeposit ? Math.round((total * depositPercent) / 100 * 100) / 100 : 0;
+  const remainingBalance = studioAllowsDeposit ? total - depositAmount : 0;
+
+  // Client's choice overrides the default behavior
+  const isDepositPayment = studioAllowsDeposit && paymentChoice === 'deposit';
+  const paymentAmount = isDepositPayment ? depositAmount : total;
 
   const location = studioLocation(studio);
   const cancellationPolicy =
@@ -437,7 +443,7 @@ export default function BookingPage() {
     }
 
     try {
-      const intent = requiresDeposit
+      const intent = isDepositPayment
         ? await depositApi.payDeposit(created.id)
         : await paymentsApi.createIntent(created.id);
 
@@ -446,10 +452,10 @@ export default function BookingPage() {
         connectedAccountId: intent.connectedAccountId,
         paymentIntentId: intent.paymentIntentId,
         amountCents: Math.round(paymentAmount * 100),
-        isDepositPayment: requiresDeposit,
+        isDepositPayment,
       });
 
-      showToast(requiresDeposit ? 'Booking created. Pay your deposit to confirm.' : 'Booking created. Complete payment to finalize.');
+      showToast(isDepositPayment ? 'Booking created. Pay your deposit to confirm.' : 'Booking created. Complete payment to finalize.');
     } catch (err) {
       setPaymentIntentError(
         err.message?.includes('not yet set up')
@@ -778,17 +784,60 @@ export default function BookingPage() {
                         borderTop: '1px solid var(--border-subtle)',
                       }}
                     >
-                      <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                        <span style={{ color: 'var(--muted)' }}>Deposit Due Now</span>
-                        <strong style={{ float: 'right', color: 'var(--mint)' }}>
-                          ${depositAmount.toFixed(2)} ({depositPercent}%)
-                        </strong>
-                      </div>
-                      <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                        <span style={{ color: 'var(--muted)' }}>Remaining Balance</span>
-                        <strong style={{ float: 'right' }}>
-                          ${remainingBalance.toFixed(2)} (paid later)
-                        </strong>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '0.75rem' }}>
+                        <strong>Choose your payment option:</strong>
+                      </p>
+
+                      <div style={{ display: 'grid', gap: '0.75rem' }}>
+                        {/* Deposit option */}
+                        <button
+                          type="button"
+                          onClick={() => setPaymentChoice('deposit')}
+                          style={{
+                            padding: '0.9rem 1rem',
+                            border: `2px solid ${paymentChoice === 'deposit' ? 'var(--mint)' : 'var(--border)'}`,
+                            background: paymentChoice === 'deposit' ? 'rgba(98,243,212,0.08)' : 'var(--card)',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong>Pay Deposit Now</strong>
+                              <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                                Pay {depositPercent}% upfront, balance later
+                              </p>
+                            </div>
+                            <strong style={{ color: 'var(--mint)' }}>${depositAmount.toFixed(2)}</strong>
+                          </div>
+                        </button>
+
+                        {/* Full payment option */}
+                        <button
+                          type="button"
+                          onClick={() => setPaymentChoice('full')}
+                          style={{
+                            padding: '0.9rem 1rem',
+                            border: `2px solid ${paymentChoice === 'full' ? 'var(--mint)' : 'var(--border)'}`,
+                            background: paymentChoice === 'full' ? 'rgba(98,243,212,0.08)' : 'var(--card)',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong>Pay Full Amount Now</strong>
+                              <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                                Complete payment and confirm your booking
+                              </p>
+                            </div>
+                            <strong style={{ color: 'var(--mint)' }}>${total.toFixed(2)}</strong>
+                          </div>
+                        </button>
                       </div>
                     </div>
                   ) : null}
@@ -836,11 +885,11 @@ export default function BookingPage() {
 
             {step === 3 && booking ? (
               <div className="eyf-stack">
-                <h2>{requiresDeposit ? 'Pay deposit' : 'Complete payment'}</h2>
+                <h2>{isDepositPayment ? 'Pay deposit' : 'Complete payment'}</h2>
                 <p className="eyf-muted">
-                  Secure checkout for <strong>{studio.name}</strong>. {requiresDeposit ? 'Deposit due: ' : 'Total due: '}
+                  Secure checkout for <strong>{studio.name}</strong>. {isDepositPayment ? 'Deposit due: ' : 'Total due: '}
                   <strong>${paymentAmount.toFixed(2)}</strong>
-                  {requiresDeposit && <> ({depositPercent}% of ${total.toFixed(2)})</>}
+                  {isDepositPayment && <> ({depositPercent}% of ${total.toFixed(2)})</>}
                 </p>
 
                 {paymentIntentError ? (
@@ -919,7 +968,7 @@ export default function BookingPage() {
             {step === 4 && booking ? (
               <div className="eyf-stack" style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2.5rem' }}>✓</div>
-                <h2>{requiresDeposit ? 'Deposit received' : 'Payment received'}</h2>
+                <h2>{isDepositPayment ? 'Deposit received' : 'Payment received'}</h2>
                 <p className="eyf-muted">
                   Your session at <strong>{studio.name}</strong> on{' '}
                   {new Date(booking.date + 'T12:00:00').toLocaleDateString(
@@ -943,7 +992,7 @@ export default function BookingPage() {
                   }}
                 >
                   <strong style={{ color: '#fbbf24' }}>
-                    {requiresDeposit ? '💰 Deposit confirmed' : '⏳ Awaiting studio confirmation'}
+                    {isDepositPayment ? '💰 Deposit confirmed' : '✅ Payment confirmed'}
                   </strong>
                   <p
                     style={{
@@ -951,7 +1000,7 @@ export default function BookingPage() {
                       color: 'var(--muted)',
                     }}
                   >
-                    {requiresDeposit
+                    {isDepositPayment
                       ? `Your deposit of $${depositAmount.toFixed(2)} has been secured. The studio will request your remaining balance ($${remainingBalance.toFixed(2)}) when ready to finalize your booking.`
                       : 'Your booking is Pending. The studio will confirm and you\'ll see the update in your dashboard.'}
                   </p>
