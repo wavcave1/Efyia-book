@@ -78,7 +78,7 @@ function buildInitialForm(studio) {
         : { consoleType: '', daws: [], mics: [], outboardGear: [], rooms: '' },
     bookingInfo:
       studio?.bookingInfo && typeof studio.bookingInfo === 'object' && !Array.isArray(studio.bookingInfo)
-        ? studio.bookingInfo
+        ? { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', requireDeposit: false, depositPercent: '', ...studio.bookingInfo }
         : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', requireDeposit: false, depositPercent: '' },
     genres: asArray(studio?.genres),
     amenities: asArray(studio?.amenities),
@@ -449,6 +449,9 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       || cleaned.notes !== null
       || cleaned.cancellationPolicy !== null
       || cleaned.requireDeposit === true;
+    console.log('normalizeBookingInfo input:', info);
+    console.log('normalizeBookingInfo cleaned:', cleaned);
+    console.log('normalizeBookingInfo hasBookingInfo:', hasBookingInfo);
     return hasBookingInfo ? cleaned : null;
   }
 
