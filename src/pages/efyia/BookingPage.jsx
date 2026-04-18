@@ -424,6 +424,9 @@ export default function BookingPage() {
         date,
         time,
         hours,
+        depositAmount: requiresDeposit ? depositAmount : null,
+        depositPercent: requiresDeposit ? depositPercent : null,
+        isDepositPayment: requiresDeposit,
       });
 
       setBooking(created);
