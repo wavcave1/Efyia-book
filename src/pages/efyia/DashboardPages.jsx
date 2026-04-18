@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import {
@@ -28,7 +29,7 @@ function ConfirmModal({
   onClose,
   loading,
 }) {
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -92,7 +93,8 @@ function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -199,7 +201,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
         />
       ) : null}
 
-      {finalPaymentBooking ? (
+      {finalPaymentBooking ? createPortal(
         <div
           style={{
             position: 'fixed',
@@ -306,7 +308,8 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : null}
 
       <div className="eyf-stack">
