@@ -65,6 +65,16 @@ export const LAYOUT_TYPES = {
     description: 'Services and media card grid',
     preview: '▩▩▩',
   },
+  magazine: {
+    label: 'Magazine',
+    description: 'Sticky sidebar + editorial numbered sections',
+    preview: '▌ ▬▬▬',
+  },
+  card: {
+    label: 'Card',
+    description: 'Bold masthead with auto-fill content cards',
+    preview: '▬ ▩ ▩ ▩',
+  },
 };
 
 // Google Fonts import URLs keyed by pairing

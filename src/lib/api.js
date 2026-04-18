@@ -110,8 +110,22 @@ export const publicApi = {
 
 // ─── Studio profile (owner-scoped branding) ───────────────────────────────────
 export const studioProfileApi = {
-  get: () => api.get('/api/studio/profile'),
-  update: (data) => api.patch('/api/studio/profile', data),
+  get: (studioId) => api.get(`/api/studio/profile${studioId ? `?studioId=${studioId}` : ''}`),
+  update: (data, studioId) => api.patch(`/api/studio/profile${studioId ? `?studioId=${studioId}` : ''}`, data),
+};
+
+// ─── Studio team (members + invites) ─────────────────────────────────────────
+export const studioTeamApi = {
+  list: (studioId) => api.get(`/api/studio/team${studioId ? `?studioId=${studioId}` : ''}`),
+  invite: (email, role, studioId) => api.post('/api/studio/team/invite', { email, role, studioId }),
+  updateRole: (memberId, role) => api.patch(`/api/studio/team/${memberId}`, { role }),
+  remove: (memberId) => api.delete(`/api/studio/team/${memberId}`),
+};
+
+// ─── Invite accept (public) ───────────────────────────────────────────────────
+export const inviteApi = {
+  getInvite: (token) => api.get(`/api/invites/${token}`),
+  accept: (token, data) => api.post(`/api/invites/${token}/accept`, data),
 };
 
 // ─── Stripe Connect & Payments ───────────────────────────────────────────────
@@ -241,4 +255,22 @@ export const emailDomainsApi = {
 export const depositApi = {
   payDeposit: (bookingId) => api.post('/api/payments/deposit/' + bookingId, {}),
   payFinal: (bookingId) => api.post('/api/payments/final/' + bookingId, {}),
+};
+
+// ─── Website builder ──────────────────────────────────────────────────────────
+export const websiteApi = {
+  get: (studioId) => api.get(`/api/website/${studioId}`),
+  create: (studioId) => api.post('/api/website', { studioId }),
+  updateSettings: (websiteId, data) => api.patch(`/api/website/${websiteId}/settings`, data),
+  searchDomain: (query) => api.get(`/api/domains/search?query=${encodeURIComponent(query)}`),
+  purchaseDomain: (websiteId, domain) => api.post('/api/domains/purchase', { websiteId, domain }),
+  getDomainStatus: (websiteId) => api.get(`/api/domains/${websiteId}/status`),
+  verifyDns: (websiteId) => api.get(`/api/domains/${websiteId}/verify`),
+  listPages: (websiteId) => api.get(`/api/website/${websiteId}/pages`),
+  createPage: (websiteId, data) => api.post(`/api/website/${websiteId}/pages`, data),
+  updatePage: (pageId, data) => api.patch(`/api/website/pages/${pageId}`, data),
+  deletePage: (pageId) => api.delete(`/api/website/pages/${pageId}`),
+  reorderPages: (websiteId, pageIds) => api.patch(`/api/website/${websiteId}/pages/order`, { pageIds }),
+  getSections: (pageId) => api.get(`/api/website/pages/${pageId}/sections`),
+  saveSections: (pageId, sections) => api.put(`/api/website/pages/${pageId}/sections`, { sections }),
 };

@@ -16,6 +16,9 @@ import MapPage from './pages/efyia/MapPage';
 import MessagesPage from './pages/efyia/MessagesPage';
 import TermsPage from './pages/efyia/TermsPage';
 import PrivacyPage from './pages/efyia/PrivacyPage';
+import InviteAcceptPage from './pages/efyia/InviteAcceptPage';
+import WebsiteDashboard from './pages/efyia/WebsiteDashboard';
+import WebsiteEditorPage from './pages/efyia/WebsiteEditorPage';
 
 export default function App() {
   return (
@@ -24,6 +27,8 @@ export default function App() {
         <Routes>
           {/* Standalone studio public page — outside main Layout */}
           <Route path="s/:slug" element={<StudioPublicPage />} />
+          {/* Public invite acceptance page */}
+          <Route path="accept-invite/:token" element={<InviteAcceptPage />} />
           <Route
             path="admin"
             element={
@@ -78,8 +83,24 @@ export default function App() {
             <Route
               path="dashboard/studio"
               element={
-                <ProtectedRoute roles={['owner']}>
+                <ProtectedRoute roles={['owner']} teamAccess>
                   <StudioDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="dashboard/studio/website"
+              element={
+                <ProtectedRoute roles={['owner']}>
+                  <WebsiteDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="dashboard/studio/website/editor"
+              element={
+                <ProtectedRoute roles={['owner']}>
+                  <WebsiteEditorPage />
                 </ProtectedRoute>
               }
             />
