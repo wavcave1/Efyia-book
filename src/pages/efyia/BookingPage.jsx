@@ -776,7 +776,7 @@ export default function BookingPage() {
                     </strong>
                   </div>
 
-                  {requiresDeposit ? (
+                  {studioAllowsDeposit ? (
                     <div
                       style={{
                         marginTop: '1.25rem',
