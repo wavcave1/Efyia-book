@@ -237,34 +237,46 @@ export default function AvailabilityManager({ studioId, onSaved }) {
 
       <form onSubmit={addBlock} className="eyf-stack">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
-          <input
-            type="date"
-            value={blockForm.date}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, date: e.target.value }))}
-          />
-          <select
-            value={blockForm.startTime}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, startTime: e.target.value }))}
-          >
-            {TIME_OPTIONS.map((time) => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-          <select
-            value={blockForm.endTime}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, endTime: e.target.value }))}
-          >
-            {TIME_OPTIONS.map((time) => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="e.g. Private event, maintenance..."
-            value={blockForm.reason}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, reason: e.target.value }))}
-          />
-          <button type="submit" className="eyf-button" disabled={addingBlock}>
+          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
+            Date
+            <input
+              type="date"
+              value={blockForm.date}
+              onChange={(e) => setBlockForm((prev) => ({ ...prev, date: e.target.value }))}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
+            Start time
+            <select
+              value={blockForm.startTime}
+              onChange={(e) => setBlockForm((prev) => ({ ...prev, startTime: e.target.value }))}
+            >
+              {TIME_OPTIONS.map((time) => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
+            End time
+            <select
+              value={blockForm.endTime}
+              onChange={(e) => setBlockForm((prev) => ({ ...prev, endTime: e.target.value }))}
+            >
+              {TIME_OPTIONS.map((time) => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
+            Reason
+            <input
+              type="text"
+              placeholder="e.g. Private event..."
+              value={blockForm.reason}
+              onChange={(e) => setBlockForm((prev) => ({ ...prev, reason: e.target.value }))}
+            />
+          </label>
+          <button type="submit" className="eyf-button" disabled={addingBlock} style={{ minHeight: 'unset', padding: '0.6rem 1rem' }}>
             {addingBlock ? 'Adding...' : 'Add'}
           </button>
         </div>
