@@ -648,6 +648,22 @@ function calcCompletion(studio) {
 function CompletionWidget({ studio, onSetupClick }) {
   const { pct, checklist } = calcCompletion(studio);
 
+  if (pct === 100) {
+    return (
+      <div className="eyf-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+        <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--sage)' }}>100%</span>
+        <button
+          type="button"
+          className="eyf-button eyf-button--ghost"
+          style={{ minHeight: 'unset', padding: '0.35rem 0.85rem', fontSize: '0.875rem' }}
+          onClick={onSetupClick}
+        >
+          Edit profile
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="eyf-card eyf-stack">
       <div className="eyf-row eyf-row--between">
@@ -656,7 +672,7 @@ function CompletionWidget({ studio, onSetupClick }) {
           style={{
             fontSize: '0.875rem',
             fontWeight: 700,
-            color: pct === 100 ? 'var(--sage)' : 'var(--muted)',
+            color: 'var(--muted)',
           }}
         >
           {pct}%
@@ -681,20 +697,14 @@ function CompletionWidget({ studio, onSetupClick }) {
         </div>
       </div>
 
-      {pct < 100 ? (
-        <button
-          type="button"
-          className="eyf-button eyf-button--secondary"
-          style={{ justifySelf: 'start' }}
-          onClick={onSetupClick}
-        >
-          Complete setup
-        </button>
-      ) : (
-        <p className="eyf-muted" style={{ fontSize: '0.875rem' }}>
-          Your profile is complete! ✓
-        </p>
-      )}
+      <button
+        type="button"
+        className="eyf-button eyf-button--secondary"
+        style={{ justifySelf: 'start' }}
+        onClick={onSetupClick}
+      >
+        Complete setup
+      </button>
     </div>
   );
 }

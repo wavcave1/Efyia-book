@@ -236,7 +236,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
       </p>
 
       <form onSubmit={addBlock} className="eyf-stack">
-        <div className="eyf-grid-2" style={{ gridTemplateColumns: 'minmax(140px, 1fr) repeat(2, minmax(120px, 1fr)) minmax(180px, 1.2fr) auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
           <input
             type="date"
             value={blockForm.date}
