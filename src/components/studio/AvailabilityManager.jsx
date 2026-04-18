@@ -236,7 +236,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
       </p>
 
       <form onSubmit={addBlock} className="eyf-stack">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', '@media (max-width: 640px)': { gridTemplateColumns: '1fr' } }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
           <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
             Date
             <input
@@ -246,31 +246,33 @@ export default function AvailabilityManager({ studioId, onSaved }) {
               style={{ width: '100%' }}
             />
           </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
+              Start time
+              <select
+                value={blockForm.startTime}
+                onChange={(e) => setBlockForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                style={{ width: '100%' }}
+              >
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
+              End time
+              <select
+                value={blockForm.endTime}
+                onChange={(e) => setBlockForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                style={{ width: '100%' }}
+              >
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </label>
+          </div>
           <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
-            Start time
-            <select
-              value={blockForm.startTime}
-              onChange={(e) => setBlockForm((prev) => ({ ...prev, startTime: e.target.value }))}
-              style={{ width: '100%' }}
-            >
-              {TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>{time}</option>
-              ))}
-            </select>
-          </label>
-          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)' }}>
-            End time
-            <select
-              value={blockForm.endTime}
-              onChange={(e) => setBlockForm((prev) => ({ ...prev, endTime: e.target.value }))}
-              style={{ width: '100%' }}
-            >
-              {TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>{time}</option>
-              ))}
-            </select>
-          </label>
-          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', gridColumn: 'span 2' }}>
             Reason
             <input
               type="text"
@@ -280,7 +282,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
               style={{ width: '100%' }}
             />
           </label>
-          <button type="submit" className="eyf-button" disabled={addingBlock} style={{ minHeight: 'unset', padding: '0.6rem 1rem', gridColumn: 'span 2' }}>
+          <button type="submit" className="eyf-button" disabled={addingBlock} style={{ minHeight: 'unset', padding: '0.6rem 1rem', width: '100%' }}>
             {addingBlock ? 'Adding...' : 'Add'}
           </button>
         </div>
