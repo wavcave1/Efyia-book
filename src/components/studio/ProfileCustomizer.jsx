@@ -273,10 +273,14 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     setSaveState('idle');
   }, []);
 
-  const setBookingInfoBool = useCallback((field) => (e) => {
-    setForm((prev) => ({ ...prev, bookingInfo: { ...prev.bookingInfo, [field]: e.target.checked } }));
+  const toggleRequireDeposit = () => {
+    const newValue = !form.bookingInfo.requireDeposit;
+    setForm((prev) => ({
+      ...prev,
+      bookingInfo: { ...prev.bookingInfo, requireDeposit: newValue },
+    }));
     setSaveState('idle');
-  }, []);
+  };
 
   const setTagField = useCallback((field) => (tags) => {
     setForm((prev) => ({ ...prev, [field]: Array.isArray(tags) ? tags : [] }));
@@ -1034,8 +1038,8 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               <input
                 type="checkbox"
                 id="require-deposit"
-                checked={form.bookingInfo.requireDeposit || false}
-                onChange={setBookingInfoBool('requireDeposit')}
+                checked={form.bookingInfo.requireDeposit === true}
+                onChange={toggleRequireDeposit}
                 style={{ width: 18, height: 18, cursor: 'pointer' }}
               />
               <label htmlFor="require-deposit" style={{ cursor: 'pointer', flex: 1, margin: 0 }}>
@@ -1054,8 +1058,14 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
                 min="10"
                 max="100"
                 step="5"
-                value={form.bookingInfo.depositPercent || '50'}
-                onChange={setBookingInfo('depositPercent')}
+                value={form.bookingInfo.depositPercent || 50}
+                onChange={(e) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    bookingInfo: { ...prev.bookingInfo, depositPercent: e.target.value },
+                  }));
+                  setSaveState('idle');
+                }}
                 placeholder="50"
               />
             </FieldGroup>
