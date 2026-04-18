@@ -141,6 +141,25 @@ return (
 </div>
 </div>
 
+{isDepositPayment ? (
+  <div
+    style={{
+      background: 'rgba(98,243,212,0.08)',
+      border: '1px solid rgba(98,243,212,0.3)',
+      borderRadius: 12,
+      padding: '0.9rem 1rem',
+      fontSize: '0.875rem',
+      lineHeight: 1.6,
+      marginBottom: '1.25rem',
+    }}
+  >
+    <strong style={{ color: 'var(--mint)' }}>💰 Deposit Payment</strong>
+    <p style={{ margin: '0.5rem 0 0', color: 'var(--muted)', fontSize: '0.85rem' }}>
+      You're paying a deposit to secure your booking. The studio will request your remaining balance when ready to finalize your session.
+    </p>
+  </div>
+) : null}
+
   {/* PaymentElement automatically shows Apple Pay, Google Pay, Cash App, card — whatever's available */}
   <PaymentElement
     options={{
@@ -170,7 +189,7 @@ return (
     className="pay-button eyf-button"
     style={{ width: '100%', marginTop: '1.25rem', justifyContent: 'center' }}
   >
-    {processing ? 'Processing...' : `Pay $${amountDollars}`}
+    {processing ? 'Processing...' : `Pay ${isDepositPayment ? 'Deposit' : ''} $${amountDollars}`}
   </button>
 
   <p className="secure-note" style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.75rem' }}>
