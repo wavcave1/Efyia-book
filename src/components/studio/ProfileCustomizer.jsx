@@ -78,7 +78,7 @@ function buildInitialForm(studio) {
         : { consoleType: '', daws: [], mics: [], outboardGear: [], rooms: '' },
     bookingInfo:
       studio?.bookingInfo && typeof studio.bookingInfo === 'object' && !Array.isArray(studio.bookingInfo)
-        ? studio.bookingInfo
+        ? { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', requireDeposit: false, depositPercent: '', ...studio.bookingInfo }
         : { minHours: '', maxHours: '', advanceNoticeDays: '', notes: '', cancellationPolicy: '', requireDeposit: false, depositPercent: '' },
     genres: asArray(studio?.genres),
     amenities: asArray(studio?.amenities),
@@ -440,10 +440,19 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       advanceNoticeDays: toNum(info.advanceNoticeDays),
       notes: info.notes || null,
       cancellationPolicy: info.cancellationPolicy || null,
-      requireDeposit: info.requireDeposit === true ? true : null,
-      depositPercent: info.requireDeposit ? toNum(info.depositPercent) : null,
+      requireDeposit: info.requireDeposit === true ? true : false,
+      depositPercent: info.requireDeposit === true ? toNum(info.depositPercent) : null,
     };
-    return Object.values(cleaned).some((v) => v !== null && v !== false) ? cleaned : null;
+    const hasBookingInfo = cleaned.minHours !== null
+      || cleaned.maxHours !== null
+      || cleaned.advanceNoticeDays !== null
+      || cleaned.notes !== null
+      || cleaned.cancellationPolicy !== null
+      || cleaned.requireDeposit === true;
+    console.log('normalizeBookingInfo input:', info);
+    console.log('normalizeBookingInfo cleaned:', cleaned);
+    console.log('normalizeBookingInfo hasBookingInfo:', hasBookingInfo);
+    return hasBookingInfo ? cleaned : null;
   }
 
   function normalizeOptionalNumber(value) {
