@@ -6,6 +6,9 @@ import LayoutMinimal from '../../components/studio/LayoutMinimal';
 import LayoutHero from '../../components/studio/LayoutHero';
 import LayoutSplit from '../../components/studio/LayoutSplit';
 import LayoutGrid from '../../components/studio/LayoutGrid';
+import LayoutMagazine from '../../components/studio/LayoutMagazine';
+import LayoutCard from '../../components/studio/LayoutCard';
+import { DEFAULT_SECTION_ORDER } from '../../components/studio/SectionOrderEditor';
 import '../../styles/studio.css';
 
 const LAYOUTS = {
@@ -13,6 +16,8 @@ const LAYOUTS = {
   hero: LayoutHero,
   split: LayoutSplit,
   grid: LayoutGrid,
+  magazine: LayoutMagazine,
+  card: LayoutCard,
 };
 
 // Inject a Google Fonts <link> for the chosen pairing (once per load)
@@ -104,21 +109,26 @@ export default function StudioPublicPage() {
   const Layout = LAYOUTS[studio.layoutType] || LayoutMinimal;
   const studioVars = buildStudioVars(studio);
 
+  const sectionOrder = Array.isArray(studio.sectionOrder) && studio.sectionOrder.length
+    ? studio.sectionOrder
+    : DEFAULT_SECTION_ORDER;
+  const hiddenSections = new Set(Array.isArray(studio.hiddenSections) ? studio.hiddenSections : []);
+
+  const noTopOffset = studio.layoutType === 'hero' || studio.layoutType === 'split' || studio.layoutType === 'magazine';
+
   return (
     <div className="sp-root" style={studioVars}>
-      {/* Minimal nav bar */}
       <nav className="sp-nav">
         <Link to="/">← Efyia Book</Link>
         <Link to={`/studios/${studio.slug}`}>Platform profile</Link>
         <span className="sp-nav-title">{studio.name}</span>
       </nav>
 
-      {/* Offset content for fixed nav on non-hero layouts */}
-      {studio.layoutType !== 'hero' && studio.layoutType !== 'split' ? (
+      {!noTopOffset ? (
         <div style={{ height: '48px' }} aria-hidden="true" />
       ) : null}
 
-      <Layout studio={studio} />
+      <Layout studio={studio} sectionOrder={sectionOrder} hiddenSections={hiddenSections} />
     </div>
   );
 }

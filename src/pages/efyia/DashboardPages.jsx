@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi } from '../../lib/api';
+import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
+import TeamManager from '../../components/studio/TeamManager';
+import StudioSwitcher from '../../components/studio/StudioSwitcher';
 import {
   EmptyState,
   ErrorMessage,
@@ -825,7 +827,7 @@ export function ClientDashboard() {
 
 // ─── Studio owner dashboard ───────────────────────────────────────────────────
 export function StudioDashboard() {
-  const { currentUser, showToast } = useAppContext();
+  const { currentUser, showToast, studioMemberships, activeStudioId, setActiveStudio, canEditProfile, canManageBookings } = useAppContext();
 
   const [bookings, setBookings] = useState([]);
   const [studio, setStudio] = useState(null);
@@ -833,6 +835,7 @@ export function StudioDashboard() {
   const [error, setError] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [websiteData, setWebsiteData] = useState(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -840,7 +843,7 @@ export function StudioDashboard() {
 
     Promise.all([
       bookingsApi.list().catch(() => []),
-      studioProfileApi.get().catch(() => null),
+      studioProfileApi.get(activeStudioId).catch(() => null),
       studiosApi.list({ limit: 50 }).catch(() => ({ studios: [] })),
       analyticsApi.studio().catch(() => null),
     ])
@@ -851,15 +854,19 @@ export function StudioDashboard() {
         if (profile) {
           setStudio(profile);
           const wizardKey = `efyia_wizard_seen_${profile.id}`;
-
           if (!localStorage.getItem(wizardKey) && !profile.richDescription?.trim()) {
             setShowWizard(true);
           }
+          // Load website data
+          websiteApi.get(profile.id).then(setWebsiteData).catch(() => {});
         } else {
           const owned = studios.find(
             (s) => s.owner?.id === currentUser?.id || s.ownerId === currentUser?.id
           );
-          if (owned) setStudio(owned);
+          if (owned) {
+            setStudio(owned);
+            websiteApi.get(owned.id).then(setWebsiteData).catch(() => {});
+          }
         }
 
         setLoading(false);
@@ -868,7 +875,7 @@ export function StudioDashboard() {
         setError(err.message);
         setLoading(false);
       });
-  }, [currentUser?.id]);
+  }, [currentUser?.id, activeStudioId]);
 
   useEffect(() => {
     fetchData();
@@ -932,6 +939,11 @@ export function StudioDashboard() {
 
       <div className="eyf-page">
         <section className="eyf-section eyf-stack" style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
+          <StudioSwitcher
+            memberships={studioMemberships}
+            activeStudioId={activeStudioId}
+            onSwitch={setActiveStudio}
+          />
           <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
@@ -1075,6 +1087,42 @@ export function StudioDashboard() {
                   </div>
 
                   <EmailDomainManager studioId={studio?.id} />
+
+                  {/* Website Builder card */}
+                  <div className="eyf-card eyf-stack">
+                    <div className="eyf-row eyf-row--between">
+                      <h3 style={{ margin: 0 }}>Website Builder</h3>
+                      {websiteData?.subdomain ? (
+                        <a
+                          href={`https://${websiteData.subdomain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.82rem', color: 'var(--muted)', textDecoration: 'underline' }}
+                        >
+                          {websiteData.subdomain} ↗
+                        </a>
+                      ) : null}
+                    </div>
+                    <p className="eyf-muted" style={{ margin: 0, fontSize: '0.875rem' }}>
+                      {websiteData
+                        ? `Your free subdomain: ${websiteData.subdomain || `${studio.slug}.efyiabook.com`}`
+                        : 'Build a standalone website for your studio with your own domain.'}
+                    </p>
+                    <Link to="/dashboard/studio/website" className="eyf-button" style={{ width: 'fit-content' }}>
+                      Open Website Builder
+                    </Link>
+                  </div>
+
+                  {/* Team card (owner only) */}
+                  {canEditProfile ? (
+                    <div className="eyf-card eyf-stack">
+                      <h3 style={{ margin: 0 }}>Team</h3>
+                      <p className="eyf-muted" style={{ margin: 0, fontSize: '0.875rem' }}>
+                        Invite managers and engineers to help run your studio.
+                      </p>
+                      <TeamManager studioId={studio.id} canEdit={canEditProfile} />
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <EmptyState

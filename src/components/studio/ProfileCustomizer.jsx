@@ -7,6 +7,9 @@ import LayoutMinimal from './LayoutMinimal';
 import LayoutHero from './LayoutHero';
 import LayoutSplit from './LayoutSplit';
 import LayoutGrid from './LayoutGrid';
+import LayoutMagazine from './LayoutMagazine';
+import LayoutCard from './LayoutCard';
+import SectionOrderEditor, { DEFAULT_SECTION_ORDER } from './SectionOrderEditor';
 import AvailabilityManager from './AvailabilityManager';
 import '../../styles/studio.css';
 
@@ -15,6 +18,8 @@ const LAYOUT_COMPONENTS = {
   hero: LayoutHero,
   split: LayoutSplit,
   grid: LayoutGrid,
+  magazine: LayoutMagazine,
+  card: LayoutCard,
 };
 
 const injectedFonts = new Set();
@@ -95,6 +100,10 @@ function buildInitialForm(studio) {
     arrivalInstructions: studio?.arrivalInstructions || studio?.directions || '',
     latitude: studio?.latitude ?? studio?.lat ?? '',
     longitude: studio?.longitude ?? studio?.lng ?? '',
+    sectionOrder: Array.isArray(studio?.sectionOrder) && studio.sectionOrder.length
+      ? studio.sectionOrder
+      : [...DEFAULT_SECTION_ORDER],
+    hiddenSections: Array.isArray(studio?.hiddenSections) ? studio.hiddenSections : [],
   };
 }
 
@@ -214,6 +223,7 @@ const AMENITY_SUGGESTIONS = [
 const TABS = [
   { id: 'branding', label: 'Branding' },
   { id: 'layout', label: 'Layout' },
+  { id: 'sections', label: 'Sections' },
   { id: 'content', label: 'Content' },
   { id: 'gallery', label: 'Gallery' },
   { id: 'services', label: 'Services' },
@@ -517,6 +527,8 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         directions: form.arrivalInstructions?.trim() || null,
         latitude: normalizeOptionalNumber(form.latitude),
         longitude: normalizeOptionalNumber(form.longitude),
+        sectionOrder: Array.isArray(form.sectionOrder) && form.sectionOrder.length ? form.sectionOrder : null,
+        hiddenSections: Array.isArray(form.hiddenSections) && form.hiddenSections.length ? form.hiddenSections : null,
       };
 
       // Remove sessionTypes from the profile payload — it's saved via studiosApi below
@@ -550,10 +562,15 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     services: asArray(form.services)
       .filter((s) => (s?.name || '').trim())
       .map((s) => ({ ...s, price: s.price !== '' ? parseFloat(s.price) : undefined })),
+    sectionOrder: Array.isArray(form.sectionOrder) && form.sectionOrder.length
+      ? form.sectionOrder
+      : [...DEFAULT_SECTION_ORDER],
+    hiddenSections: Array.isArray(form.hiddenSections) ? form.hiddenSections : [],
   };
 
   const PreviewLayout = LAYOUT_COMPONENTS[form.layoutType] || LayoutMinimal;
   const previewVars = buildStudioVars(previewStudio);
+  const previewHiddenSet = new Set(previewStudio.hiddenSections);
 
   return (
     <div>
@@ -709,6 +726,23 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
               ))}
             </div>
           </FieldGroup>
+        </div>
+      ) : null}
+
+      {/* ── Sections tab ────────────────────────────────────────────────────── */}
+      {activeTab === 'sections' ? (
+        <div>
+          <p style={{ fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+            Drag sections to reorder them on your public page. Click the eye icon to show or hide a section.
+          </p>
+          <SectionOrderEditor
+            sections={form.sectionOrder}
+            hidden={form.hiddenSections}
+            onChange={(newOrder, newHidden) => {
+              setForm((prev) => ({ ...prev, sectionOrder: newOrder, hiddenSections: newHidden }));
+              setSaveState('idle');
+            }}
+          />
         </div>
       ) : null}
 
@@ -1298,9 +1332,15 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
           <h4 style={{ marginBottom: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)' }}>
             Live preview — {LAYOUT_TYPES[form.layoutType]?.label}
           </h4>
-          <div className="sp-preview-frame">
-            <div className="sp-root" style={previewVars}>
-              <PreviewLayout studio={previewStudio} />
+          <div className="sp-preview-outer">
+            <div className="sp-preview-inner">
+              <div className="sp-root" style={previewVars}>
+                <PreviewLayout
+                  studio={previewStudio}
+                  sectionOrder={previewStudio.sectionOrder}
+                  hiddenSections={previewHiddenSet}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { getDisplayLocation } from '../../lib/location';
+import { DEFAULT_SECTION_ORDER } from './SectionOrderEditor';
 
 function Stars({ rating }) {
   return (
@@ -56,54 +57,104 @@ function SocialRow({ links }) {
   );
 }
 
-export default function LayoutMinimal({ studio }) {
+function renderSection(key, studio) {
+  const { accentColor, richDescription, description, gallery, services, amenities, equipment,
+    contactInfo, socialLinks, reviews } = studio;
+
+  switch (key) {
+    case 'about':
+      return richDescription || description ? (
+        <p key="about" className="sp-body-text">{richDescription || description}</p>
+      ) : null;
+    case 'gallery':
+      return gallery?.length ? (
+        <section key="gallery" className="sp-section">
+          <h2 className="sp-heading-md">Gallery</h2>
+          <div className="sp-gallery">
+            {gallery.map((img, i) => (
+              <div key={i} className="sp-gallery-item">
+                <img src={img.url} alt={img.caption || `Studio photo ${i + 1}`} loading="lazy" />
+                {img.caption ? <span className="sp-gallery-item__caption">{img.caption}</span> : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null;
+    case 'services':
+      return services?.length ? (
+        <section key="services" className="sp-section">
+          <h2 className="sp-heading-md">Services</h2>
+          <ServicesList services={services} />
+        </section>
+      ) : null;
+    case 'amenities':
+      return amenities?.length ? (
+        <section key="amenities" className="sp-section">
+          <h2 className="sp-heading-md">Amenities</h2>
+          <ul className="sp-list">{amenities.map((a) => <li key={a}>{a}</li>)}</ul>
+        </section>
+      ) : null;
+    case 'equipment':
+      return equipment?.length ? (
+        <section key="equipment" className="sp-section">
+          <h2 className="sp-heading-md">Equipment</h2>
+          <ul className="sp-list">{equipment.map((e) => <li key={e}>{e}</li>)}</ul>
+        </section>
+      ) : null;
+    case 'contact':
+      return contactInfo || socialLinks ? (
+        <section key="contact" className="sp-section">
+          <h2 className="sp-heading-md">Connect</h2>
+          {contactInfo?.phone ? <p>📞 {contactInfo.phone}</p> : null}
+          {contactInfo?.email ? <p>✉ <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a></p> : null}
+          <SocialRow links={socialLinks} />
+        </section>
+      ) : null;
+    case 'reviews':
+      return reviews?.length ? (
+        <section key="reviews" className="sp-section">
+          <h2 className="sp-heading-md">Reviews</h2>
+          <div className="sp-reviews">
+            {reviews.slice(0, 4).map((r) => (
+              <div key={r.id} className="sp-review-card">
+                <div className="sp-review-header">
+                  <strong>{r.user?.name}</strong>
+                  <Stars rating={r.rating} />
+                </div>
+                <p>{r.content}</p>
+                {r.ownerReply ? <p className="sp-owner-reply"><strong>Studio reply:</strong> {r.ownerReply}</p> : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null;
+    default:
+      return null;
+  }
+}
+
+export default function LayoutMinimal({ studio, sectionOrder, hiddenSections }) {
   const locationLabel = getDisplayLocation(studio);
-  const {
-    name,
-    richDescription,
-    description,
-    logoUrl,
-    coverUrl,
-    accentColor,
-    tags,
-    amenities,
-    equipment,
-    sessionTypes,
-    pricePerHour,
-    city,
-    state,
-    rating,
-    reviewCount,
-    services,
-    socialLinks,
-    contactInfo,
-    gallery,
-    reviews,
-    id,
-  } = studio;
+  const { name, richDescription, description, logoUrl, coverUrl, accentColor, sessionTypes,
+    pricePerHour, city, state, rating, reviewCount, contactInfo, id } = studio;
+
+  const effectiveOrder = sectionOrder?.length ? sectionOrder : DEFAULT_SECTION_ORDER;
+  const hiddenSet = hiddenSections instanceof Set ? hiddenSections : new Set(hiddenSections || []);
 
   return (
     <div className="sp-minimal">
       {coverUrl ? (
-        <div
-          className="sp-minimal-cover"
-          style={{ backgroundImage: `url(${coverUrl})` }}
-          aria-hidden="true"
-        />
+        <div className="sp-minimal-cover" style={{ backgroundImage: `url(${coverUrl})` }} aria-hidden="true" />
       ) : (
         <div className="sp-minimal-cover sp-minimal-cover--color" style={{ background: accentColor }} />
       )}
 
       <div className="sp-minimal-body">
         <header className="sp-minimal-header">
-          {logoUrl ? (
-            <img src={logoUrl} alt={`${name} logo`} className="sp-logo" />
-          ) : null}
+          {logoUrl ? <img src={logoUrl} alt={`${name} logo`} className="sp-logo" /> : null}
           <div>
             <h1 className="sp-heading-xl">{name}</h1>
-            <p className="sp-muted">
-              {locationLabel || [city, state].filter(Boolean).join(', ')} · ${pricePerHour}/hr
-            </p>
+            <p className="sp-muted">{locationLabel || [city, state].filter(Boolean).join(', ')} · ${pricePerHour}/hr</p>
             {rating > 0 ? (
               <p className="sp-rating-row">
                 <Stars rating={rating} />
@@ -113,115 +164,20 @@ export default function LayoutMinimal({ studio }) {
           </div>
         </header>
 
-        <p className="sp-body-text">{richDescription || description}</p>
-
         {sessionTypes?.length ? (
           <div className="sp-tags">
-            {sessionTypes.map((t) => (
-              <span key={t} className="sp-tag" style={{ borderColor: accentColor }}>
-                {t}
-              </span>
-            ))}
+            {sessionTypes.map((t) => <span key={t} className="sp-tag" style={{ borderColor: accentColor }}>{t}</span>)}
           </div>
         ) : null}
 
-        {gallery?.length ? (
-          <section className="sp-section">
-            <h2 className="sp-heading-md">Gallery</h2>
-            <div className="sp-gallery">
-              {gallery.map((img, i) => (
-                <div key={i} className="sp-gallery-item">
-                  <img
-                    src={img.url}
-                    alt={img.caption || `Studio photo ${i + 1}`}
-                    loading="lazy"
-                  />
-                  {img.caption ? (
-                    <span className="sp-gallery-item__caption">{img.caption}</span>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {services?.length ? (
-          <section className="sp-section">
-            <h2 className="sp-heading-md">Services</h2>
-            <ServicesList services={services} />
-          </section>
-        ) : null}
-
-        <div className="sp-two-col">
-          {amenities?.length ? (
-            <section className="sp-section">
-              <h2 className="sp-heading-md">Amenities</h2>
-              <ul className="sp-list">
-                {amenities.map((a) => <li key={a}>{a}</li>)}
-              </ul>
-            </section>
-          ) : null}
-
-          {equipment?.length ? (
-            <section className="sp-section">
-              <h2 className="sp-heading-md">Equipment</h2>
-              <ul className="sp-list">
-                {equipment.map((e) => <li key={e}>{e}</li>)}
-              </ul>
-            </section>
-          ) : null}
-        </div>
-
-        {contactInfo || socialLinks ? (
-          <section className="sp-section">
-            <h2 className="sp-heading-md">Connect</h2>
-            {contactInfo?.phone ? <p>📞 {contactInfo.phone}</p> : null}
-            {contactInfo?.email ? (
-              <p>
-                ✉ <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a>
-              </p>
-            ) : null}
-            <SocialRow links={socialLinks} />
-          </section>
-        ) : null}
-
-        {reviews?.length ? (
-          <section className="sp-section">
-            <h2 className="sp-heading-md">Reviews</h2>
-            <div className="sp-reviews">
-              {reviews.slice(0, 4).map((r) => (
-                <div key={r.id} className="sp-review-card">
-                  <div className="sp-review-header">
-                    <strong>{r.user?.name}</strong>
-                    <Stars rating={r.rating} />
-                  </div>
-                  <p>{r.content}</p>
-                  {r.ownerReply ? (
-                    <p className="sp-owner-reply">
-                      <strong>Studio reply:</strong> {r.ownerReply}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        {effectiveOrder.filter((k) => !hiddenSet.has(k)).map((key) => renderSection(key, studio))}
 
         <div className="sp-cta-row">
-          <Link
-            to={`/booking/${id}`}
-            className="sp-button-primary"
-            style={{ background: accentColor }}
-          >
+          <Link to={`/booking/${id}`} className="sp-button-primary" style={{ background: accentColor }}>
             Book a session
           </Link>
           {contactInfo?.bookingUrl ? (
-            <a
-              href={contactInfo.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="sp-button-ghost"
-            >
+            <a href={contactInfo.bookingUrl} target="_blank" rel="noopener noreferrer" className="sp-button-ghost">
               External booking
             </a>
           ) : null}
