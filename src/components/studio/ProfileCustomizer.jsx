@@ -527,7 +527,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
         directions: form.arrivalInstructions?.trim() || null,
         latitude: normalizeOptionalNumber(form.latitude),
         longitude: normalizeOptionalNumber(form.longitude),
-        sectionOrder: Array.isArray(form.sectionOrder) && form.sectionOrder.length ? form.sectionOrder : null,
+        sectionOrder: Array.isArray(form.sectionOrder) ? form.sectionOrder : DEFAULT_SECTION_ORDER,
         hiddenSections: Array.isArray(form.hiddenSections) && form.hiddenSections.length ? form.hiddenSections : null,
       };
 
