@@ -79,7 +79,7 @@ export default function HomePage() {
             Book your next<br /><span className="eyf-gradient-text">recording session.</span>
           </h1>
           <p className="eyf-home-hero__sub">
-            Discover, compare, and book recording studios across major music cities.
+            Discover, compare, and book recording studios.
           </p>
 
           {/* Search bar */}
