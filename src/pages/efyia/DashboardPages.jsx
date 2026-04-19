@@ -15,6 +15,7 @@ import {
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
 import FileList from '../../components/booking/FileList';
+import BookingDetailModal from '../../components/booking/BookingDetailModal';
 import RevenueChart from '../../components/studio/RevenueChart';
 import AvailabilityManager from '../../components/studio/AvailabilityManager';
 import { canRevealBookingAddress, getPrivateAddress } from '../../lib/location';
@@ -154,12 +155,12 @@ function BookingLocationDetails({ booking }) {
 
 // ─── Client booking rows ──────────────────────────────────────────────────────
 function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioIds = new Set() }) {
-  const PAGE = 5;
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(PAGE);
-  const [finalPaymentBooking, setFinalPaymentBooking] = useState(null);
+  const [finalPaymentBooking, setFinalPaymentBooking] = useState(false);
   const [processingFinalPayment, setProcessingFinalPayment] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [activeTab, setActiveTab] = useState('upcoming');
 
   if (!bookings.length) {
     return (
@@ -178,14 +179,22 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   };
 
   const handleFinalPaymentSuccess = () => {
-    // Reload to refresh booking status
     window.location.reload();
   };
 
-  const calculateRemainingBalance = (booking) => {
-    if (!booking.depositAmount || !booking.total) return 0;
-    return booking.total - booking.depositAmount;
+  const groupedBookings = {
+    upcoming: bookings.filter((b) => ['PENDING', 'CONFIRMED'].includes(b.status)),
+    completed: bookings.filter((b) => b.status === 'COMPLETED'),
+    cancelled: bookings.filter((b) => b.status === 'CANCELLED'),
   };
+
+  const tabs = [
+    { id: 'upcoming', label: 'Upcoming', count: groupedBookings.upcoming.length, color: 'var(--mint)' },
+    { id: 'completed', label: 'Completed', count: groupedBookings.completed.length, color: 'var(--sage)' },
+    { id: 'cancelled', label: 'Cancelled', count: groupedBookings.cancelled.length, color: 'var(--earth)' },
+  ];
+
+  const activeBookings = groupedBookings[activeTab] || [];
 
   return (
     <>
@@ -201,7 +210,88 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
         />
       ) : null}
 
-      {finalPaymentBooking ? createPortal(
+      {selectedBooking ? (
+        <BookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          canUploadFiles={false}
+          currentUserId={currentUserId}
+          onAction={({ status, depositPaid, finalPaymentDate }) => {
+            const actions = [];
+
+            if (status === 'COMPLETED' && selectedBooking?.studio?.slug) {
+              if (reviewedStudioIds.has(selectedBooking.studio.id)) {
+                actions.push(
+                  <span key="reviewed" className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.82rem', padding: '0.4rem 0.9rem' }}>
+                    ✓ Reviewed
+                  </span>
+                );
+              } else {
+                actions.push(
+                  <Link
+                    key="review"
+                    to={`/studios/${selectedBooking.studio.slug}?tab=reviews`}
+                    className="eyf-button"
+                    onClick={() => setSelectedBooking(null)}
+                  >
+                    Leave a Review
+                  </Link>
+                );
+              }
+            }
+
+            if (['PENDING', 'CONFIRMED'].includes(status) && !depositPaid) {
+              actions.push(
+                <button
+                  key="cancel"
+                  type="button"
+                  className="eyf-button eyf-button--ghost"
+                  style={{ color: '#f87171', borderColor: '#f87171' }}
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setConfirmCancel(selectedBooking);
+                  }}
+                >
+                  Cancel Booking
+                </button>
+              );
+            }
+
+            if (depositPaid && !finalPaymentDate && status === 'CONFIRMED') {
+              actions.push(
+                <button
+                  key="payment"
+                  type="button"
+                  className="eyf-button eyf-button--secondary"
+                  onClick={() => {
+                    setFinalPaymentBooking(selectedBooking);
+                    setSelectedBooking(null);
+                  }}
+                >
+                  Pay Balance
+                </button>
+              );
+            }
+
+            if (['CANCELLED', 'COMPLETED'].includes(status) && selectedBooking?.studio?.id) {
+              actions.push(
+                <Link
+                  key="bookagin"
+                  to={`/booking/${selectedBooking.studio.id}`}
+                  className="eyf-button eyf-button--secondary"
+                  onClick={() => setSelectedBooking(null)}
+                >
+                  Book again
+                </Link>
+              );
+            }
+
+            return actions;
+          }}
+        />
+      ) : null}
+
+      {finalPaymentBooking && finalPaymentBooking.id ? createPortal(
         <div
           style={{
             position: 'fixed',
@@ -215,7 +305,9 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           }}
           role="dialog"
           aria-modal="true"
-          aria-label="Final payment"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setFinalPaymentBooking(false);
+          }}
         >
           <div
             style={{
@@ -275,7 +367,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem' }}>
                 <strong>Balance due</strong>
-                <strong style={{ color: 'var(--mint)' }}>${calculateRemainingBalance(finalPaymentBooking).toFixed(2)}</strong>
+                <strong style={{ color: 'var(--mint)' }}>${(finalPaymentBooking.total - finalPaymentBooking.depositAmount).toFixed(2)}</strong>
               </div>
             </div>
 
@@ -293,7 +385,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               <button
                 type="button"
                 className="eyf-button eyf-button--ghost"
-                onClick={() => setFinalPaymentBooking(null)}
+                onClick={() => setFinalPaymentBooking(false)}
                 disabled={processingFinalPayment}
               >
                 Cancel
@@ -312,104 +404,111 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
         document.body
       ) : null}
 
-      <div className="eyf-stack">
-        {bookings.slice(0, visibleCount).map((booking) => (
-          <div key={booking.id} className="eyf-stack" style={{ gap: '0.55rem' }}>
-            <article className="eyf-card eyf-card--booking eyf-stack">
-              <div className="eyf-row eyf-row--between eyf-row--start">
-                <div>
-                  <h3>{booking.studio?.name || 'Studio'}</h3>
-                  <p className="eyf-muted">
-                    {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
-                  </p>
+      {/* Tab Navigation */}
+      <div className="eyf-stack" style={{ gap: '1.25rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className="eyf-button eyf-button--ghost"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '0.5rem 1rem',
+                minHeight: 'unset',
+                fontSize: '0.9rem',
+                whiteSpace: 'nowrap',
+                borderBottom: activeTab === tab.id ? `2px solid ${tab.color}` : 'none',
+                borderRadius: 0,
+                color: activeTab === tab.id ? tab.color : 'var(--muted)',
+                fontWeight: activeTab === tab.id ? 700 : 400,
+              }}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span style={{
+                  marginLeft: '0.4rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: tab.color,
+                  color: 'white',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: 999,
+                  minWidth: '1.2rem',
+                  textAlign: 'center',
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Booking Cards */}
+        {activeBookings.length === 0 ? (
+          <EmptyState
+            title={`No ${activeTab} bookings`}
+            description={`Check back soon for new ${activeTab} bookings.`}
+          />
+        ) : (
+          <div className="eyf-stack" style={{ gap: '0.75rem' }}>
+            {activeBookings.map((booking) => (
+              <article
+                key={booking.id}
+                className="eyf-card"
+                style={{
+                  padding: '1.25rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid var(--border)',
+                }}
+                onClick={() => setSelectedBooking(booking)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setSelectedBooking(booking);
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="eyf-row eyf-row--between eyf-row--start">
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{booking.studio?.name || 'Studio'}</h3>
+                    <p className="eyf-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.9rem' }}>
+                      {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <strong style={{ fontSize: '1.1rem' }}>${booking.total?.toFixed(2)}</strong>
+                    {booking.depositPaid && !booking.finalPaymentDate && (
+                      <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
+                        FINAL DUE
+                      </span>
+                    )}
+                    {booking.finalPaymentDate && (
+                      <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
+                        PAID
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="eyf-booking-meta">
-                  <BookingStatusBadge status={booking.status} />
-                  {booking.depositPaid && !booking.finalPaymentDate && (
-                    <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
-                      FINAL PAYMENT DUE
-                    </span>
-                  )}
-                  {booking.finalPaymentDate && (
-                    <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
-                      PAID
-                    </span>
-                  )}
-                  <strong>${booking.total?.toFixed(2)}</strong>
-                  {booking.depositPaid && !booking.finalPaymentDate && booking.status === 'CONFIRMED' ? (
-                    <button
-                      type="button"
-                      className="eyf-button eyf-button--secondary"
-                      style={{ padding: '0.4rem 0.75rem', minHeight: 'unset', fontSize: '0.82rem' }}
-                      onClick={() => setFinalPaymentBooking(booking)}
-                    >
-                      Pay Balance
-                    </button>
-                  ) : null}
-                  {['PENDING', 'CONFIRMED'].includes(booking.status) && !booking.depositPaid ? (
-                    <button
-                      type="button"
-                      className="eyf-button eyf-button--ghost"
-                      style={{ padding: '0.4rem 0.75rem', minHeight: 'unset', fontSize: '0.82rem', color: '#f87171', borderColor: '#f87171' }}
-                      onClick={() => setConfirmCancel(booking)}
-                    >
-                      Cancel
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-              {['CANCELLED', 'COMPLETED'].includes(booking.status) && booking.studio?.id ? (
-                <Link
-                  to={`/booking/${booking.studio.id}`}
-                  className="eyf-button eyf-button--secondary"
-                  style={{ justifySelf: 'start', padding: '0.4rem 0.9rem', minHeight: 'unset', fontSize: '0.85rem' }}
-                >
-                  Book again
-                </Link>
-              ) : null}
-              {booking.status === 'COMPLETED' && booking.studio?.slug ? (
-                reviewedStudioIds.has(booking.studio.id) ? (
-                  <span
-                    className="eyf-badge eyf-badge--sage"
-                    style={{ justifySelf: 'start', fontSize: '0.82rem', padding: '0.3rem 0.7rem' }}
-                  >
-                    Reviewed ✓
-                  </span>
-                ) : (
-                  <Link
-                    to={`/studios/${booking.studio.slug}?tab=reviews`}
-                    className="eyf-button"
-                    style={{ justifySelf: 'start', padding: '0.4rem 0.9rem', minHeight: 'unset', fontSize: '0.85rem' }}
-                  >
-                    Leave a Review
-                  </Link>
-                )
-              ) : null}
-              <BookingLocationDetails booking={booking} />
-            </article>
+                <p style={{ margin: '0.75rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                  Click to view details
+                </p>
+              </article>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-      {bookings.length > visibleCount && (
-        <button
-          type="button"
-          className="eyf-button eyf-button--ghost"
-          style={{ justifySelf: 'center', marginTop: '0.25rem' }}
-          onClick={() => setVisibleCount((n) => n + PAGE)}
-        >
-          Show more ({bookings.length - visibleCount} remaining)
-        </button>
-      )}
     </>
   );
 }
 
-// ─── Studio owner booking rows ────────────────────────────────────────────────
+// ─── Studio owner booking rows (organized by status) ─────────────────────────
 function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [acting, setActing] = useState(false);
   const [finalPaymentLoading, setFinalPaymentLoading] = useState(null);
-  const [finalPaymentError, setFinalPaymentError] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [activeTab, setActiveTab] = useState('pending');
 
   if (!bookings.length) {
     return (
@@ -429,20 +528,31 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
 
   const handleRequestFinalPayment = async (bookingId) => {
     setFinalPaymentLoading(bookingId);
-    setFinalPaymentError(null);
     try {
       await depositApi.payFinal(bookingId);
-      // Refresh bookings or show success message
-      if (onStatusChange) {
-        // Refetch bookings to update the UI
-        window.location.reload();
-      }
+      window.location.reload();
     } catch (err) {
-      setFinalPaymentError(err.message || 'Failed to request final payment');
+      console.error(err);
     } finally {
       setFinalPaymentLoading(null);
     }
   };
+
+  const groupedBookings = {
+    pending: bookings.filter((b) => b.status === 'PENDING'),
+    confirmed: bookings.filter((b) => b.status === 'CONFIRMED'),
+    completed: bookings.filter((b) => b.status === 'COMPLETED'),
+    cancelled: bookings.filter((b) => b.status === 'CANCELLED'),
+  };
+
+  const tabs = [
+    { id: 'pending', label: 'Pending', count: groupedBookings.pending.length, color: 'var(--amber)' },
+    { id: 'confirmed', label: 'Confirmed', count: groupedBookings.confirmed.length, color: 'var(--mint)' },
+    { id: 'completed', label: 'Completed', count: groupedBookings.completed.length, color: 'var(--sage)' },
+    { id: 'cancelled', label: 'Cancelled', count: groupedBookings.cancelled.length, color: 'var(--earth)' },
+  ];
+
+  const activeBookings = groupedBookings[activeTab] || [];
 
   return (
     <>
@@ -476,124 +586,182 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
         />
       ) : null}
 
-      <div className="eyf-stack">
-        {bookings.map((booking) => (
-          <div key={booking.id} className="eyf-stack" style={{ gap: '0.55rem' }}>
-            <article className="eyf-card eyf-row eyf-row--between eyf-row--start">
-              <div>
-                <h3>{booking.user?.name || 'Client'}</h3>
-                <p className="eyf-muted">
-                  {booking.date} · {booking.time} · {booking.sessionType} ·{' '}
-                  {booking.hours}hr
+      {selectedBooking ? (
+        <BookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          canUploadFiles={true}
+          currentUserId={currentUserId}
+          onAction={({ status, depositPaid, finalPaymentDate }) => {
+            const actions = [];
+
+            if (status === 'PENDING') {
+              actions.push(
+                <button
+                  key="confirm"
+                  type="button"
+                  className="eyf-button eyf-button--secondary"
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setConfirmAction({ booking: selectedBooking, action: 'CONFIRMED' });
+                  }}
+                >
+                  Confirm
+                </button>,
+                <button
+                  key="decline"
+                  type="button"
+                  className="eyf-button eyf-button--ghost"
+                  style={{ color: '#f87171', borderColor: '#f87171' }}
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setConfirmAction({ booking: selectedBooking, action: 'CANCELLED' });
+                  }}
+                >
+                  Decline
+                </button>
+              );
+            }
+
+            if (status === 'CONFIRMED') {
+              if (depositPaid && !finalPaymentDate) {
+                actions.push(
+                  <button
+                    key="payment"
+                    type="button"
+                    className="eyf-button eyf-button--secondary"
+                    onClick={() => handleRequestFinalPayment(selectedBooking.id)}
+                    disabled={finalPaymentLoading === selectedBooking.id}
+                  >
+                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Request Payment'}
+                  </button>
+                );
+              }
+              actions.push(
+                <button
+                  key="complete"
+                  type="button"
+                  className="eyf-button eyf-button--ghost"
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setConfirmAction({ booking: selectedBooking, action: 'COMPLETED' });
+                  }}
+                >
+                  Mark Complete
+                </button>,
+                <button
+                  key="cancel"
+                  type="button"
+                  className="eyf-button eyf-button--ghost"
+                  style={{ color: '#f87171', borderColor: '#f87171' }}
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setConfirmAction({ booking: selectedBooking, action: 'CANCELLED' });
+                  }}
+                >
+                  Cancel
+                </button>
+              );
+            }
+
+            return actions;
+          }}
+        />
+      ) : null}
+
+      {/* Tab Navigation */}
+      <div className="eyf-stack" style={{ gap: '1.25rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`eyf-button eyf-button--ghost`}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '0.5rem 1rem',
+                minHeight: 'unset',
+                fontSize: '0.9rem',
+                whiteSpace: 'nowrap',
+                borderBottom: activeTab === tab.id ? `2px solid ${tab.color}` : 'none',
+                borderRadius: 0,
+                color: activeTab === tab.id ? tab.color : 'var(--muted)',
+                fontWeight: activeTab === tab.id ? 700 : 400,
+              }}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span style={{
+                  marginLeft: '0.4rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: tab.color,
+                  color: 'white',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: 999,
+                  minWidth: '1.2rem',
+                  textAlign: 'center',
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Booking Cards Grid */}
+        {activeBookings.length === 0 ? (
+          <EmptyState
+            title={`No ${activeTab} bookings`}
+            description={`Check back soon for new ${activeTab} booking requests.`}
+          />
+        ) : (
+          <div className="eyf-stack" style={{ gap: '0.75rem' }}>
+            {activeBookings.map((booking) => (
+              <article
+                key={booking.id}
+                className="eyf-card"
+                style={{
+                  padding: '1.25rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid var(--border)',
+                }}
+                onClick={() => setSelectedBooking(booking)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setSelectedBooking(booking);
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="eyf-row eyf-row--between eyf-row--start">
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{booking.user?.name || 'Client'}</h3>
+                    <p className="eyf-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.9rem' }}>
+                      {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <strong style={{ fontSize: '1.1rem' }}>${booking.total?.toFixed(2)}</strong>
+                    {booking.depositPaid && !booking.finalPaymentDate && (
+                      <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
+                        FINAL DUE
+                      </span>
+                    )}
+                    {booking.finalPaymentDate && (
+                      <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
+                        PAID
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p style={{ margin: '0.75rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                  Click to view details
                 </p>
-              </div>
-              <div className="eyf-booking-meta">
-                <BookingStatusBadge status={booking.status} />
-                {booking.depositPaid && !booking.finalPaymentDate && (
-                  <span className="eyf-badge eyf-badge--mint" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
-                    DEPOSIT PAID · FINAL DUE
-                  </span>
-                )}
-                {booking.finalPaymentDate && (
-                  <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
-                    FULLY PAID
-                  </span>
-                )}
-                <strong>${booking.total?.toFixed(2)}</strong>
-
-                {booking.status === 'PENDING' ? (
-                  <>
-                    <button
-                      type="button"
-                      className="eyf-button eyf-button--secondary"
-                      style={{
-                        padding: '0.4rem 0.75rem',
-                        minHeight: 'unset',
-                        fontSize: '0.85rem',
-                      }}
-                      onClick={() =>
-                        setConfirmAction({ booking, action: 'CONFIRMED' })
-                      }
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      type="button"
-                      className="eyf-button eyf-button--ghost"
-                      style={{
-                        padding: '0.4rem 0.75rem',
-                        minHeight: 'unset',
-                        fontSize: '0.82rem',
-                        color: '#f87171',
-                        borderColor: '#f87171',
-                      }}
-                      onClick={() =>
-                        setConfirmAction({ booking, action: 'CANCELLED' })
-                      }
-                    >
-                      Decline
-                    </button>
-                  </>
-                ) : null}
-
-                {booking.status === 'CONFIRMED' ? (
-                  <>
-                    {booking.depositPaid && !booking.finalPaymentDate ? (
-                      <button
-                        type="button"
-                        className="eyf-button eyf-button--secondary"
-                        style={{
-                          padding: '0.4rem 0.75rem',
-                          minHeight: 'unset',
-                          fontSize: '0.85rem',
-                        }}
-                        onClick={() => handleRequestFinalPayment(booking.id)}
-                        disabled={finalPaymentLoading === booking.id}
-                      >
-                        {finalPaymentLoading === booking.id ? 'Requesting...' : 'Request Final Payment'}
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="eyf-button eyf-button--ghost"
-                      style={{
-                        padding: '0.4rem 0.75rem',
-                        minHeight: 'unset',
-                        fontSize: '0.85rem',
-                      }}
-                      onClick={() =>
-                        setConfirmAction({ booking, action: 'COMPLETED' })
-                      }
-                    >
-                      Mark complete
-                    </button>
-                    <button
-                      type="button"
-                      className="eyf-button eyf-button--ghost"
-                      style={{
-                        padding: '0.4rem 0.75rem',
-                        minHeight: 'unset',
-                        fontSize: '0.82rem',
-                        color: '#f87171',
-                        borderColor: '#f87171',
-                      }}
-                      onClick={() =>
-                        setConfirmAction({ booking, action: 'CANCELLED' })
-                      }
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            </article>
-            <BookingLocationDetails booking={booking} />
-
-            {['CONFIRMED', 'COMPLETED'].includes(booking.status) ? (
-              <FileList bookingId={booking.id} canUpload currentUserId={currentUserId} />
-            ) : null}
+              </article>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </>
   );
