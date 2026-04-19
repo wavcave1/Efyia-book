@@ -74,7 +74,7 @@ export default function HomePage() {
         <div className="eyf-home-hero__overlay" aria-hidden="true" />
 
         <div className="eyf-home-hero__content">
-          <p className="eyf-home-hero__eyebrow">Studio Booking Marketplace</p>
+          <p className="eyf-home-hero__eyebrow">Book Your Next Session</p>
           <h1 className="eyf-home-hero__heading">
             Book your next<br /><span className="eyf-gradient-text">recording session.</span>
           </h1>
