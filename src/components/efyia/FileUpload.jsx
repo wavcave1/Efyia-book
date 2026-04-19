@@ -22,7 +22,7 @@ async function uploadToServer(file) {
 
 const ACCEPT_MAP = {
   image: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
-  audio: 'audio/mpeg,audio/wav,audio/aac,audio/ogg,audio/flac,audio/mp4',
+  audio: 'audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/aac,audio/x-aac,audio/ogg,audio/flac,audio/x-flac,audio/mp4,audio/x-m4a,.mp3,.wav,.aac,.ogg,.flac,.m4a,.m4b',
 };
 
 export default function FileUpload({
