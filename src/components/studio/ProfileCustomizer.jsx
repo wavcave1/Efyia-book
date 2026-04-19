@@ -534,7 +534,7 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
       // Remove sessionTypes from the profile payload — it's saved via studiosApi below
       const { sessionTypes: _sessionTypes, ...profilePayload } = payload;
 
-      let updated = await studioProfileApi.update(profilePayload);
+      let updated = await studioProfileApi.update(profilePayload, initialStudio?.id);
 
       // sessionTypes lives on the Studio model, not the profile endpoint
       if (initialStudio?.id) {
