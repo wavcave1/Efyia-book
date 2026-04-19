@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import TeamManager from '../../components/studio/TeamManager';
@@ -13,7 +14,6 @@ import {
 } from '../../components/efyia/ui';
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
-import MessageThread from '../../components/booking/MessageThread';
 import FileList from '../../components/booking/FileList';
 import RevenueChart from '../../components/studio/RevenueChart';
 import AvailabilityManager from '../../components/studio/AvailabilityManager';
@@ -30,7 +30,7 @@ function ConfirmModal({
   onClose,
   loading,
 }) {
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -94,7 +94,8 @@ function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -156,7 +157,6 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   const PAGE = 5;
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
-  const [expandedThread, setExpandedThread] = useState(null);
   const [visibleCount, setVisibleCount] = useState(PAGE);
   const [finalPaymentBooking, setFinalPaymentBooking] = useState(null);
   const [processingFinalPayment, setProcessingFinalPayment] = useState(false);
@@ -201,7 +201,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
         />
       ) : null}
 
-      {finalPaymentBooking ? (
+      {finalPaymentBooking ? createPortal(
         <div
           style={{
             position: 'fixed',
@@ -308,7 +308,8 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : null}
 
       <div className="eyf-stack">
@@ -386,13 +387,6 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               ) : null}
               <BookingLocationDetails booking={booking} />
             </article>
-
-            <MessageThread
-              bookingId={booking.id}
-              currentUserId={currentUserId}
-              isExpanded={expandedThread === booking.id}
-              onToggle={() => setExpandedThread(expandedThread === booking.id ? null : booking.id)}
-            />
           </div>
         ))}
       </div>
@@ -414,7 +408,6 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
 function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [acting, setActing] = useState(false);
-  const [expandedThread, setExpandedThread] = useState(null);
   const [finalPaymentLoading, setFinalPaymentLoading] = useState(null);
   const [finalPaymentError, setFinalPaymentError] = useState(null);
 
@@ -595,13 +588,6 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
               </div>
             </article>
             <BookingLocationDetails booking={booking} />
-
-            <MessageThread
-              bookingId={booking.id}
-              currentUserId={currentUserId}
-              isExpanded={expandedThread === booking.id}
-              onToggle={() => setExpandedThread(expandedThread === booking.id ? null : booking.id)}
-            />
 
             {['CONFIRMED', 'COMPLETED'].includes(booking.status) ? (
               <FileList bookingId={booking.id} canUpload currentUserId={currentUserId} />

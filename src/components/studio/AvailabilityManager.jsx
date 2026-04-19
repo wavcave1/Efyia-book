@@ -236,35 +236,53 @@ export default function AvailabilityManager({ studioId, onSaved }) {
       </p>
 
       <form onSubmit={addBlock} className="eyf-stack">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
-          <input
-            type="date"
-            value={blockForm.date}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, date: e.target.value }))}
-          />
-          <select
-            value={blockForm.startTime}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, startTime: e.target.value }))}
-          >
-            {TIME_OPTIONS.map((time) => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-          <select
-            value={blockForm.endTime}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, endTime: e.target.value }))}
-          >
-            {TIME_OPTIONS.map((time) => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="e.g. Private event, maintenance..."
-            value={blockForm.reason}
-            onChange={(e) => setBlockForm((prev) => ({ ...prev, reason: e.target.value }))}
-          />
-          <button type="submit" className="eyf-button" disabled={addingBlock}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', overflow: 'hidden' }}>
+          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', width: 'fit-content' }}>
+            Date
+            <input
+              type="date"
+              value={blockForm.date}
+              onChange={(e) => setBlockForm((prev) => ({ ...prev, date: e.target.value }))}
+              style={{ minWidth: '160px', boxSizing: 'border-box' }}
+            />
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', minWidth: 0 }}>
+            <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', minWidth: 0 }}>
+              Start time
+              <select
+                value={blockForm.startTime}
+                onChange={(e) => setBlockForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+              >
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', minWidth: 0 }}>
+              End time
+              <select
+                value={blockForm.endTime}
+                onChange={(e) => setBlockForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+              >
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label style={{ display: 'grid', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', minWidth: 0 }}>
+            Reason
+            <input
+              type="text"
+              placeholder="e.g. Private event..."
+              value={blockForm.reason}
+              onChange={(e) => setBlockForm((prev) => ({ ...prev, reason: e.target.value }))}
+              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+            />
+          </label>
+          <button type="submit" className="eyf-button" disabled={addingBlock} style={{ minHeight: 'unset', padding: '0.6rem 1rem', width: '100%' }}>
             {addingBlock ? 'Adding...' : 'Add'}
           </button>
         </div>
