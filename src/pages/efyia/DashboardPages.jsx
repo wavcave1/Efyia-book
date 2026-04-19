@@ -406,37 +406,21 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
 
       {/* Tab Navigation */}
       <div className="eyf-stack" style={{ gap: '1.25rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+        <div className="eyf-booking-tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className="eyf-button eyf-button--ghost"
+              className={`eyf-booking-tab-btn eyf-button eyf-button--ghost ${activeTab === tab.id ? 'is-active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: '0.5rem 1rem',
-                minHeight: 'unset',
-                fontSize: '0.9rem',
-                whiteSpace: 'nowrap',
                 borderBottom: activeTab === tab.id ? `2px solid ${tab.color}` : 'none',
-                borderRadius: 0,
                 color: activeTab === tab.id ? tab.color : 'var(--muted)',
-                fontWeight: activeTab === tab.id ? 700 : 400,
               }}
             >
               {tab.label}
               {tab.count > 0 && (
-                <span style={{
-                  marginLeft: '0.4rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  background: tab.color,
-                  color: 'white',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: 999,
-                  minWidth: '1.2rem',
-                  textAlign: 'center',
-                }}>
+                <span className="eyf-booking-tab-badge" style={{ background: tab.color }}>
                   {tab.count}
                 </span>
               )}
@@ -671,37 +655,21 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
 
       {/* Tab Navigation */}
       <div className="eyf-stack" style={{ gap: '1.25rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+        <div className="eyf-booking-tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className={`eyf-button eyf-button--ghost`}
+              className={`eyf-booking-tab-btn eyf-button eyf-button--ghost ${activeTab === tab.id ? 'is-active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: '0.5rem 1rem',
-                minHeight: 'unset',
-                fontSize: '0.9rem',
-                whiteSpace: 'nowrap',
                 borderBottom: activeTab === tab.id ? `2px solid ${tab.color}` : 'none',
-                borderRadius: 0,
                 color: activeTab === tab.id ? tab.color : 'var(--muted)',
-                fontWeight: activeTab === tab.id ? 700 : 400,
               }}
             >
               {tab.label}
               {tab.count > 0 && (
-                <span style={{
-                  marginLeft: '0.4rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  background: tab.color,
-                  color: 'white',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: 999,
-                  minWidth: '1.2rem',
-                  textAlign: 'center',
-                }}>
+                <span className="eyf-booking-tab-badge" style={{ background: tab.color }}>
                   {tab.count}
                 </span>
               )}
