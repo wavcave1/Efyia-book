@@ -132,7 +132,7 @@ function Footer() {
       <div className="eyf-footer__grid">
         <div className="eyf-footer__brand">
           <strong className="eyf-footer__brand-name">Efyia <em>Book</em></strong>
-          <p>The studio booking marketplace for artists, engineers, and studio owners across major music cities.</p>
+          <p>The go to studio booking marketplace.</p>
         </div>
         <div className="eyf-footer__col">
           <span className="eyf-footer__col-heading">Platform</span>
