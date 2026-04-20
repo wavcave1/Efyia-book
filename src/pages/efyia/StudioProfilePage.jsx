@@ -797,7 +797,7 @@ export default function StudioProfilePage() {
               Sign in to book
             </Link>
           )}
-          <Link className="eyf-button eyf-button--secondary" to="/map">View on map</Link>
+          <Link className="eyf-button eyf-button--secondary" to="/discover">Find more studios</Link>
 
           {isOwner ? (
             <button type="button" className="eyf-button eyf-button--ghost" onClick={() => openDrawer('branding')}>
