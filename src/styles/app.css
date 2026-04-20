@@ -850,6 +850,70 @@ html { overflow-x: hidden; }
 }
 
 /* ─── Scrollable tab bar helper ───────────────────────────────────────────── */
+.eyf-tabs-nav-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.eyf-tabs-nav-wrap.is-desktop .eyf-tabs--scroll {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.eyf-tabs-nav-wrap.is-desktop .eyf-tabs--scroll::before,
+.eyf-tabs-nav-wrap.is-desktop .eyf-tabs--scroll::after {
+  content: '';
+  position: sticky;
+  top: 0;
+  width: 1.5rem;
+  height: auto;
+  align-self: stretch;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.eyf-tabs-nav-wrap.is-desktop .eyf-tabs--scroll::before {
+  left: 0;
+  margin-right: -1.5rem;
+  background: linear-gradient(90deg, var(--card) 25%, rgba(17, 24, 32, 0));
+}
+
+.eyf-tabs-nav-wrap.is-desktop .eyf-tabs--scroll::after {
+  right: 0;
+  margin-left: -1.5rem;
+  background: linear-gradient(270deg, var(--card) 25%, rgba(17, 24, 32, 0));
+}
+
+.eyf-tabs-scroll-btn {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.eyf-tabs-scroll-btn:hover:not(:disabled) {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.eyf-tabs-scroll-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .eyf-tabs--scroll {
   overflow-x: auto;
   flex-wrap: nowrap;
@@ -858,6 +922,16 @@ html { overflow-x: hidden; }
   padding-bottom: 2px;
 }
 .eyf-tabs--scroll::-webkit-scrollbar { display: none; }
+
+@media (max-width: 899px) {
+  .eyf-tabs-nav-wrap {
+    gap: 0;
+  }
+
+  .eyf-tabs-scroll-btn {
+    display: none;
+  }
+}
 
 /* ─── Tag input ──────────────────────────────────────────────────────────── */
 .eyf-tag-input {
@@ -3207,5 +3281,4 @@ img, video, iframe { max-width: 100%; }
     padding: 4rem 1rem 3rem;
   }
 }
-
 
