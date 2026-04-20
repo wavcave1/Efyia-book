@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -7,6 +7,7 @@ import { useAppContext } from '../../context/AppContext';
 import { EmptyState, ErrorMessage, SectionHeading, Spinner, Stars, StudioCard } from '../../components/efyia/ui';
 import { getDisplayLocation } from '../../lib/location';
 import { resolveStudioCoords } from '../../lib/geocode';
+import MapView from '../../components/efyia/MapView';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -227,6 +228,11 @@ export default function SearchPage() {
 
           {/* ── Results + optional map ──────────────────────────────────── */}
           <div className={`eyf-results-area${showMap ? ' has-map' : ''}`}>
+            {/* Map embedded from Map page — always shown, spans full width */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <MapView />
+            </div>
+
             <div className="eyf-results-panel">
               {loading ? (
                 <Spinner />
