@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -25,11 +25,18 @@ function MapboxPanel({ studios, selected, onSelect }) {
       zoom: 3,
     });
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    mapRef.current.on('click', (e) => {
+      if (!e.originalEvent.target.closest('.eyf-map-pin')) {
+        onSelect(null);
+      }
+    });
+
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [onSelect]);
 
   // Rebuild markers whenever the studios list changes
   useEffect(() => {
@@ -93,23 +100,24 @@ function MapboxPanel({ studios, selected, onSelect }) {
   }, [selected]);
 
   return (
-    <div className="eyf-discover-map-canvas">
+    <div className="eyf-card eyf-map-canvas" style={{ position: 'relative', overflow: 'hidden', minHeight: '420px' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {selected ? (
         <div className="eyf-discover-map-preview">
           <div>
             <strong>{selected.name}</strong>
             <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
-              {getDisplayLocation(selected)}
+              {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
             </p>
             <Stars rating={selected.rating || 0} />
           </div>
-          <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
-            View
-          </Link>
+          <button type="button" onClick={() => onSelect(null)} className="eyf-button eyf-button--ghost" style={{ minHeight: 'unset', padding: '0.35rem 0.6rem' }}>
+            ✕
+          </button>
+          <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>View profile</Link>
         </div>
       ) : (
-        <p className="eyf-map-label">Select a pin to preview</p>
+        <p className="eyf-map-label" style={{ left: '1rem', bottom: '1rem', transform: 'none' }}>Select a pin to preview</p>
       )}
     </div>
   );
@@ -126,13 +134,11 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hasSearched, setHasSearched] = useState(!!params.get('q'));
   const [selectedStudio, setSelectedStudio] = useState(null);
 
   // Sync query from URL
   useEffect(() => {
     setQuery(params.get('q') || '');
-    setHasSearched(!!params.get('q'));
   }, [params]);
 
   const fetchStudios = (overrides = {}) => {
@@ -168,11 +174,10 @@ export default function SearchPage() {
   const applyFilters = () => {
     if (query) setParams({ q: query });
     else setParams({});
-    setHasSearched(true);
     fetchStudios({ q: query });
   };
 
-  const showMap = hasSearched && studios.length > 0 && !loading && !error;
+  const showMap = studios.length > 0 && !loading && !error;
 
   return (
     <div className="eyf-page">
@@ -225,8 +230,20 @@ export default function SearchPage() {
             </button>
           </aside>
 
-          {/* ── Results + optional map ──────────────────────────────────── */}
-          <div className={`eyf-results-area${showMap ? ' has-map' : ''}`}>
+          <div className="eyf-results-area">
+            {showMap ? (
+              <div className="eyf-discover-map" style={{ marginBottom: '1rem' }}>
+                <p className="eyf-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                  {studios.length} result{studios.length !== 1 ? 's' : ''} on map
+                </p>
+                <MapboxPanel
+                  studios={studios}
+                  selected={selectedStudio}
+                  onSelect={setSelectedStudio}
+                />
+              </div>
+            ) : null}
+
             <div className="eyf-results-panel">
               {loading ? (
                 <Spinner />
@@ -238,7 +255,7 @@ export default function SearchPage() {
                     <strong>{total}</strong> studio{total !== 1 ? 's' : ''} found
                   </div>
                   {studios.length > 0 ? (
-                    <div className={`eyf-card-grid${showMap ? ' eyf-card-grid--compact' : ''}`}>
+                    <div className="eyf-card-grid">
                       {studios.map((studio) => (
                         <StudioCard
                           key={studio.id}
@@ -257,20 +274,6 @@ export default function SearchPage() {
                 </>
               )}
             </div>
-
-            {/* ── Map panel (auto-shows on search) ─────────────────────── */}
-            {showMap ? (
-              <div className="eyf-discover-map">
-                <p className="eyf-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                  {studios.length} result{studios.length !== 1 ? 's' : ''} on map
-                </p>
-                <MapboxPanel
-                  studios={studios}
-                  selected={selectedStudio}
-                  onSelect={setSelectedStudio}
-                />
-              </div>
-            ) : null}
           </div>
         </div>
       </section>
