@@ -1137,21 +1137,16 @@ export function ClientDashboard() {
           <SectionHeading
             eyebrow="Client dashboard"
             title={`Welcome back, ${currentUser?.name}`}
-            action={(
-              <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
-                Account settings
-              </button>
-            )}
           />
+          
           <button
             type="button"
-            className="eyf-button eyf-button--ghost"
+            className="eyf-button eyf-button--secondary"
             style={{ width: 'fit-content' }}
             onClick={() => setShowAccountSettings(true)}
           >
             Account settings
           </button>
-
           {loading ? (
             <Spinner />
           ) : error ? (
@@ -1320,24 +1315,19 @@ export function StudioDashboard() {
             activeStudioId={activeStudioId}
             onSwitch={setActiveStudio}
           />
-          <SectionHeading
+                <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
-            action={(
-              <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
-                Account settings
-              </button>
-            )}
           />
+          
           <button
             type="button"
-            className="eyf-button eyf-button--ghost"
+            className="eyf-button eyf-button--secondary"
             style={{ width: 'fit-content' }}
             onClick={() => setShowAccountSettings(true)}
           >
             Account settings
           </button>
-
           {loading ? (
             <Spinner />
           ) : error ? (
