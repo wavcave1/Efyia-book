@@ -161,15 +161,25 @@ export default function HomePage() {
         <div className="eyf-home-stats">
           <div className="eyf-home-stats__item">
             <strong className="eyf-home-stats__num">{stats.studios > 0 ? stats.studios : '—'}</strong>
-            <span>Studios listed</span>
+            <span>Verified Studios </span>
           </div>
           
           <div className="eyf-home-stats__item">
+            <strong className="eyf-home-stats__num">Instant</strong>
+            <span>booking</span>
+          </div>
+        
+        
+        <div className="eyf-home-stats__item">
+            <strong className="eyf-home-stats__num">Secure</strong>
+            <span>checkout</span>
+          </div>
+           <div className="eyf-home-stats__item">
             <strong className="eyf-home-stats__num">24/7</strong>
-            <span>Artist support</span>
+            <span>support</span>
           </div>
         </div>
-
+        
         {/* ── How it works ──────────────────────────────────────────────────── */}
         <section className="eyf-section eyf-how-it-works">
           <SectionHeading
@@ -199,7 +209,7 @@ export default function HomePage() {
         <section className="eyf-section">
           <SectionHeading
             eyebrow="Featured studios"
-            title="Top-rated spaces across the marketplace"
+            title="Top rated spaces across the marketplace"
             action={<Link className="eyf-link-button" to="/discover">View all studios</Link>}
           />
           {loading ? (
