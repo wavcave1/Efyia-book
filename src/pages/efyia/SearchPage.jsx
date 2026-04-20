@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -13,31 +13,40 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 function MapboxPanel({ studios, selected, onSelect }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
-  const markersRef = useRef([]); // [{ marker, el, id, lat, lng }]
+  const markersRef = useRef([]);
 
-  // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+
     mapRef.current = new mapboxgl.Map({
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/standard',
       center: [-98.5795, 39.8283],
       zoom: 3,
     });
+
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    mapRef.current.on('click', (e) => {
+      if (!e.originalEvent.target.closest('.eyf-map-pin')) {
+        onSelect(null);
+      }
+    });
+
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [onSelect]);
 
-  // Rebuild markers whenever the studios list changes
   useEffect(() => {
-    if (!mapRef.current || !studios.length) return;
+    if (!mapRef.current) return;
 
     const addMarkers = async () => {
       markersRef.current.forEach(({ marker }) => marker.remove());
       markersRef.current = [];
+
+      if (!studios.length) return;
 
       const token = mapboxgl.accessToken;
       const resolved = await Promise.all(
@@ -52,21 +61,25 @@ function MapboxPanel({ studios, selected, onSelect }) {
 
       resolved.forEach(({ studio, lat, lng }) => {
         if (lat == null || lng == null) return;
+
         hasCoords = true;
         bounds.extend([lng, lat]);
 
         const el = document.createElement('button');
         el.className = 'eyf-map-pin';
         el.style.background = studio.color || '#62f3d4';
-        el.setAttribute('aria-label', `${studio.name} — ${getDisplayLocation(studio)}`);
+        el.setAttribute('aria-label', `View ${studio.name} — ${getDisplayLocation(studio)}`);
         el.title = studio.name;
+
         el.addEventListener('click', () => {
           onSelect((prev) => (prev?.id === studio.id ? null : studio));
+          mapRef.current.flyTo({ center: [lng, lat], zoom: 12, duration: 800 });
         });
 
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
+
         markersRef.current.push({ marker, el, id: studio.id, lat, lng });
       });
 
@@ -77,13 +90,13 @@ function MapboxPanel({ studios, selected, onSelect }) {
 
     if (mapRef.current.isStyleLoaded()) addMarkers();
     else mapRef.current.once('load', addMarkers);
-  }, [studios]);
+  }, [studios, onSelect]);
 
-  // Sync pin highlight + fly to selected studio
   useEffect(() => {
     markersRef.current.forEach(({ el, id }) => {
       el.classList.toggle('is-selected', selected?.id === id);
     });
+
     if (selected && mapRef.current) {
       const entry = markersRef.current.find((m) => m.id === selected.id);
       if (entry) {
@@ -93,23 +106,83 @@ function MapboxPanel({ studios, selected, onSelect }) {
   }, [selected]);
 
   return (
-    <div className="eyf-discover-map-canvas">
+    <div
+      className="eyf-card eyf-map-canvas"
+      style={{ position: 'relative', overflow: 'hidden', minHeight: '420px' }}
+    >
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+
       {selected ? (
-        <div className="eyf-discover-map-preview">
-          <div>
-            <strong>{selected.name}</strong>
-            <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
-              {getDisplayLocation(selected)}
-            </p>
-            <Stars rating={selected.rating || 0} />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '1rem',
+            left: '1rem',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: '14px',
+            padding: '1rem',
+            maxWidth: '320px',
+            width: 'calc(100% - 2rem)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.6rem',
+            zIndex: 10,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: '0.5rem',
+            }}
+          >
+            <div>
+              <strong style={{ display: 'block', fontSize: '0.95rem' }}>{selected.name}</strong>
+              <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
+                {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
+              </p>
+              <Stars rating={selected.rating || 0} />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onSelect(null)}
+              aria-label="Close studio preview"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--muted)',
+                fontSize: '1.1rem',
+                lineHeight: 1,
+                padding: '0',
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
           </div>
+
           <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
-            View
+            View profile
           </Link>
         </div>
       ) : (
-        <p className="eyf-map-label">Select a pin to preview</p>
+        <p
+          className="eyf-map-label"
+          style={{
+            position: 'absolute',
+            left: '1rem',
+            bottom: '1rem',
+            zIndex: 5,
+            margin: 0,
+          }}
+        >
+          Select a pin to preview
+        </p>
       )}
     </div>
   );
@@ -126,11 +199,12 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasSearched, setHasSearched] = useState(!!params.get('q'));
   const [selectedStudio, setSelectedStudio] = useState(null);
 
-  // Sync query from URL
   useEffect(() => {
     setQuery(params.get('q') || '');
+    setHasSearched(!!params.get('q'));
   }, [params]);
 
   const fetchStudios = (overrides = {}) => {
@@ -166,10 +240,11 @@ export default function SearchPage() {
   const applyFilters = () => {
     if (query) setParams({ q: query });
     else setParams({});
+    setHasSearched(true);
     fetchStudios({ q: query });
   };
 
-  const showMap = studios.length > 0 && !loading && !error;
+  const showMap = hasSearched && studios.length > 0 && !loading && !error;
 
   return (
     <div className="eyf-page">
@@ -180,9 +255,9 @@ export default function SearchPage() {
         />
 
         <div className="eyf-search-layout">
-          {/* ── Filter sidebar ──────────────────────────────────────────── */}
           <aside className="eyf-card eyf-filter-panel">
             <h3>Filters</h3>
+
             <label>
               Search
               <input
@@ -192,6 +267,7 @@ export default function SearchPage() {
                 placeholder="City, zip code, or studio name"
               />
             </label>
+
             <label>
               Max hourly rate: ${priceMax}{priceMax === 200 ? '+' : ''}
               <input
@@ -202,6 +278,7 @@ export default function SearchPage() {
                 onChange={(e) => setPriceMax(Number(e.target.value))}
               />
             </label>
+
             <div>
               <span className="eyf-filter-label">Minimum rating</span>
               <div className="eyf-city-list">
@@ -217,13 +294,26 @@ export default function SearchPage() {
                 ))}
               </div>
             </div>
+
             <button type="button" className="eyf-button" onClick={applyFilters}>
               Apply filters
             </button>
           </aside>
 
-          {/* ── Results ──────────────────────────────────────────────────── */}
           <div className="eyf-results-area">
+            {showMap ? (
+              <div className="eyf-discover-map" style={{ marginBottom: '1rem' }}>
+                <p className="eyf-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                  {studios.length} result{studios.length !== 1 ? 's' : ''} on map
+                </p>
+                <MapboxPanel
+                  studios={studios}
+                  selected={selectedStudio}
+                  onSelect={setSelectedStudio}
+                />
+              </div>
+            ) : null}
+
             <div className="eyf-results-panel">
               {loading ? (
                 <Spinner />
@@ -234,6 +324,7 @@ export default function SearchPage() {
                   <div className="eyf-results-count">
                     <strong>{total}</strong> studio{total !== 1 ? 's' : ''} found
                   </div>
+
                   {studios.length > 0 ? (
                     <div className="eyf-card-grid">
                       {studios.map((studio) => (
@@ -256,20 +347,6 @@ export default function SearchPage() {
             </div>
           </div>
         </div>
-
-        {/* ── Map panel (merged from Map View) ─────────────────────────── */}
-        {showMap ? (
-          <div className="eyf-discover-map" style={{ marginTop: '1rem' }}>
-            <p className="eyf-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-              {studios.length} result{studios.length !== 1 ? 's' : ''} on map
-            </p>
-            <MapboxPanel
-              studios={studios}
-              selected={selectedStudio}
-              onSelect={setSelectedStudio}
-            />
-          </div>
-        ) : null}
       </section>
     </div>
   );
