@@ -28,7 +28,7 @@ function AddressCard({ booking }) {
   return (
     <div className="eyf-card" style={{ background: 'var(--bg-subtle)', padding: '1.25rem' }}>
       <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)' }}>
-        📍 Location
+         Location
       </h4>
       <div style={{ display: 'grid', gap: '0.35rem' }}>
         {location.line1 ? <p style={{ margin: 0, fontSize: '0.95rem' }}>{location.line1}</p> : null}
@@ -38,7 +38,7 @@ function AddressCard({ booking }) {
         {location.fallback && !location.line1 ? <p style={{ margin: 0, fontSize: '0.95rem' }}>{location.fallback}</p> : null}
         {location.directions ? (
           <p className="eyf-muted" style={{ margin: '0.5rem 0 0', whiteSpace: 'pre-wrap', fontSize: '0.85rem' }}>
-            📝 Directions: {location.directions}
+             Directions: {location.directions}
           </p>
         ) : null}
       </div>
@@ -129,7 +129,7 @@ export default function BookingDetailModal({
         {/* Session Details */}
         <div className="eyf-card" style={{ background: 'var(--bg-subtle)', padding: '1.25rem' }}>
           <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)' }}>
-            📅 Session Details
+             Session Details
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
@@ -157,7 +157,7 @@ export default function BookingDetailModal({
         {/* Payment Details */}
         <div className="eyf-card" style={{ background: 'var(--bg-subtle)', padding: '1.25rem' }}>
           <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)' }}>
-            💰 Payment
+             Payment
           </h4>
           <div style={{ display: 'grid', gap: '0.6rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
