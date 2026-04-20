@@ -163,14 +163,7 @@ export default function HomePage() {
             <strong className="eyf-home-stats__num">{stats.studios > 0 ? stats.studios : '—'}</strong>
             <span>Studios listed</span>
           </div>
-          <div className="eyf-home-stats__item">
-            <strong className="eyf-home-stats__num">4.7+</strong>
-            <span>Average rating</span>
-          </div>
-          <div className="eyf-home-stats__item">
-            <strong className="eyf-home-stats__num">$2</strong>
-              <span>Booking fee</span>
-          </div>
+          
           <div className="eyf-home-stats__item">
             <strong className="eyf-home-stats__num">24/7</strong>
             <span>Artist support</span>
@@ -180,7 +173,7 @@ export default function HomePage() {
         {/* ── How it works ──────────────────────────────────────────────────── */}
         <section className="eyf-section eyf-how-it-works">
           <SectionHeading
-            eyebrow="Simple process"
+            eyebrow="How it works"
             title="Book in three steps"
           />
           <div className="eyf-how-steps">
@@ -197,7 +190,7 @@ export default function HomePage() {
             <div className="eyf-how-step">
               <div className="eyf-how-step__num">03</div>
               <h4>Book instantly</h4>
-              <p className="eyf-muted">Confirm your session and pay securely — all through the platform.</p>
+              <p className="eyf-muted">Confirm your session and pay.</p>
             </div>
           </div>
         </section>
@@ -247,11 +240,11 @@ export default function HomePage() {
               <p className="eyf-eyebrow">For studio owners</p>
               <h2>Reach artists who are ready to book</h2>
               <p className="eyf-muted">
-                List your space on Efyia Book. Set your rates, manage availability, and get discovered by artists, producers, and engineers in your city.
+                List your space on Efyia Book. Set your rates, manage availability, and get discovered by clients in your city.
               </p>
               <div className="eyf-row eyf-row--center">
                 <Link className="eyf-button" to="/signup">
-                  List your studio — it's free
+                  List your studio
                 </Link>
               </div>
             </div>
