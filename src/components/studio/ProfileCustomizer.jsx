@@ -241,7 +241,19 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   const [saveError, setSaveError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || 'branding');
+  const [showTabScrollControls, setShowTabScrollControls] = useState(false);
+  const [canScrollTabsLeft, setCanScrollTabsLeft] = useState(false);
+  const [canScrollTabsRight, setCanScrollTabsRight] = useState(false);
   const saveTimerRef = useRef(null);
+  const tabsScrollRef = useRef(null);
+
+  const updateTabScrollButtons = useCallback(() => {
+    const tabsEl = tabsScrollRef.current;
+    if (!tabsEl) return;
+    const maxScrollLeft = tabsEl.scrollWidth - tabsEl.clientWidth;
+    setCanScrollTabsLeft(tabsEl.scrollLeft > 1);
+    setCanScrollTabsRight(tabsEl.scrollLeft < maxScrollLeft - 1);
+  }, []);
 
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -257,6 +269,44 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     const url = FONT_URLS[form.fontPairing];
     if (url) injectFont(url);
   }, [form.fontPairing]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const desktopQuery = window.matchMedia('(min-width: 900px)');
+    const handleDesktopChange = (event) => setShowTabScrollControls(event.matches);
+    setShowTabScrollControls(desktopQuery.matches);
+    if (desktopQuery.addEventListener) {
+      desktopQuery.addEventListener('change', handleDesktopChange);
+    } else {
+      desktopQuery.addListener(handleDesktopChange);
+    }
+    return () => {
+      if (desktopQuery.removeEventListener) {
+        desktopQuery.removeEventListener('change', handleDesktopChange);
+      } else {
+        desktopQuery.removeListener(handleDesktopChange);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const tabsEl = tabsScrollRef.current;
+    if (!tabsEl) return undefined;
+    const handleScroll = () => updateTabScrollButtons();
+    tabsEl.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
+    return () => {
+      tabsEl.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [updateTabScrollButtons, showTabScrollControls]);
+
+  const scrollTabsBy = useCallback((offset) => {
+    const tabsEl = tabsScrollRef.current;
+    if (!tabsEl) return;
+    tabsEl.scrollBy({ left: offset, behavior: 'smooth' });
+  }, []);
 
   const set = useCallback((field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -575,32 +625,59 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   return (
     <div>
       {/* Tab bar */}
-      <div
-        className="eyf-tabs eyf-tabs--scroll"
-        style={{ borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', gap: '0' }}
-      >
-        {TABS.map((tab) => (
+      <div className={`eyf-tabs-nav-wrap${showTabScrollControls ? ' is-desktop' : ''}`}>
+        {showTabScrollControls ? (
           <button
-            key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '0.5rem 0.9rem',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid var(--mint)' : '2px solid transparent',
-              color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
-              cursor: 'pointer',
-              fontWeight: activeTab === tab.id ? 700 : 400,
-              fontSize: '0.875rem',
-              paddingBottom: '0.65rem',
-              whiteSpace: 'nowrap',
-              transition: 'color 0.15s',
-            }}
+            className="eyf-tabs-scroll-btn eyf-tabs-scroll-btn--left"
+            onClick={() => scrollTabsBy(-220)}
+            disabled={!canScrollTabsLeft}
+            aria-label="Scroll tabs left"
           >
-            {tab.label}
+            ‹
           </button>
-        ))}
+        ) : null}
+
+        <div
+          ref={tabsScrollRef}
+          className="eyf-tabs eyf-tabs--scroll"
+          style={{ borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', gap: '0' }}
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '0.5rem 0.9rem',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.id ? '2px solid var(--mint)' : '2px solid transparent',
+                color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
+                cursor: 'pointer',
+                fontWeight: activeTab === tab.id ? 700 : 400,
+                fontSize: '0.875rem',
+                paddingBottom: '0.65rem',
+                whiteSpace: 'nowrap',
+                transition: 'color 0.15s',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {showTabScrollControls ? (
+          <button
+            type="button"
+            className="eyf-tabs-scroll-btn eyf-tabs-scroll-btn--right"
+            onClick={() => scrollTabsBy(220)}
+            disabled={!canScrollTabsRight}
+            aria-label="Scroll tabs right"
+          >
+            ›
+          </button>
+        ) : null}
       </div>
 
       {/* ── Branding tab ────────────────────────────────────────────────────── */}
