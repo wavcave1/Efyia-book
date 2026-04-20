@@ -123,7 +123,7 @@ export default function MapPage() {
       <section className="eyf-section">
         <SectionHeading
           eyebrow="Map view"
-          title="Studio locations across key music markets"
+          title="Studio locations in your cities"
           description="Select a pin to explore studios near you."
         />
         {loading ? (
@@ -131,98 +131,99 @@ export default function MapPage() {
         ) : error ? (
           <ErrorMessage message={error} onRetry={fetchStudios} />
         ) : (
-          <div className="eyf-map-layout">
-            {/* Sidebar */}
-            <div className="eyf-map-sidebar">
-              {studios.map((studio) => (
-                <article
-                  key={studio.id}
-                  className="eyf-card eyf-map-card"
-                  style={{ borderColor: selected?.id === studio.id ? 'var(--mint)' : undefined, cursor: 'pointer' }}
-                  onClick={() => {
-                    setSelected((prev) => (prev?.id === studio.id ? null : studio));
-                    const entry = markersRef.current.find((m) => m.id === studio.id);
-                    if (entry && mapRef.current) {
-                      mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12, duration: 800 });
-                    }
-                  }}
-                >
-                  <div className="eyf-row eyf-row--between eyf-row--start">
-                    <div>
-                      <h3>{studio.name}</h3>
-                      <p className="eyf-muted">{getDisplayLocation(studio)}</p>
-                    </div>
-                    <span className="eyf-price">${studio.pricePerHour}/hr</span>
-                  </div>
-                  <Stars rating={studio.rating || 0} />
-                  <p className="eyf-muted">{studio.description}</p>
-                  <Link
-                    className="eyf-link-button"
-                    to={`/studios/${studio.slug}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    View profile
-                  </Link>
-                </article>
-              ))}
-            </div>
+      <div className="eyf-map-layout">
+  {/* Mapbox map */}
+  <div className="eyf-card eyf-map-canvas" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
 
-            {/* Mapbox map */}
-            <div className="eyf-card eyf-map-canvas" style={{ position: 'relative', overflow: 'hidden' }}>
-              <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
-
-              {/* Selected studio overlay — compact card, bottom-left, with close button */}
-              {selected && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '1rem',
-                    left: '1rem',
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '14px',
-                    padding: '1rem',
-                    maxWidth: '320px',
-                    width: 'calc(100% - 2rem)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.6rem',
-                    zIndex: 10,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '0.95rem' }}>{selected.name}</strong>
-                      <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
-                        {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelected(null)}
-                      aria-label="Close studio preview"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--muted)',
-                        fontSize: '1.1rem',
-                        lineHeight: 1,
-                        padding: '0',
-                        flexShrink: 0,
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
-                    View profile
-                  </Link>
-                </div>
-              )}
-            </div>
+    {/* Selected studio overlay — compact card, bottom-left, with close button */}
+    {selected && (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: '1rem',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: '14px',
+          padding: '1rem',
+          maxWidth: '320px',
+          width: 'calc(100% - 2rem)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.6rem',
+          zIndex: 10,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <div>
+            <strong style={{ display: 'block', fontSize: '0.95rem' }}>{selected.name}</strong>
+            <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
+              {getDisplayLocation(selected)} · ${selected.pricePerHour}/hr
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setSelected(null)}
+            aria-label="Close studio preview"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--muted)',
+              fontSize: '1.1rem',
+              lineHeight: 1,
+              padding: '0',
+              flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+        <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
+          View profile
+        </Link>
+      </div>
+    )}
+  </div>
+
+  {/* Sidebar */}
+  <div className="eyf-map-sidebar">
+    {studios.map((studio) => (
+      <article
+        key={studio.id}
+        className="eyf-card eyf-map-card"
+        style={{ borderColor: selected?.id === studio.id ? 'var(--mint)' : undefined, cursor: 'pointer' }}
+        onClick={() => {
+          setSelected((prev) => (prev?.id === studio.id ? null : studio));
+          const entry = markersRef.current.find((m) => m.id === studio.id);
+          if (entry && mapRef.current) {
+            mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12, duration: 800 });
+          }
+        }}
+      >
+        <div className="eyf-row eyf-row--between eyf-row--start">
+          <div>
+            <h3>{studio.name}</h3>
+            <p className="eyf-muted">{getDisplayLocation(studio)}</p>
+          </div>
+          <span className="eyf-price">${studio.pricePerHour}/hr</span>
+        </div>
+        <Stars rating={studio.rating || 0} />
+        <p className="eyf-muted">{studio.description}</p>
+        <Link
+          className="eyf-link-button"
+          to={`/studios/${studio.slug}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          View profile
+        </Link>
+      </article>
+    ))}
+  </div>
+</div>
+     
         )}
       </section>
     </div>
