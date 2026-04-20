@@ -3226,4 +3226,7 @@ img, video, iframe { max-width: 100%; }
   .eyf-home-hero {
     padding: 4rem 1rem 3rem;
   }
+  .eyf-map-canvas {
+  min-height: 420px;
+}
 }
