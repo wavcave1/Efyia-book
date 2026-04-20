@@ -14,6 +14,7 @@ bookingDetails,
 onSuccess,
 onError,
 isDepositPayment,
+paymentLabel,
 }) {
 const stripePromise = useMemo(() => {
 if (!publishableKey) return null;
@@ -73,12 +74,13 @@ bookingDetails={bookingDetails}
 onSuccess={onSuccess}
 onError={onError}
 isDepositPayment={isDepositPayment}
+paymentLabel={paymentLabel}
 />
 </Elements>
 );
 }
 
-function CheckoutForm({ bookingId, studioName, amountCents, bookingDetails, onSuccess, onError, isDepositPayment }) {
+function CheckoutForm({ bookingId, studioName, amountCents, bookingDetails, onSuccess, onError, isDepositPayment, paymentLabel }) {
 const stripe = useStripe();
 const elements = useElements();
 const [processing, setProcessing] = useState(false);
@@ -136,7 +138,7 @@ return (
 <span>{bookingDetails.duration}</span>
 </div>
 <div className="amount-row">
-<span>{isDepositPayment ? 'Deposit due' : 'Total due'}</span>
+<span>{paymentLabel || (isDepositPayment ? 'Deposit due' : 'Total due')}</span>
 <strong>${amountDollars}</strong>
 </div>
 </div>
@@ -189,7 +191,7 @@ return (
     className="pay-button eyf-button"
     style={{ width: '100%', marginTop: '1.25rem', justifyContent: 'center' }}
   >
-    {processing ? 'Processing...' : `Pay ${isDepositPayment ? 'Deposit' : ''} $${amountDollars}`}
+    {processing ? 'Processing...' : `Pay ${isDepositPayment ? 'Deposit' : 'Final payment'} $${amountDollars}`}
   </button>
 
   <p className="secure-note" style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.75rem' }}>

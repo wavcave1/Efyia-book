@@ -55,6 +55,8 @@ export default function BookingDetailModal({
   onAction = null,
 }) {
   if (!booking) return null;
+  const finalPaymentPaid = booking.finalPaymentPaid === true || Boolean(booking.finalPaymentDate);
+  const finalPaymentRequested = Boolean(booking.finalPaymentIntentId);
 
   const calculateRemainingBalance = () => {
     if (!booking.depositAmount || !booking.total) return 0;
@@ -114,12 +116,12 @@ export default function BookingDetailModal({
         {/* Status badges */}
         <div className="eyf-row" style={{ gap: '0.6rem', flexWrap: 'wrap' }}>
           <BookingStatusBadge status={booking.status} />
-          {booking.depositPaid && !booking.finalPaymentDate && (
+          {booking.depositPaid && !finalPaymentPaid && finalPaymentRequested && (
             <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
               FINAL PAYMENT DUE
             </span>
           )}
-          {booking.finalPaymentDate && (
+          {finalPaymentPaid && (
             <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
               FULLY PAID
             </span>
@@ -166,13 +168,13 @@ export default function BookingDetailModal({
             </div>
             {booking.depositAmount ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="eyf-muted">Deposit paid</span>
+                <span className="eyf-muted">Deposit</span>
                 <strong style={{ color: 'var(--mint)' }}>−${booking.depositAmount?.toFixed(2)}</strong>
               </div>
             ) : null}
-            {booking.depositAmount && !booking.finalPaymentDate ? (
+            {booking.depositAmount && !finalPaymentPaid ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.6rem', borderTop: '1px solid var(--border)' }}>
-                <strong>Balance due</strong>
+                <strong>Final payment</strong>
                 <strong style={{ color: 'var(--mint)', fontSize: '1.1rem' }}>${calculateRemainingBalance().toFixed(2)}</strong>
               </div>
             ) : null}
@@ -192,7 +194,8 @@ export default function BookingDetailModal({
             {onAction({
               status: booking.status,
               depositPaid: booking.depositPaid,
-              finalPaymentDate: booking.finalPaymentDate,
+              finalPaymentPaid,
+              finalPaymentIntentId: booking.finalPaymentIntentId,
             })}
           </div>
         ) : null}
