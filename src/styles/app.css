@@ -534,22 +534,14 @@ html { overflow-x: hidden; }
 
 /* ─── Search / Map / Profile layouts ────────────────────────────────────────── */
 .eyf-search-layout,
-.eyf-map-layout,
 .eyf-profile-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 1rem; }
 .eyf-profile-layout { grid-template-columns: minmax(0, 1.2fr) 320px; align-items: start; }
-.eyf-results-panel,
-.eyf-map-sidebar { display: grid; gap: 1rem; }
+.eyf-results-panel { display: grid; gap: 1rem; }
 .eyf-filter-panel label,
 .eyf-auth-card label,
 .eyf-booking-flow label { display: grid; gap: 0.45rem; color: var(--muted); }
 .eyf-filter-label { display: block; margin-bottom: 0.5rem; color: var(--muted); }
 
-/* ─── Map canvas ─────────────────────────────────────────────────────────────── */
-.eyf-map-canvas {
-  min-height: 480px;
-  position: relative;
-  overflow: hidden;
-}
 .eyf-map-pin {
   position: absolute;
   width: 1.4rem;
@@ -790,7 +782,6 @@ html { overflow-x: hidden; }
   .eyf-nav__links { width: 100%; }
   .eyf-hero,
   .eyf-search-layout,
-  .eyf-map-layout,
   .eyf-profile-layout,
   .eyf-grid-2 { grid-template-columns: minmax(0, 1fr); }
   .eyf-booking-sidebar { position: static; }
@@ -1587,13 +1578,6 @@ html { overflow-x: hidden; }
   gap: 1.5rem;
   min-width: 0;
 }
-.eyf-results-area.has-map {
-  grid-template-columns: 1fr min(420px, 42%);
-}
-
-.eyf-card-grid--compact {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-}
 
 .eyf-discover-map {
   position: sticky;
@@ -2129,10 +2113,6 @@ html { overflow-x: hidden; }
 
   .eyf-home-stats { grid-template-columns: repeat(2, 1fr); }
 
-  .eyf-results-area.has-map {
-    grid-template-columns: 1fr;
-  }
-
   .eyf-discover-map {
     position: static;
     height: 320px;
@@ -2639,20 +2619,9 @@ html { overflow-x: hidden; }
   white-space: nowrap;
 }
 
-.eyf-map-canvas,
 .eyf-discover-map-canvas {
   background: none !important;
   background-image: none !important;
-}
-
-.eyf-map-canvas {
-  height: 520px;
-  padding: 0 !important;
-}
-
-.eyf-map-canvas > div {
-  width: 100%;
-  height: 100%;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3239,4 +3208,3 @@ img, video, iframe { max-width: 100%; }
     padding: 4rem 1rem 3rem;
   }
 }
-
