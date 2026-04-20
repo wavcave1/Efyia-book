@@ -161,7 +161,7 @@ export default function HomePage() {
         <div className="eyf-home-stats">
           <div className="eyf-home-stats__item">
             <strong className="eyf-home-stats__num">{stats.studios > 0 ? stats.studios : '—'}</strong>
-            <span>Verified Studios </span>
+            <span>Verified studios </span>
           </div>
           
           <div className="eyf-home-stats__item">
