@@ -100,6 +100,7 @@ export const favoritesApi = {
 export const usersApi = {
   list: () => api.get('/api/users'),
   updateMe: (data) => api.patch('/api/users/me', data),
+  changePassword: (data) => api.post('/api/users/me/change-password', data),
   adminUpdate: (id, data) => api.patch(`/api/users/${id}`, data),
 };
 
