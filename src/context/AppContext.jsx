@@ -147,6 +147,11 @@ export function AppProvider({ children }) {
   }, [currentUser, favoriteStudioIds]);
 
   const showToast = useCallback((message) => setToast(message), []);
+  const reloadCurrentUser = useCallback(async () => {
+    const user = await authApi.me();
+    setCurrentUser(user);
+    return user;
+  }, []);
 
   const teamRole = useMemo(
     () => deriveTeamRole(studioMemberships, activeStudioId, currentUser),
@@ -163,6 +168,7 @@ export function AppProvider({ children }) {
       toast,
       setToast,
       showToast,
+      reloadCurrentUser,
       favoriteStudioIds,
       login,
       signup,
@@ -177,7 +183,7 @@ export function AppProvider({ children }) {
       isReadOnly,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser, favoriteStudioIds, toast, showToast, login, signup, logout, toggleFavorite,
+    [currentUser, favoriteStudioIds, toast, showToast, reloadCurrentUser, login, signup, logout, toggleFavorite,
       studioMemberships, activeStudioId, setActiveStudio, teamRole],
   );
 
