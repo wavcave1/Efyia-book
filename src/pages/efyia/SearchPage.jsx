@@ -126,13 +126,11 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hasSearched, setHasSearched] = useState(!!params.get('q'));
   const [selectedStudio, setSelectedStudio] = useState(null);
 
   // Sync query from URL
   useEffect(() => {
     setQuery(params.get('q') || '');
-    setHasSearched(!!params.get('q'));
   }, [params]);
 
   const fetchStudios = (overrides = {}) => {
@@ -168,11 +166,10 @@ export default function SearchPage() {
   const applyFilters = () => {
     if (query) setParams({ q: query });
     else setParams({});
-    setHasSearched(true);
     fetchStudios({ q: query });
   };
 
-  const showMap = hasSearched && studios.length > 0 && !loading && !error;
+  const showMap = studios.length > 0 && !loading && !error;
 
   return (
     <div className="eyf-page">
