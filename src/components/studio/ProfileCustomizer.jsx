@@ -242,6 +242,9 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || 'branding');
   const saveTimerRef = useRef(null);
+  const tabsRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -257,6 +260,29 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
     const url = FONT_URLS[form.fontPairing];
     if (url) injectFont(url);
   }, [form.fontPairing]);
+
+  const syncTabScrollState = useCallback(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+    setCanScrollLeft(el.scrollLeft > 2);
+    setCanScrollRight(el.scrollLeft < maxLeft - 2);
+  }, []);
+
+  useEffect(() => {
+    syncTabScrollState();
+    const onResize = () => syncTabScrollState();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [syncTabScrollState, form.layoutType, showPreview]);
+
+  const scrollTabs = useCallback((direction) => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const amount = Math.max(180, Math.floor(el.clientWidth * 0.45));
+    el.scrollBy({ left: direction * amount, behavior: 'smooth' });
+    window.setTimeout(syncTabScrollState, 180);
+  }, [syncTabScrollState]);
 
   const set = useCallback((field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -575,32 +601,54 @@ export default function ProfileCustomizer({ studio: initialStudio, onSaved, init
   return (
     <div>
       {/* Tab bar */}
-      <div
-        className="eyf-tabs eyf-tabs--scroll"
-        style={{ borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', gap: '0' }}
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '0.5rem 0.9rem',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid var(--mint)' : '2px solid transparent',
-              color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
-              cursor: 'pointer',
-              fontWeight: activeTab === tab.id ? 700 : 400,
-              fontSize: '0.875rem',
-              paddingBottom: '0.65rem',
-              whiteSpace: 'nowrap',
-              transition: 'color 0.15s',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="eyf-tab-scroll-wrap" style={{ marginBottom: '1.5rem' }}>
+        <button
+          type="button"
+          className="eyf-tab-scroll-nav eyf-tab-scroll-nav--left"
+          aria-label="Scroll tabs left"
+          disabled={!canScrollLeft}
+          onClick={() => scrollTabs(-1)}
+        >
+          ‹
+        </button>
+        <div
+          ref={tabsRef}
+          className="eyf-tabs eyf-tabs--scroll"
+          style={{ borderBottom: '1px solid var(--border)', gap: '0' }}
+          onScroll={syncTabScrollState}
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '0.5rem 0.9rem',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.id ? '2px solid var(--mint)' : '2px solid transparent',
+                color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
+                cursor: 'pointer',
+                fontWeight: activeTab === tab.id ? 700 : 400,
+                fontSize: '0.875rem',
+                paddingBottom: '0.65rem',
+                whiteSpace: 'nowrap',
+                transition: 'color 0.15s',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="eyf-tab-scroll-nav eyf-tab-scroll-nav--right"
+          aria-label="Scroll tabs right"
+          disabled={!canScrollRight}
+          onClick={() => scrollTabs(1)}
+        >
+          ›
+        </button>
       </div>
 
       {/* ── Branding tab ────────────────────────────────────────────────────── */}

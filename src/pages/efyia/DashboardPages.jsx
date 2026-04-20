@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
+import { analyticsApi, authApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import TeamManager from '../../components/studio/TeamManager';
 import StudioSwitcher from '../../components/studio/StudioSwitcher';
@@ -667,6 +667,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
                     <p className="eyf-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.9rem' }}>
                       {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
                     </p>
+                    <BookingLocationDetails booking={booking} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     <strong style={{ fontSize: '1.1rem' }}>${booking.total?.toFixed(2)}</strong>
@@ -1136,6 +1137,11 @@ export function ClientDashboard() {
           <SectionHeading
             eyebrow="Client dashboard"
             title={`Welcome back, ${currentUser?.name}`}
+            action={(
+              <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
+                Account settings
+              </button>
+            )}
           />
           <button
             type="button"
@@ -1317,6 +1323,11 @@ export function StudioDashboard() {
           <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
+            action={(
+              <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
+                Account settings
+              </button>
+            )}
           />
           <button
             type="button"

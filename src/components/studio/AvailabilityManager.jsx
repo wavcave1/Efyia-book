@@ -18,6 +18,18 @@ function buildTimeOptions() {
 
 const TIME_OPTIONS = buildTimeOptions();
 
+function formatTimeLabel(time) {
+  if (typeof time !== 'string') return '';
+  const [rawHour, rawMinute] = time.split(':');
+  const hour = Number(rawHour);
+  const minute = Number(rawMinute);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return time;
+
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+}
+
 function SectionDivider({ title }) {
   return (
     <h4
@@ -203,7 +215,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
                 onChange={(e) => updateScheduleField(idx, 'openTime', e.target.value)}
               >
                 {TIME_OPTIONS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
+                  <option key={time} value={time}>{formatTimeLabel(time)}</option>
                 ))}
               </select>
               <select
@@ -212,7 +224,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
                 onChange={(e) => updateScheduleField(idx, 'closeTime', e.target.value)}
               >
                 {TIME_OPTIONS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
+                  <option key={time} value={time}>{formatTimeLabel(time)}</option>
                 ))}
               </select>
             </div>
@@ -255,7 +267,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
                 style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
               >
                 {TIME_OPTIONS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
+                  <option key={time} value={time}>{formatTimeLabel(time)}</option>
                 ))}
               </select>
             </label>
@@ -267,7 +279,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
                 style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
               >
                 {TIME_OPTIONS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
+                  <option key={time} value={time}>{formatTimeLabel(time)}</option>
                 ))}
               </select>
             </label>
@@ -297,7 +309,7 @@ export default function AvailabilityManager({ studioId, onSaved }) {
               <div style={{ display: 'grid', gap: '0.2rem' }}>
                 <strong style={{ fontSize: '0.9rem' }}>{block.date}</strong>
                 <span className="eyf-muted" style={{ fontSize: '0.82rem' }}>
-                  {block.startTime} - {block.endTime}
+                  {formatTimeLabel(block.startTime)} - {formatTimeLabel(block.endTime)}
                 </span>
                 <span style={{ fontSize: '0.85rem' }}>{block.reason || 'Blocked'}</span>
               </div>

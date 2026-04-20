@@ -859,6 +859,38 @@ html { overflow-x: hidden; }
 }
 .eyf-tabs--scroll::-webkit-scrollbar { display: none; }
 
+.eyf-tab-scroll-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.eyf-tab-scroll-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.eyf-tab-scroll-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .eyf-tab-scroll-nav {
+    display: none;
+  }
+}
+
 /* ─── Tag input ──────────────────────────────────────────────────────────── */
 .eyf-tag-input {
   display: flex;
@@ -3207,5 +3239,4 @@ img, video, iframe { max-width: 100%; }
     padding: 4rem 1rem 3rem;
   }
 }
-
 
