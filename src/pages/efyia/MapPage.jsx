@@ -123,7 +123,7 @@ export default function MapPage() {
       <section className="eyf-section">
         <SectionHeading
           eyebrow="Map view"
-          title="Studio locations in your cities"
+          title="Studio locations in your favorite cities"
           description="Select a pin to explore studios near you."
         />
         {loading ? (
