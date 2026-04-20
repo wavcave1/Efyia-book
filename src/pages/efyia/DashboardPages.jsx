@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { analyticsApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
+import { analyticsApi, authApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import TeamManager from '../../components/studio/TeamManager';
 import StudioSwitcher from '../../components/studio/StudioSwitcher';
@@ -97,6 +97,144 @@ function ConfirmModal({
       </div>
     </div>,
     document.body
+  );
+}
+
+function AccountSettingsModal({ user, onClose, onSaved, showToast }) {
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [error, setError] = useState('');
+
+  const saveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setError('');
+    try {
+      await usersApi.updateMe({
+        name: name.trim(),
+        email: email.trim(),
+      });
+      const freshUser = await authApi.me();
+      localStorage.setItem('efyia_user', JSON.stringify(freshUser));
+      if (onSaved) onSaved();
+      showToast('Account profile updated.');
+      onClose();
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Could not update account profile.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const savePassword = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!currentPassword || !newPassword) {
+      setError('Please enter your current password and a new password.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('New password and confirmation do not match.');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await usersApi.changePassword({ currentPassword, newPassword });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast('Password updated successfully.');
+    } catch (err) {
+      setError(err.message || 'Could not update password.');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 200,
+        display: 'grid',
+        placeItems: 'center',
+        padding: '1rem',
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Account settings"
+    >
+      <div
+        style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 20,
+          padding: '1.25rem',
+          width: 'min(560px, 100%)',
+          display: 'grid',
+          gap: '1rem',
+          maxHeight: '90vh',
+          overflow: 'auto',
+        }}
+      >
+        <div className="eyf-row eyf-row--between">
+          <h3 style={{ margin: 0 }}>Account settings</h3>
+          <button type="button" className="eyf-button eyf-button--ghost" onClick={onClose}>Close</button>
+        </div>
+
+        {error ? <p className="eyf-field-error" style={{ margin: 0 }}>{error}</p> : null}
+
+        <form className="eyf-stack" onSubmit={saveProfile} style={{ gap: '0.75rem' }}>
+          <h4 style={{ margin: 0 }}>Profile</h4>
+          <label style={{ display: 'grid', gap: '0.35rem' }}>
+            <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Name</span>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+          </label>
+          <label style={{ display: 'grid', gap: '0.35rem' }}>
+            <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Email</span>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <button type="submit" className="eyf-button" disabled={savingProfile}>
+            {savingProfile ? 'Saving…' : 'Save profile'}
+          </button>
+        </form>
+
+        <form className="eyf-stack" onSubmit={savePassword} style={{ gap: '0.75rem' }}>
+          <h4 style={{ margin: 0 }}>Password</h4>
+          <label style={{ display: 'grid', gap: '0.35rem' }}>
+            <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Current password</span>
+            <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+          </label>
+          <label style={{ display: 'grid', gap: '0.35rem' }}>
+            <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>New password</span>
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          </label>
+          <label style={{ display: 'grid', gap: '0.35rem' }}>
+            <span className="eyf-muted" style={{ fontSize: '0.8rem' }}>Confirm new password</span>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+          </label>
+          <button type="submit" className="eyf-button" disabled={savingPassword}>
+            {savingPassword ? 'Updating…' : 'Update password'}
+          </button>
+        </form>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -459,6 +597,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
                     <p className="eyf-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.9rem' }}>
                       {booking.date} · {booking.time} · {booking.sessionType} · {booking.hours}hr
                     </p>
+                    <BookingLocationDetails booking={booking} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     <strong style={{ fontSize: '1.1rem' }}>${booking.total?.toFixed(2)}</strong>
@@ -843,6 +982,7 @@ export function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reviewedStudioIds, setReviewedStudioIds] = useState(new Set());
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -914,11 +1054,24 @@ export function ClientDashboard() {
 
   return (
     <div className="eyf-page">
+      {settingsOpen ? (
+        <AccountSettingsModal
+          user={currentUser}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={fetchData}
+          showToast={showToast}
+        />
+      ) : null}
       <div className="eyf-client-dashboard">
         <section className="eyf-section eyf-stack">
           <SectionHeading
             eyebrow="Client dashboard"
             title={`Welcome back, ${currentUser?.name}`}
+            action={(
+              <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
+                Account settings
+              </button>
+            )}
           />
 
           {loading ? (
@@ -972,6 +1125,7 @@ export function StudioDashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [websiteData, setWebsiteData] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -1065,6 +1219,14 @@ export function StudioDashboard() {
 
   return (
     <>
+      {settingsOpen ? (
+        <AccountSettingsModal
+          user={currentUser}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={fetchData}
+          showToast={showToast}
+        />
+      ) : null}
       {showWizard && studio ? (
         <ProfileSetupWizard
           studio={studio}
@@ -1083,6 +1245,11 @@ export function StudioDashboard() {
           <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
+            action={(
+              <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
+                Account settings
+              </button>
+            )}
           />
 
           {loading ? (
@@ -1276,12 +1443,13 @@ export function StudioDashboard() {
 
 // ─── Admin dashboard ─────────────────────────────────────────────────────────
 export function AdminDashboard() {
-  const { showToast } = useAppContext();
+  const { currentUser, showToast } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [studios, setStudios] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -1326,8 +1494,24 @@ export function AdminDashboard() {
 
   return (
     <div className="eyf-page">
+      {settingsOpen ? (
+        <AccountSettingsModal
+          user={currentUser}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={fetchData}
+          showToast={showToast}
+        />
+      ) : null}
       <section className="eyf-section eyf-stack">
-        <SectionHeading eyebrow="Admin" title="Marketplace overview" />
+        <SectionHeading
+          eyebrow="Admin"
+          title="Marketplace overview"
+          action={(
+            <button type="button" className="eyf-button eyf-button--secondary" onClick={() => setSettingsOpen(true)}>
+              Account settings
+            </button>
+          )}
+        />
 
         {loading ? (
           <Spinner />
