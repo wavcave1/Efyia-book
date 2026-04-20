@@ -173,7 +173,7 @@ export default function MapPage() {
               cursor: 'pointer',
               color: 'var(--muted)',
               fontSize: '1.1rem',
-              lineHeight: 1,
+              lineHei RT ght: 1,
               padding: '0',
               flexShrink: 0,
             }}
@@ -188,44 +188,13 @@ export default function MapPage() {
     )}
   </div>
 
-  {/* Sidebar */}
-  <div className="eyf-map-sidebar">
-    {studios.map((studio) => (
-      <article
-        key={studio.id}
+  
         className="eyf-card eyf-map-card"
         style={{ borderColor: selected?.id === studio.id ? 'var(--mint)' : undefined, cursor: 'pointer' }}
         onClick={() => {
           setSelected((prev) => (prev?.id === studio.id ? null : studio));
           const entry = markersRef.current.find((m) => m.id === studio.id);
           if (entry && mapRef.current) {
-            mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12, duration: 800 });
-          }
-        }}
-      >
-        <div className="eyf-row eyf-row--between eyf-row--start">
-          <div>
-            <h3>{studio.name}</h3>
-            <p className="eyf-muted">{getDisplayLocation(studio)}</p>
-          </div>
-          <span className="eyf-price">${studio.pricePerHour}/hr</span>
-        </div>
-        <Stars rating={studio.rating || 0} />
-        <p className="eyf-muted">{studio.description}</p>
-        <Link
-          className="eyf-link-button"
-          to={`/studios/${studio.slug}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          View profile
-        </Link>
-      </article>
-    ))}
-  </div>
-</div>
-     
-        )}
-      </section>
-    </div>
+            mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12  </div>
   );
 }
