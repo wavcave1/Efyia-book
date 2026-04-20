@@ -14,6 +14,7 @@ import {
 } from '../../components/efyia/ui';
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
+import BookingCheckout from '../../components/stripe/BookingCheckout';
 import FileList from '../../components/booking/FileList';
 import BookingDetailModal from '../../components/booking/BookingDetailModal';
 import RevenueChart from '../../components/studio/RevenueChart';
@@ -361,12 +362,22 @@ function BookingLocationDetails({ booking }) {
   );
 }
 
+function isFinalPaymentPaid(booking) {
+  return booking?.finalPaymentPaid === true || Boolean(booking?.finalPaymentDate);
+}
+
+function hasFinalPaymentRequest(booking) {
+  return Boolean(booking?.finalPaymentIntentId);
+}
+
 // ─── Client booking rows ──────────────────────────────────────────────────────
-function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioIds = new Set() }) {
+function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioIds = new Set(), showToast }) {
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
-  const [finalPaymentBooking, setFinalPaymentBooking] = useState(false);
+  const [finalPaymentBooking, setFinalPaymentBooking] = useState(null);
+  const [finalPaymentCheckout, setFinalPaymentCheckout] = useState(null);
   const [processingFinalPayment, setProcessingFinalPayment] = useState(false);
+  const [finalPaymentError, setFinalPaymentError] = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
 
@@ -387,7 +398,26 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   };
 
   const handleFinalPaymentSuccess = () => {
+    showToast?.('Final payment completed.');
     window.location.reload();
+  };
+
+  const handleOpenFinalPayment = async (booking) => {
+    if (!booking?.id) return;
+    setProcessingFinalPayment(true);
+    setFinalPaymentError('');
+    setFinalPaymentCheckout(null);
+    try {
+      const paymentIntent = await depositApi.getFinalClientSecret(booking.id);
+      setFinalPaymentCheckout({ ...paymentIntent, booking });
+      setFinalPaymentBooking(booking);
+      setSelectedBooking(null);
+    } catch (err) {
+      setFinalPaymentError(err.message || 'Unable to load final payment.');
+      showToast?.(err.message || 'Unable to load final payment.');
+    } finally {
+      setProcessingFinalPayment(false);
+    }
   };
 
   const groupedBookings = {
@@ -424,7 +454,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           onClose={() => setSelectedBooking(null)}
           canUploadFiles={false}
           currentUserId={currentUserId}
-          onAction={({ status, depositPaid, finalPaymentDate }) => {
+          onAction={({ status, depositPaid, finalPaymentPaid, finalPaymentIntentId }) => {
             const actions = [];
 
             if (status === 'COMPLETED' && selectedBooking?.studio?.slug) {
@@ -465,19 +495,33 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentDate && status === 'CONFIRMED') {
+            if (depositPaid && !finalPaymentPaid && finalPaymentIntentId) {
               actions.push(
                 <button
                   key="payment"
                   type="button"
                   className="eyf-button eyf-button--secondary"
-                  onClick={() => {
-                    setFinalPaymentBooking(selectedBooking);
-                    setSelectedBooking(null);
-                  }}
+                  onClick={() => handleOpenFinalPayment(selectedBooking)}
+                  disabled={processingFinalPayment}
                 >
-                  Pay Balance
+                  {processingFinalPayment ? 'Loading...' : 'Pay Remaining Balance'}
                 </button>
+              );
+            }
+
+            if (depositPaid && !finalPaymentPaid && !finalPaymentIntentId) {
+              actions.push(
+                <div key="payment-pending" className="eyf-muted" style={{ fontSize: '0.88rem' }}>
+                  Final payment has not been requested by the studio yet.
+                </div>
+              );
+            }
+
+            if (finalPaymentPaid) {
+              actions.push(
+                <span key="payment-complete" className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.82rem', padding: '0.4rem 0.9rem' }}>
+                  Final payment completed
+                </span>
               );
             }
 
@@ -513,8 +557,12 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           }}
           role="dialog"
           aria-modal="true"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setFinalPaymentBooking(false);
+                  onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setFinalPaymentBooking(null);
+              setFinalPaymentCheckout(null);
+              setFinalPaymentError('');
+            }
           }}
         >
           <div
@@ -575,36 +623,48 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem' }}>
                 <strong>Balance due</strong>
-                <strong style={{ color: 'var(--mint)' }}>${(finalPaymentBooking.total - finalPaymentBooking.depositAmount).toFixed(2)}</strong>
+                <strong style={{ color: 'var(--mint)' }}>${((finalPaymentCheckout?.amountCents || 0) / 100).toFixed(2)}</strong>
               </div>
             </div>
 
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>
-              Payment will be processed securely by Stripe.
-            </p>
+            {finalPaymentError ? (
+              <ErrorMessage message={finalPaymentError} />
+            ) : null}
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '0.75rem',
-              }}
-            >
+            {finalPaymentCheckout?.clientSecret ? (
+              <BookingCheckout
+                clientSecret={finalPaymentCheckout.clientSecret}
+                connectedAccountId={finalPaymentCheckout.connectedAccountId}
+                bookingId={finalPaymentBooking.id}
+                studioName={finalPaymentBooking.studio?.name || 'Studio'}
+                amountCents={finalPaymentCheckout.amountCents}
+                bookingDetails={{
+                  date: finalPaymentBooking.date,
+                  time: finalPaymentBooking.time,
+                  duration: `${finalPaymentBooking.hours}hr`,
+                }}
+                onSuccess={handleFinalPaymentSuccess}
+                onError={(message) => setFinalPaymentError(message)}
+                paymentLabel="Final payment due"
+              />
+            ) : (
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>
+                Final payment is not yet requested. Please check back later.
+              </p>
+            )}
+
+            <div>
               <button
                 type="button"
                 className="eyf-button eyf-button--ghost"
-                onClick={() => setFinalPaymentBooking(false)}
+                onClick={() => {
+                  setFinalPaymentBooking(null);
+                  setFinalPaymentCheckout(null);
+                  setFinalPaymentError('');
+                }}
                 disabled={processingFinalPayment}
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="eyf-button"
-                onClick={handleFinalPaymentSuccess}
-                disabled={processingFinalPayment}
-              >
-                {processingFinalPayment ? 'Processing...' : 'Proceed to Payment'}
+                Close
               </button>
             </div>
           </div>
@@ -671,12 +731,12 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     <strong style={{ fontSize: '1.1rem' }}>${booking.total?.toFixed(2)}</strong>
-                    {booking.depositPaid && !booking.finalPaymentDate && (
+                    {booking.depositPaid && !isFinalPaymentPaid(booking) && hasFinalPaymentRequest(booking) && (
                       <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
                         FINAL DUE
                       </span>
                     )}
-                    {booking.finalPaymentDate && (
+                    {isFinalPaymentPaid(booking) && (
                       <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
                         PAID
                       </span>
@@ -696,7 +756,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
 }
 
 // ─── Studio owner booking rows (organized by status) ─────────────────────────
-function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
+function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [acting, setActing] = useState(false);
   const [finalPaymentLoading, setFinalPaymentLoading] = useState(null);
@@ -723,9 +783,10 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
     setFinalPaymentLoading(bookingId);
     try {
       await depositApi.payFinal(bookingId);
+      showToast?.('Final payment requested from client.');
       window.location.reload();
     } catch (err) {
-      console.error(err);
+      showToast?.(err.message || 'Could not request final payment.');
     } finally {
       setFinalPaymentLoading(null);
     }
@@ -785,7 +846,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
           onClose={() => setSelectedBooking(null)}
           canUploadFiles={true}
           currentUserId={currentUserId}
-          onAction={({ status, depositPaid, finalPaymentDate }) => {
+          onAction={({ status, depositPaid, finalPaymentPaid, finalPaymentIntentId }) => {
             const actions = [];
 
             if (status === 'PENDING') {
@@ -816,8 +877,8 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
               );
             }
 
-            if (status === 'CONFIRMED') {
-              if (depositPaid && !finalPaymentDate) {
+            if (status === 'COMPLETED') {
+              if (depositPaid && !finalPaymentPaid && !finalPaymentIntentId) {
                 actions.push(
                   <button
                     key="payment"
@@ -826,10 +887,20 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
                     onClick={() => handleRequestFinalPayment(selectedBooking.id)}
                     disabled={finalPaymentLoading === selectedBooking.id}
                   >
-                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Request Payment'}
+                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Request Final Payment'}
                   </button>
                 );
               }
+              if (depositPaid && !finalPaymentPaid && finalPaymentIntentId) {
+                actions.push(
+                  <span key="requested" className="eyf-badge eyf-badge--amber">
+                    Final payment requested
+                  </span>
+                );
+              }
+            }
+
+            if (status === 'CONFIRMED') {
               actions.push(
                 <button
                   key="complete"
@@ -920,12 +991,12 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId }) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     <strong style={{ fontSize: '1.1rem' }}>${booking.total?.toFixed(2)}</strong>
-                    {booking.depositPaid && !booking.finalPaymentDate && (
+                    {booking.depositPaid && !isFinalPaymentPaid(booking) && hasFinalPaymentRequest(booking) && (
                       <span className="eyf-badge eyf-badge--amber" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
                         FINAL DUE
                       </span>
                     )}
-                    {booking.finalPaymentDate && (
+                    {isFinalPaymentPaid(booking) && (
                       <span className="eyf-badge eyf-badge--sage" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
                         PAID
                       </span>
@@ -1159,6 +1230,7 @@ export function ClientDashboard() {
                 onCancel={handleCancel}
                 currentUserId={currentUser?.id}
                 reviewedStudioIds={reviewedStudioIds}
+                showToast={showToast}
               />
 
               {favorites.length > 0 ? (
@@ -1375,7 +1447,7 @@ export function StudioDashboard() {
               ) : null}
 
               <h3>Bookings</h3>
-              <OwnerBookingRows bookings={bookings} onStatusChange={handleStatusChange} currentUserId={currentUser?.id} />
+              <OwnerBookingRows bookings={bookings} onStatusChange={handleStatusChange} currentUserId={currentUser?.id} showToast={showToast} />
 
               {studio ? (
                 <>
@@ -1669,7 +1741,7 @@ export function AdminDashboard() {
             </div>
 
             <h3>All bookings</h3>
-            <OwnerBookingRows bookings={bookings} onStatusChange={async () => {}} currentUserId={null} />
+            <OwnerBookingRows bookings={bookings} onStatusChange={async () => {}} currentUserId={null} showToast={() => {}} />
           </>
         )}
       </section>
