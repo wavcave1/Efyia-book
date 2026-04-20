@@ -137,7 +137,6 @@ function Footer() {
         <div className="eyf-footer__col">
           <span className="eyf-footer__col-heading">Platform</span>
           <a href="/discover">Find Studios</a>
-          <a href="/map">Map View</a>
           <a href="/signup">List Your Studio</a>
         </div>
         <div className="eyf-footer__col">
@@ -192,7 +191,6 @@ export default function Layout() {
           {!isOwnerDashboard ? (
             <nav className="eyf-nav__links">
               <NavLink to="/discover">Find Studios</NavLink>
-              <NavLink to="/map">Map View</NavLink>
             </nav>
           ) : null}
         </div>

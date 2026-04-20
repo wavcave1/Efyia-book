@@ -1,119 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
-import { EmptyState, ErrorMessage, SectionHeading, Spinner, Stars, StudioCard } from '../../components/efyia/ui';
-import { getDisplayLocation } from '../../lib/location';
-import { resolveStudioCoords } from '../../lib/geocode';
-
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
-function MapboxPanel({ studios, selected, onSelect }) {
-  const containerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef([]); // [{ marker, el, id, lat, lng }]
-
-  // Initialize map once
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    mapRef.current = new mapboxgl.Map({
-      container: containerRef.current,
-      style: 'mapbox://styles/mapbox/standard',
-      center: [-98.5795, 39.8283],
-      zoom: 3,
-    });
-    mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  // Rebuild markers whenever the studios list changes
-  useEffect(() => {
-    if (!mapRef.current || !studios.length) return;
-
-    const addMarkers = async () => {
-      markersRef.current.forEach(({ marker }) => marker.remove());
-      markersRef.current = [];
-
-      const token = mapboxgl.accessToken;
-      const resolved = await Promise.all(
-        studios.map(async (studio) => ({
-          studio,
-          ...(await resolveStudioCoords(studio, token)),
-        })),
-      );
-
-      const bounds = new mapboxgl.LngLatBounds();
-      let hasCoords = false;
-
-      resolved.forEach(({ studio, lat, lng }) => {
-        if (lat == null || lng == null) return;
-        hasCoords = true;
-        bounds.extend([lng, lat]);
-
-        const el = document.createElement('button');
-        el.className = 'eyf-map-pin';
-        el.style.background = studio.color || '#62f3d4';
-        el.setAttribute('aria-label', `${studio.name} — ${getDisplayLocation(studio)}`);
-        el.title = studio.name;
-        el.addEventListener('click', () => {
-          onSelect((prev) => (prev?.id === studio.id ? null : studio));
-        });
-
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([lng, lat])
-          .addTo(mapRef.current);
-        markersRef.current.push({ marker, el, id: studio.id, lat, lng });
-      });
-
-      if (hasCoords) {
-        mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 12, duration: 800 });
-      }
-    };
-
-    if (mapRef.current.isStyleLoaded()) addMarkers();
-    else mapRef.current.once('load', addMarkers);
-  }, [studios]);
-
-  // Sync pin highlight + fly to selected studio
-  useEffect(() => {
-    markersRef.current.forEach(({ el, id }) => {
-      el.classList.toggle('is-selected', selected?.id === id);
-    });
-    if (selected && mapRef.current) {
-      const entry = markersRef.current.find((m) => m.id === selected.id);
-      if (entry) {
-        mapRef.current.flyTo({ center: [entry.lng, entry.lat], zoom: 12, duration: 800 });
-      }
-    }
-  }, [selected]);
-
-  return (
-    <div className="eyf-discover-map-canvas">
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-      {selected ? (
-        <div className="eyf-discover-map-preview">
-          <div>
-            <strong>{selected.name}</strong>
-            <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.82rem' }}>
-              {getDisplayLocation(selected)}
-            </p>
-            <Stars rating={selected.rating || 0} />
-          </div>
-          <Link className="eyf-link-button" to={`/studios/${selected.slug}`}>
-            View
-          </Link>
-        </div>
-      ) : (
-        <p className="eyf-map-label">Select a pin to preview</p>
-      )}
-    </div>
-  );
-}
+import { EmptyState, ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
+import StudioMapView from '../../components/efyia/StudioMapView';
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
@@ -172,8 +62,6 @@ export default function SearchPage() {
     fetchStudios({ q: query });
   };
 
-  const showMap = hasSearched && studios.length > 0 && !loading && !error;
-
   return (
     <div className="eyf-page">
       <section className="eyf-section">
@@ -225,8 +113,16 @@ export default function SearchPage() {
             </button>
           </aside>
 
-          {/* ── Results + optional map ──────────────────────────────────── */}
-          <div className={`eyf-results-area${showMap ? ' has-map' : ''}`}>
+          {/* ── Map + Results ────────────────────────────────────────────── */}
+          <div className="eyf-results-area">
+            {/* ── Embedded map ─────────────────────────────────────────── */}
+            <StudioMapView
+              studios={studios}
+              selected={selectedStudio}
+              onSelect={setSelectedStudio}
+            />
+
+            {/* ── Studio results ────────────────────────────────────────── */}
             <div className="eyf-results-panel">
               {loading ? (
                 <Spinner />
@@ -238,7 +134,7 @@ export default function SearchPage() {
                     <strong>{total}</strong> studio{total !== 1 ? 's' : ''} found
                   </div>
                   {studios.length > 0 ? (
-                    <div className={`eyf-card-grid${showMap ? ' eyf-card-grid--compact' : ''}`}>
+                    <div className="eyf-card-grid">
                       {studios.map((studio) => (
                         <StudioCard
                           key={studio.id}
@@ -257,20 +153,6 @@ export default function SearchPage() {
                 </>
               )}
             </div>
-
-            {/* ── Map panel (auto-shows on search) ─────────────────────── */}
-            {showMap ? (
-              <div className="eyf-discover-map">
-                <p className="eyf-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                  {studios.length} result{studios.length !== 1 ? 's' : ''} on map
-                </p>
-                <MapboxPanel
-                  studios={studios}
-                  selected={selectedStudio}
-                  onSelect={setSelectedStudio}
-                />
-              </div>
-            ) : null}
           </div>
         </div>
       </section>
