@@ -901,6 +901,27 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
             }
 
             if (status === 'CONFIRMED') {
+              // If there's a deposit with remaining balance, request final payment first
+              if (depositPaid && !finalPaymentPaid && !finalPaymentIntentId) {
+                actions.push(
+                  <button
+                    key="final-payment"
+                    type="button"
+                    className="eyf-button eyf-button--secondary"
+                    onClick={() => handleRequestFinalPayment(selectedBooking.id)}
+                    disabled={finalPaymentLoading === selectedBooking.id}
+                  >
+                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Request Final Payment'}
+                  </button>
+                );
+              }
+              if (depositPaid && !finalPaymentPaid && finalPaymentIntentId) {
+                actions.push(
+                  <span key="requested" className="eyf-badge eyf-badge--amber">
+                    Final payment requested
+                  </span>
+                );
+              }
               actions.push(
                 <button
                   key="complete"
