@@ -823,7 +823,17 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
             confirmAction.action === 'CONFIRMED'
               ? `Confirm the ${confirmAction.booking.sessionType} session on ${confirmAction.booking.date} at ${confirmAction.booking.time}? The client will be notified.`
               : confirmAction.action === 'COMPLETED'
-                ? 'Mark this session as completed? This will finalize the booking.'
+                ? (() => {
+                    const finalPaymentOwed =
+                      confirmAction.booking.depositPaid &&
+                      confirmAction.booking.depositAmount != null &&
+                      (confirmAction.booking.total - confirmAction.booking.depositAmount) > 0 &&
+                      !confirmAction.booking.finalPaymentPaid;
+
+                    return finalPaymentOwed
+                      ? `This booking has an outstanding balance of $${(confirmAction.booking.total - confirmAction.booking.depositAmount).toFixed(2)}. Mark as complete to request the remaining payment from the customer.`
+                      : 'Mark this session as completed? This will finalize the booking.';
+                  })()
                 : `Cancel this booking for ${confirmAction.booking.user?.name}? This cannot be undone.`
           }
           confirmLabel={
@@ -901,6 +911,12 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
             }
 
             if (status === 'CONFIRMED') {
+              const hasUnpaidFinalPayment =
+                depositPaid &&
+                selectedBooking.depositAmount != null &&
+                (selectedBooking.total - selectedBooking.depositAmount) > 0 &&
+                !finalPaymentPaid;
+
               actions.push(
                 <button
                   key="complete"
@@ -910,6 +926,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                     setSelectedBooking(null);
                     setConfirmAction({ booking: selectedBooking, action: 'COMPLETED' });
                   }}
+                  title={hasUnpaidFinalPayment ? 'Request final payment from customer before completing' : ''}
                 >
                   Mark Complete
                 </button>,
