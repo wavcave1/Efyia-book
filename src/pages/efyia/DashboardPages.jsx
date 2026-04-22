@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { analyticsApi, authApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi } from '../../lib/api';
+import { analyticsApi, authApi, bookingsApi, reviewsApi, studioProfileApi, studiosApi, usersApi, depositApi, websiteApi, paymentMethodsApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import TeamManager from '../../components/studio/TeamManager';
 import StudioSwitcher from '../../components/studio/StudioSwitcher';
@@ -125,9 +125,37 @@ function AccountSettingsModal({ currentUser, onClose, onSaved, showToast }) {
   });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+
+  // Load payment methods on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingPaymentMethods(true);
+        const { methods } = await paymentMethodsApi.list();
+        setPaymentMethods(methods || []);
+      } catch (err) {
+        console.error('Failed to load payment methods:', err);
+      } finally {
+        setLoadingPaymentMethods(false);
+      }
+    })();
+  }, []);
 
   const setField = (key) => (event) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const handleDeletePaymentMethod = async (methodId) => {
+    if (!window.confirm('Remove this payment method?')) return;
+    try {
+      await paymentMethodsApi.delete(methodId);
+      setPaymentMethods((prev) => prev.filter((m) => m.id !== methodId));
+      showToast?.('Payment method removed.');
+    } catch (err) {
+      setError(err.message || 'Failed to remove payment method.');
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -293,6 +321,51 @@ function AccountSettingsModal({ currentUser, onClose, onSaved, showToast }) {
               <input type="password" value={form.confirmPassword} onChange={setField('confirmPassword')} autoComplete="new-password" />
             </label>
           </div>
+
+          <h4 style={{ margin: 0 }}>Saved payment methods</h4>
+          <p className="eyf-muted" style={{ margin: '0.35rem 0 0.75rem', fontSize: '0.9rem' }}>
+            These cards are used for automatic final payments when you book with a deposit.
+          </p>
+          {loadingPaymentMethods ? (
+            <p className="eyf-muted">Loading payment methods...</p>
+          ) : paymentMethods.length === 0 ? (
+            <p className="eyf-muted">No saved payment methods yet.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {paymentMethods.map((method) => (
+                <div
+                  key={method.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.75rem',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  <div>
+                    <span style={{ textTransform: 'capitalize', marginRight: '0.5rem' }}>
+                      {method.brand} •••• {method.last4}
+                    </span>
+                    <span className="eyf-muted" style={{ fontSize: '0.85rem' }}>
+                      Expires {method.expMonth}/{method.expYear}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="eyf-button eyf-button--ghost eyf-button--sm"
+                    onClick={() => handleDeletePaymentMethod(method.id)}
+                    disabled={saving}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'end', gap: '0.75rem' }}>
             <button type="button" className="eyf-button eyf-button--ghost" onClick={onClose} disabled={saving}>

@@ -257,6 +257,13 @@ export const depositApi = {
   payDeposit: (bookingId) => api.post('/api/payments/deposit/' + bookingId, {}),
   payFinal: (bookingId) => api.post('/api/payments/final/' + bookingId, {}),
   getFinalClientSecret: (bookingId) => api.get('/api/payments/final/' + bookingId + '/client-secret'),
+  setupIntent: (bookingId) => api.post('/api/payments/setup-intent', { bookingId }),
+};
+
+// ─── Payment Methods ──────────────────────────────────────────────────────────
+export const paymentMethodsApi = {
+  list: () => api.get('/api/payment-methods'),
+  delete: (paymentMethodId) => api.delete('/api/payment-methods/' + paymentMethodId),
 };
 
 // ─── Website builder ──────────────────────────────────────────────────────────
