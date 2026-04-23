@@ -925,6 +925,28 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                 (selectedBooking.total - selectedBooking.depositAmount) > 0 &&
                 !finalPaymentPaid;
 
+              if (hasUnpaidFinalPayment && !finalPaymentIntentId) {
+                actions.push(
+                  <button
+                    key="request-payment"
+                    type="button"
+                    className="eyf-button eyf-button--secondary"
+                    onClick={() => handleRequestFinalPayment(selectedBooking.id)}
+                    disabled={finalPaymentLoading === selectedBooking.id}
+                  >
+                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Request Final Payment'}
+                  </button>
+                );
+              }
+
+              if (hasUnpaidFinalPayment && finalPaymentIntentId) {
+                actions.push(
+                  <span key="requested" className="eyf-badge eyf-badge--amber">
+                    Final payment requested
+                  </span>
+                );
+              }
+
               actions.push(
                 <button
                   key="complete"
@@ -934,7 +956,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                     setSelectedBooking(null);
                     setConfirmAction({ booking: selectedBooking, action: 'COMPLETED' });
                   }}
-                  title={hasUnpaidFinalPayment ? 'Request final payment from customer before completing' : ''}
+                  title={hasUnpaidFinalPayment && !finalPaymentIntentId ? 'Request final payment from customer before completing' : ''}
                 >
                   Mark Complete
                 </button>,
