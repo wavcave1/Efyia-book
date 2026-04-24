@@ -8,6 +8,7 @@ function BookingStatusBadge({ status }) {
     CONFIRMED: 'confirmed',
     COMPLETED: 'completed',
     CANCELLED: 'cancelled',
+    AWAITING_FINAL_PAYMENT: 'amber',
   };
 
   return (
@@ -57,6 +58,12 @@ export default function BookingDetailModal({
   if (!booking) return null;
   const finalPaymentPaid = booking.finalPaymentPaid === true || Boolean(booking.finalPaymentDate);
   const finalPaymentRequested = Boolean(booking.finalPaymentIntentId);
+  const finalPaymentDue =
+    typeof booking.finalPaymentDue === 'number'
+      ? booking.finalPaymentDue
+      : booking.depositAmount && booking.total
+        ? Math.max(booking.total - booking.depositAmount, 0)
+        : 0;
 
   const calculateRemainingBalance = () => {
     if (!booking.depositAmount || !booking.total) return 0;
@@ -180,6 +187,29 @@ export default function BookingDetailModal({
             ) : null}
           </div>
         </div>
+
+        {booking.status === 'AWAITING_FINAL_PAYMENT' ? (
+          <div
+            className="eyf-card"
+            style={{
+              background: 'rgba(251, 191, 36, 0.08)',
+              border: '1px solid rgba(251, 191, 36, 0.35)',
+              padding: '1rem 1.25rem',
+              display: 'grid',
+              gap: '0.4rem',
+            }}
+          >
+            <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Final payment required</h4>
+            {finalPaymentDue > 0 ? (
+              <p style={{ margin: 0, color: 'var(--text)' }}>
+                Amount due: <strong>${finalPaymentDue.toFixed(2)}</strong>
+              </p>
+            ) : null}
+            <p className="eyf-muted" style={{ margin: 0, fontSize: '0.9rem' }}>
+              We couldn&apos;t complete the automatic charge. Ask the client to complete final payment manually.
+            </p>
+          </div>
+        ) : null}
 
         {/* Files */}
         {['CONFIRMED', 'COMPLETED'].includes(booking.status) ? (
