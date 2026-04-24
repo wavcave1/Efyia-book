@@ -15,6 +15,7 @@ import {
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
 import BookingCheckout from '../../components/stripe/BookingCheckout';
+import SavedCardSection from '../../components/stripe/SavedCardSection';
 import FileList from '../../components/booking/FileList';
 import BookingDetailModal from '../../components/booking/BookingDetailModal';
 import RevenueChart from '../../components/studio/RevenueChart';
@@ -127,7 +128,7 @@ function ConfirmModal({
   );
 }
 
-function AccountSettingsModal({ currentUser, onClose, onSaved, showToast }) {
+function AccountSettingsModal({ currentUser, onClose, onSaved, showToast, studioId }) {
   const normalizedAddress = currentUser?.address && typeof currentUser.address === 'object'
     ? currentUser.address
     : currentUser;
@@ -244,6 +245,8 @@ function AccountSettingsModal({ currentUser, onClose, onSaved, showToast }) {
           width: 'min(640px, 100%)',
           maxHeight: '90vh',
           overflowY: 'auto',
+          display: 'grid',
+          gap: '1.5rem',
         }}
       >
         <form className="eyf-stack" onSubmit={handleSubmit}>
@@ -329,6 +332,8 @@ function AccountSettingsModal({ currentUser, onClose, onSaved, showToast }) {
             </button>
           </div>
         </form>
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+        <SavedCardSection studioId={studioId} showToast={showToast} />
       </div>
     </div>,
     document.body
@@ -1299,6 +1304,8 @@ export function ClientDashboard() {
     }
   };
 
+  const latestStudioId = bookings.find((b) => b.studio?.id)?.studio?.id ?? null;
+
   return (
     <div className="eyf-page">
       {showAccountSettings ? (
@@ -1307,6 +1314,7 @@ export function ClientDashboard() {
           onClose={() => setShowAccountSettings(false)}
           onSaved={reloadCurrentUser}
           showToast={showToast}
+          studioId={latestStudioId}
         />
       ) : null}
       <div className="eyf-client-dashboard">
@@ -1492,6 +1500,7 @@ export function StudioDashboard() {
           onClose={() => setShowAccountSettings(false)}
           onSaved={reloadCurrentUser}
           showToast={showToast}
+          studioId={activeStudioId}
         />
       ) : null}
       {showWizard && studio ? (
