@@ -421,7 +421,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   };
 
   const groupedBookings = {
-    upcoming: bookings.filter((b) => ['PENDING', 'CONFIRMED', 'AWAITING_FINAL_PAYMENT'].includes(b.status)),
+    upcoming: bookings.filter((b) => ['PENDING', 'CONFIRMED'].includes(b.status)),
     completed: bookings.filter((b) => b.status === 'COMPLETED'),
     cancelled: bookings.filter((b) => b.status === 'CANCELLED'),
   };
@@ -794,7 +794,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
 
   const groupedBookings = {
     pending: bookings.filter((b) => b.status === 'PENDING'),
-    confirmed: bookings.filter((b) => ['CONFIRMED', 'AWAITING_FINAL_PAYMENT'].includes(b.status)),
+    confirmed: bookings.filter((b) => b.status === 'CONFIRMED'),
     completed: bookings.filter((b) => b.status === 'COMPLETED'),
     cancelled: bookings.filter((b) => b.status === 'CANCELLED'),
   };
@@ -884,14 +884,6 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                 >
                   Decline
                 </button>
-              );
-            }
-
-            if (status === 'AWAITING_FINAL_PAYMENT') {
-              actions.push(
-                <span key="awaiting-payment" className="eyf-badge eyf-badge--amber">
-                  Awaiting final payment
-                </span>
               );
             }
 
@@ -1383,12 +1375,9 @@ export function StudioDashboard() {
         } else {
           showToast('Booking cancelled.');
         }
-      } else if (result.status === 'AWAITING_FINAL_PAYMENT') {
-        showToast('Awaiting final payment from client. Payment request sent.');
-      } else if (status === 'CONFIRMED') {
-        showToast('Booking confirmed.');
-      } else if (status === 'COMPLETED') {
-        showToast('Booking marked complete.');
+      } else {
+        const label = status === 'CONFIRMED' ? 'confirmed' : 'marked complete';
+        showToast(`Booking ${label}.`);
       }
     } catch (err) {
       showToast(err.message || 'Could not update booking status.');
