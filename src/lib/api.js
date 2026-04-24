@@ -78,7 +78,16 @@ export const bookingsApi = {
   list: () => api.get('/api/bookings'),
   getById: (id) => api.get(`/api/bookings/${id}`),
   create: (data) => api.post('/api/bookings', data),
-  updateStatus: (id, status) => api.patch(`/api/bookings/${id}/status`, { status }),
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/api/bookings/${id}/status`, { status });
+    const booking = response?.booking && typeof response.booking === 'object' ? response.booking : response;
+    return {
+      ...booking,
+      requiresManualPayment: response?.requiresManualPayment ?? booking?.requiresManualPayment ?? false,
+      finalPaymentDue: response?.finalPaymentDue ?? booking?.finalPaymentDue ?? null,
+      autoChargeAttempted: response?.autoChargeAttempted ?? booking?.autoChargeAttempted ?? false,
+    };
+  },
 };
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────

@@ -22,6 +22,32 @@ import AvailabilityManager from '../../components/studio/AvailabilityManager';
 import { canRevealBookingAddress, getPrivateAddress } from '../../lib/location';
 import EmailDomainManager from '../../components/efyia/EmailDomainManager';
 
+function getStatusUpdateErrorMessage(error) {
+  const message = error?.message || '';
+  if (message.includes('Deposit must be paid before completion')) {
+    return 'Deposit must be paid before completion. If payment already went through, refresh and try again.';
+  }
+  if (message.includes('Stripe is not configured for this studio. Final payment cannot be processed.')) {
+    return 'Stripe is not configured for this studio. Final payment cannot be processed.';
+  }
+  return message || 'Could not update booking status.';
+}
+
+function getFinalPaymentDueAmount(booking = {}) {
+  if (typeof booking.finalPaymentDue === 'number') return Math.max(booking.finalPaymentDue, 0);
+  if (typeof booking.total === 'number' && typeof booking.depositAmount === 'number') {
+    return Math.max(booking.total - booking.depositAmount, 0);
+  }
+  return 0;
+}
+
+function getManualPaymentNotice(result = {}) {
+  if (result?.autoChargeAttempted) {
+    return 'Automatic charge attempt failed, so manual payment is required.';
+  }
+  return 'No saved payment method was available, so manual payment is required.';
+}
+
 // ─── Confirm action modal ─────────────────────────────────────────────────────
 function ConfirmModal({
   title,
@@ -759,9 +785,18 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
 function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [acting, setActing] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const [finalPaymentLoading, setFinalPaymentLoading] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
+
+  useEffect(() => {
+    if (!selectedBooking?.id) return;
+    const updatedBooking = bookings.find((booking) => booking.id === selectedBooking.id);
+    if (updatedBooking) {
+      setSelectedBooking(updatedBooking);
+    }
+  }, [bookings, selectedBooking?.id]);
 
   if (!bookings.length) {
     return (
@@ -773,20 +808,27 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
   }
 
   const handleConfirm = async () => {
+    if (!confirmAction || acting || statusUpdating) return;
     setActing(true);
-    await onStatusChange(confirmAction.booking.id, confirmAction.action);
-    setActing(false);
-    setConfirmAction(null);
+    setStatusUpdating(true);
+    try {
+      await onStatusChange(confirmAction.booking.id, confirmAction.action);
+      setConfirmAction(null);
+    } finally {
+      setActing(false);
+      setStatusUpdating(false);
+    }
   };
 
   const handleRequestFinalPayment = async (bookingId) => {
+    if (finalPaymentLoading || statusUpdating) return;
     setFinalPaymentLoading(bookingId);
     try {
       await depositApi.payFinal(bookingId);
       showToast?.('Final payment requested from client.');
       window.location.reload();
     } catch (err) {
-      showToast?.(err.message || 'Could not request final payment.');
+      showToast?.(getStatusUpdateErrorMessage(err));
     } finally {
       setFinalPaymentLoading(null);
     }
@@ -889,9 +931,22 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
 
             if (status === 'AWAITING_FINAL_PAYMENT') {
               actions.push(
-                <span key="awaiting-payment" className="eyf-badge eyf-badge--amber">
-                  Awaiting final payment
-                </span>
+                <div key="awaiting-payment" style={{ display: 'grid', gap: '0.5rem' }}>
+                  <span className="eyf-badge eyf-badge--amber">
+                    Final payment required{getFinalPaymentDueAmount(selectedBooking) > 0 ? ` · $${getFinalPaymentDueAmount(selectedBooking).toFixed(2)} due` : ''}
+                  </span>
+                  <p className="eyf-muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                    {getManualPaymentNotice(selectedBooking)}
+                  </p>
+                  <button
+                    type="button"
+                    className="eyf-button eyf-button--secondary"
+                    onClick={() => handleRequestFinalPayment(selectedBooking.id)}
+                    disabled={finalPaymentLoading === selectedBooking.id || statusUpdating}
+                  >
+                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Complete Payment'}
+                  </button>
+                </div>
               );
             }
 
@@ -953,12 +1008,14 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                   type="button"
                   className="eyf-button eyf-button--ghost"
                   onClick={() => {
+                    if (statusUpdating) return;
                     setSelectedBooking(null);
                     setConfirmAction({ booking: selectedBooking, action: 'COMPLETED' });
                   }}
+                  disabled={statusUpdating}
                   title={hasUnpaidFinalPayment && !finalPaymentIntentId ? 'Request final payment from customer before completing' : ''}
                 >
-                  Mark Complete
+                  {statusUpdating ? 'Updating…' : 'Mark Complete'}
                 </button>,
                 <button
                   key="cancel"
@@ -966,9 +1023,11 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                   className="eyf-button eyf-button--ghost"
                   style={{ color: '#f87171', borderColor: '#f87171' }}
                   onClick={() => {
+                    if (statusUpdating) return;
                     setSelectedBooking(null);
                     setConfirmAction({ booking: selectedBooking, action: 'CANCELLED' });
                   }}
+                  disabled={statusUpdating}
                 >
                   Cancel
                 </button>
@@ -1366,32 +1425,45 @@ export function StudioDashboard() {
   const handleStatusChange = async (bookingId, status) => {
     try {
       const result = await bookingsApi.updateStatus(bookingId, status);
+      const refreshedBookingResponse = await bookingsApi.getById(bookingId).catch(() => null);
+      const refreshedBooking =
+        refreshedBookingResponse?.booking && typeof refreshedBookingResponse.booking === 'object'
+          ? refreshedBookingResponse.booking
+          : refreshedBookingResponse;
+      const latestBooking = refreshedBooking || result;
 
       setBookings((prev) =>
-        prev.map((b) => (b.id === bookingId ? result : b))
+        prev.map((b) => (b.id === bookingId ? latestBooking : b))
       );
 
       if (status === 'CANCELLED') {
-        if (result.refund?.refundId) {
+        if (latestBooking.refund?.refundId) {
           showToast('Booking cancelled. Client refund has been issued.');
-        } else if (result.refund?.error) {
+        } else if (latestBooking.refund?.error) {
           showToast(
             'Booking cancelled. Refund could not be processed — check Stripe dashboard.'
           );
-        } else if (result.refund?.status === 'cancelled_before_capture') {
+        } else if (latestBooking.refund?.status === 'cancelled_before_capture') {
           showToast('Booking cancelled. Payment was voided before capture.');
         } else {
           showToast('Booking cancelled.');
         }
-      } else if (result.status === 'AWAITING_FINAL_PAYMENT') {
+      } else if (latestBooking.status === 'AWAITING_FINAL_PAYMENT' && latestBooking.requiresManualPayment) {
+        const amountDue = getFinalPaymentDueAmount(latestBooking);
+        showToast(
+          amountDue > 0
+            ? `Final payment required. $${amountDue.toFixed(2)} is still due.`
+            : 'Final payment required. Please complete payment manually.'
+        );
+      } else if (latestBooking.status === 'AWAITING_FINAL_PAYMENT') {
         showToast('Awaiting final payment from client. Payment request sent.');
       } else if (status === 'CONFIRMED') {
         showToast('Booking confirmed.');
-      } else if (status === 'COMPLETED') {
-        showToast('Booking marked complete.');
+      } else if (latestBooking.status === 'COMPLETED') {
+        showToast('Booking completed successfully.');
       }
     } catch (err) {
-      showToast(err.message || 'Could not update booking status.');
+      showToast(getStatusUpdateErrorMessage(err));
     }
   };
 
