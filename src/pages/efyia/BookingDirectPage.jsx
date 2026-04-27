@@ -91,13 +91,7 @@ function normalizeSessionTypeOptions(values) {
 
 function getStudioSessionTypeOptions(studio) {
   const explicitSessionTypes = normalizeSessionTypeOptions(studio?.sessionTypes);
-  if (explicitSessionTypes.length) return explicitSessionTypes;
-
-  const serviceNames = normalizeSessionTypeOptions(
-    (Array.isArray(studio?.services) ? studio.services : []).map((service) => service?.name)
-  );
-
-  return serviceNames;
+  return explicitSessionTypes;
 }
 
 // ─── Cancellation Policy Modal ────────────────────────────────────────────────
@@ -350,6 +344,16 @@ export default function BookingDirectPage() {
   const hasAvailableSessionTypes = availableSessionTypes.length > 0;
   const hasValidSelectedSessionType =
     hasAvailableSessionTypes && availableSessionTypes.includes(sessionType);
+
+  console.log('[BookingDirectPage] dropdown-debug', {
+    component: 'BookingDirectPage',
+    studioId: studio.id,
+    studioName: studio.name,
+    studioSessionTypes: studio.sessionTypes,
+    studioServices: studio.services,
+    availableSessionTypes,
+    currentSessionType: sessionType,
+  });
 
   const pricePerHour = getPriceForSession(studio, sessionType) || studio.pricePerHour || 0;
   const selectedService = getServiceForSession(studio, sessionType);
