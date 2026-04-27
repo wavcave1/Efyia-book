@@ -92,12 +92,7 @@ function normalizeSessionTypeOptions(values) {
 function getStudioSessionTypeOptions(studio) {
   const explicitSessionTypes = normalizeSessionTypeOptions(studio?.sessionTypes);
   if (explicitSessionTypes.length) return explicitSessionTypes;
-
-  const serviceNames = normalizeSessionTypeOptions(
-    (Array.isArray(studio?.services) ? studio.services : []).map((service) => service?.name)
-  );
-
-  return serviceNames;
+  return [];
 }
 
 // ─── Cancellation Policy Modal ────────────────────────────────────────────────
@@ -315,6 +310,12 @@ export default function BookingDirectPage() {
       .then((data) => {
         setStudio(data);
         const types = getStudioSessionTypeOptions(data);
+        console.log('[BookingDirectPage] studio.id:', data?.id);
+        console.log('[BookingDirectPage] studio.name:', data?.name);
+        console.log('[BookingDirectPage] studio.sessionTypes:', data?.sessionTypes);
+        console.log('[BookingDirectPage] studio.services:', data?.services);
+        console.log('[BookingDirectPage] availableSessionTypes:', types);
+        console.log('[BookingDirectPage] initial sessionType:', types[0] || '');
 
         setSessionType(types[0] || '');
         setStudioLoading(false);
@@ -350,6 +351,8 @@ export default function BookingDirectPage() {
   const hasAvailableSessionTypes = availableSessionTypes.length > 0;
   const hasValidSelectedSessionType =
     hasAvailableSessionTypes && availableSessionTypes.includes(sessionType);
+
+  console.log('[BookingDirectPage render] availableSessionTypes:', availableSessionTypes, '| current sessionType:', sessionType);
 
   const pricePerHour = getPriceForSession(studio, sessionType) || studio.pricePerHour || 0;
   const selectedService = getServiceForSession(studio, sessionType);

@@ -92,12 +92,7 @@ function normalizeSessionTypeOptions(values) {
 function getStudioSessionTypeOptions(studio) {
   const explicitSessionTypes = normalizeSessionTypeOptions(studio?.sessionTypes);
   if (explicitSessionTypes.length) return explicitSessionTypes;
-
-  const serviceNames = normalizeSessionTypeOptions(
-    (Array.isArray(studio?.services) ? studio.services : []).map((service) => service?.name)
-  );
-
-  return serviceNames;
+  return [];
 }
 
 // ─── Cancellation Policy Modal ────────────────────────────────────────────────
@@ -326,6 +321,12 @@ export default function BookingPage() {
       .then((data) => {
         setStudio(data);
         const types = getStudioSessionTypeOptions(data);
+        console.log('[BookingPage] studio.id:', data?.id);
+        console.log('[BookingPage] studio.name:', data?.name);
+        console.log('[BookingPage] studio.sessionTypes:', data?.sessionTypes);
+        console.log('[BookingPage] studio.services:', data?.services);
+        console.log('[BookingPage] availableSessionTypes:', types);
+        console.log('[BookingPage] initial sessionType:', types[0] || '');
 
         setSessionType(types[0] || '');
         setStudioLoading(false);
@@ -361,6 +362,8 @@ export default function BookingPage() {
   const hasAvailableSessionTypes = availableSessionTypes.length > 0;
   const hasValidSelectedSessionType =
     hasAvailableSessionTypes && availableSessionTypes.includes(sessionType);
+
+  console.log('[BookingPage render] availableSessionTypes:', availableSessionTypes, '| current sessionType:', sessionType);
 
   const pricePerHour = getPriceForSession(studio, sessionType) || studio.pricePerHour || 0;
   const selectedService = getServiceForSession(studio, sessionType);
