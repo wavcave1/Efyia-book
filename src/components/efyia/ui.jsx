@@ -238,7 +238,7 @@ ${lowestPrice}<span style={{ fontWeight: 500, opacity: 0.75 }}>/hr</span>
 ) : null}
 </div>
 <div className="eyf-tags">
-{(studio.tags || studio.sessionTypes || []).slice(0, 3).map((tag) => (
+{(Array.isArray(studio.sessionTypes) ? studio.sessionTypes : []).slice(0, 3).map((tag) => (
 <span key={tag} className="eyf-tag">{tag}</span>
 ))}
 </div>
