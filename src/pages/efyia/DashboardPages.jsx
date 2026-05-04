@@ -429,13 +429,24 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
     setConfirmCancel(null);
   };
 
-  const handleFinalPaymentSuccess = async () => {
-    const message = 'Final payment completed. Refreshing your bookings...';
-    setFinalPaymentSuccess(message);
+  const handleFinalPaymentSuccess = async (paymentIntentId) => {
+    if (!finalPaymentBooking?.id || !paymentIntentId) return;
+
     setFinalPaymentError('');
-    setFinalPaymentCheckout(null);
-    showToast?.('Final payment completed.');
-    await onRefreshBookings?.();
+    try {
+      // Confirm the payment with backend before closing modal
+      await depositApi.confirmFinalPayment(finalPaymentBooking.id, paymentIntentId);
+
+      const message = 'Final payment completed. Refreshing your bookings...';
+      setFinalPaymentSuccess(message);
+      setFinalPaymentCheckout(null);
+      showToast?.('Final payment completed.');
+      await onRefreshBookings?.();
+    } catch (err) {
+      const errorMsg = err.message || 'Failed to confirm payment. Please contact support if balance is charged.';
+      setFinalPaymentError(errorMsg);
+      showToast?.(errorMsg);
+    }
   };
 
   const handleOpenFinalPayment = async (booking) => {
