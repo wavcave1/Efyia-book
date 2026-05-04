@@ -48,7 +48,7 @@ function CardSummary({ card }) {
   );
 }
 
-function SetupForm({ onSuccess, onCancel }) {
+function SetupForm({ setupIntentId, studioId, onSuccess, onCancel }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -82,7 +82,7 @@ function SetupForm({ onSuccess, onCancel }) {
       return;
     }
 
-    onSuccess?.();
+    onSuccess?.(setupIntentId, studioId);
   };
 
   return (
@@ -163,10 +163,16 @@ export default function SavedCardSection({ studioId, showToast }) {
     setIntentError(null);
   };
 
-  const handleSetupSuccess = async () => {
-    setSetupIntent(null);
-    showToast?.('Card saved successfully.');
-    await fetchCard();
+  const handleSetupSuccess = async (setupIntentId, studioId) => {
+    try {
+      await savedCardApi.confirmSetupIntent(setupIntentId, studioId);
+      setSetupIntent(null);
+      showToast?.('Card saved successfully.');
+      await fetchCard();
+    } catch (err) {
+      setIntentError(err.message || 'Failed to confirm card setup. Please try again.');
+      setProcessing?.(false);
+    }
   };
 
   const handleRemove = async () => {
@@ -283,7 +289,12 @@ export default function SavedCardSection({ studioId, showToast }) {
               stripe={stripePromise}
               options={{ clientSecret: setupIntent.clientSecret, appearance: STRIPE_APPEARANCE }}
             >
-              <SetupForm onSuccess={handleSetupSuccess} onCancel={handleCancelSetup} />
+              <SetupForm
+                setupIntentId={setupIntent.setupIntentId}
+                studioId={studioId}
+                onSuccess={handleSetupSuccess}
+                onCancel={handleCancelSetup}
+              />
             </Elements>
           ) : null}
         </>
