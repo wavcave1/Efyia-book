@@ -272,6 +272,8 @@ export const depositApi = {
 export const savedCardApi = {
   get: () => api.get('/api/payments/saved-card'),
   createSetupIntent: (studioId) => api.post('/api/payments/setup-intent', { studioId }),
+  confirmSetupIntent: (setupIntentId, studioId) =>
+    api.post('/api/payments/setup-intent/confirm', { setupIntentId, studioId }),
   remove: () => api.delete('/api/payments/saved-card'),
 };
 
