@@ -266,6 +266,8 @@ export const depositApi = {
   payDeposit: (bookingId) => api.post('/api/payments/deposit/' + bookingId, {}),
   payFinal: (bookingId) => api.post('/api/payments/final/' + bookingId, {}),
   getFinalClientSecret: (bookingId) => api.get('/api/payments/final/' + bookingId + '/client-secret'),
+  confirmFinalPayment: (bookingId, paymentIntentId) =>
+    api.post(`/api/payments/final/${bookingId}/confirm`, { paymentIntentId }),
 };
 
 // ─── Saved card ───────────────────────────────────────────────────────────────
