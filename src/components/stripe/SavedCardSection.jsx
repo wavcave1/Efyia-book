@@ -48,7 +48,7 @@ function CardSummary({ card }) {
   );
 }
 
-function SetupForm({ onSuccess, onCancel }) {
+function SetupForm({ onSuccess, onCancel, setupIntentId, studioId }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -78,6 +78,15 @@ function SetupForm({ onSuccess, onCancel }) {
 
     if (confirmError) {
       setError(confirmError.message || 'Failed to save card. Please try again.');
+      setProcessing(false);
+      return;
+    }
+
+    // Tell the backend to persist the saved card now (don't wait for webhook)
+    try {
+      await savedCardApi.confirmSetupIntent(setupIntentId, studioId);
+    } catch (persistErr) {
+      setError(persistErr.message || 'Card saved with Stripe but could not be stored. Please try again.');
       setProcessing(false);
       return;
     }
@@ -283,7 +292,12 @@ export default function SavedCardSection({ studioId, showToast }) {
               stripe={stripePromise}
               options={{ clientSecret: setupIntent.clientSecret, appearance: STRIPE_APPEARANCE }}
             >
-              <SetupForm onSuccess={handleSetupSuccess} onCancel={handleCancelSetup} />
+              <SetupForm
+                onSuccess={handleSetupSuccess}
+                onCancel={handleCancelSetup}
+                setupIntentId={setupIntent.setupIntentId}
+                studioId={studioId}
+              />
             </Elements>
           ) : null}
         </>
