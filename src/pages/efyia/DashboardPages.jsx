@@ -502,7 +502,18 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           onClose={() => setSelectedBooking(null)}
           canUploadFiles={false}
           currentUserId={currentUserId}
-          onAction={({ status, depositPaid, finalPaymentPaid, finalPaymentIntentId }) => {
+          onAction={(payload = {}) => {
+            const {
+              status,
+              depositPaid,
+              finalPaymentPaid,
+              finalPaymentIntentId,
+            } = payload;
+            // requiresCustomerAction may not be forwarded by BookingDetailModal;
+            // fall back to the selectedBooking object so the gate still works.
+            const requiresCustomerAction =
+              payload.requiresCustomerAction ?? selectedBooking?.requiresCustomerAction;
+            const needsCustomerAction = requiresCustomerAction === true;
             const actions = [];
 
             if (status === 'COMPLETED' && selectedBooking?.studio?.slug) {
@@ -543,7 +554,12 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentPaid && finalPaymentIntentId) {
+            // "Pay Remaining Balance" is exposed ONLY when the backend has
+            // set requiresCustomerAction=true — i.e. off-session auto-charge
+            // failed, the saved card is missing/detached, or Stripe required
+            // customer authentication. In the happy path the booking flips
+            // straight to COMPLETED and this button never renders.
+            if (depositPaid && !finalPaymentPaid && needsCustomerAction && finalPaymentIntentId) {
               actions.push(
                 <button
                   key="payment"
@@ -557,10 +573,10 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentPaid && !finalPaymentIntentId) {
+            if (depositPaid && !finalPaymentPaid && !needsCustomerAction) {
               actions.push(
                 <div key="payment-pending" className="eyf-muted" style={{ fontSize: '0.88rem' }}>
-                  Final payment has not been requested by the studio yet.
+                  Final payment will be charged automatically when the studio marks this booking complete.
                 </div>
               );
             }
@@ -576,7 +592,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
             if (['CANCELLED', 'COMPLETED'].includes(status) && selectedBooking?.studio?.id) {
               actions.push(
                 <Link
-                  key="bookagin"
+                  key="bookagain"
                   to={`/booking/${selectedBooking.studio.id}`}
                   className="eyf-button eyf-button--secondary"
                   onClick={() => setSelectedBooking(null)}
