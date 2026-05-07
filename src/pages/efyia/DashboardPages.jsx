@@ -502,7 +502,18 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           onClose={() => setSelectedBooking(null)}
           canUploadFiles={false}
           currentUserId={currentUserId}
-          onAction={({ status, depositPaid, finalPaymentPaid, finalPaymentIntentId, requiresCustomerAction }) => {
+          onAction={(payload = {}) => {
+            const {
+              status,
+              depositPaid,
+              finalPaymentPaid,
+              finalPaymentIntentId,
+            } = payload;
+            // requiresCustomerAction may not be forwarded by BookingDetailModal;
+            // fall back to the selectedBooking object so the gate still works.
+            const requiresCustomerAction =
+              payload.requiresCustomerAction ?? selectedBooking?.requiresCustomerAction;
+            const needsCustomerAction = requiresCustomerAction === true;
             const actions = [];
 
             if (status === 'COMPLETED' && selectedBooking?.studio?.slug) {
@@ -548,7 +559,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
             // failed, the saved card is missing/detached, or Stripe required
             // customer authentication. In the happy path the booking flips
             // straight to COMPLETED and this button never renders.
-            if (depositPaid && !finalPaymentPaid && requiresCustomerAction === true && finalPaymentIntentId) {
+            if (depositPaid && !finalPaymentPaid && needsCustomerAction && finalPaymentIntentId) {
               actions.push(
                 <button
                   key="payment"
@@ -562,7 +573,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentPaid && !requiresCustomerAction) {
+            if (depositPaid && !finalPaymentPaid && !needsCustomerAction) {
               actions.push(
                 <div key="payment-pending" className="eyf-muted" style={{ fontSize: '0.88rem' }}>
                   Final payment will be charged automatically when the studio marks this booking complete.
