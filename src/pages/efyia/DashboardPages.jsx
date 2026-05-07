@@ -592,7 +592,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
             if (['CANCELLED', 'COMPLETED'].includes(status) && selectedBooking?.studio?.id) {
               actions.push(
                 <Link
-                  key="bookagin"
+                  key="bookagain"
                   to={`/booking/${selectedBooking.studio.id}`}
                   className="eyf-button eyf-button--secondary"
                   onClick={() => setSelectedBooking(null)}
