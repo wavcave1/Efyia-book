@@ -105,7 +105,9 @@ function CancellationPolicyModal({ policy, studioName, onAgree, onDecline }) {
         backdropFilter: 'blur(4px)',
         zIndex: 200,
         display: 'grid',
-        placeItems: 'center',
+        alignItems: 'safe center',
+        justifyItems: 'center',
+        overflowY: 'auto',
         padding: '1rem',
       }}
       role="dialog"
@@ -119,6 +121,8 @@ function CancellationPolicyModal({ policy, studioName, onAgree, onDecline }) {
           borderRadius: 20,
           padding: '2rem',
           width: 'min(520px, 100%)',
+          maxHeight: 'calc(100dvh - 2rem)',
+          overflowY: 'auto',
           display: 'grid',
           gap: '1.25rem',
         }}
@@ -214,7 +218,9 @@ function CancelBookingModal({
         backdropFilter: 'blur(4px)',
         zIndex: 200,
         display: 'grid',
-        placeItems: 'center',
+        alignItems: 'safe center',
+        justifyItems: 'center',
+        overflowY: 'auto',
         padding: '1rem',
       }}
       role="dialog"
@@ -228,6 +234,8 @@ function CancelBookingModal({
           borderRadius: 20,
           padding: '2rem',
           width: 'min(440px, 100%)',
+          maxHeight: 'calc(100dvh - 2rem)',
+          overflowY: 'auto',
           display: 'grid',
           gap: '1.25rem',
         }}

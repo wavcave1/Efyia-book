@@ -68,7 +68,9 @@ function ConfirmModal({
         backdropFilter: 'blur(4px)',
         zIndex: 200,
         display: 'grid',
-        placeItems: 'center',
+        alignItems: 'safe center',
+        justifyItems: 'center',
+        overflowY: 'auto',
         padding: '1rem',
       }}
       role="dialog"
@@ -81,6 +83,8 @@ function ConfirmModal({
           borderRadius: 20,
           padding: '2rem',
           width: 'min(420px, 100%)',
+          maxHeight: 'calc(100dvh - 2rem)',
+          overflowY: 'auto',
           display: 'grid',
           gap: '1.25rem',
         }}
@@ -229,7 +233,9 @@ function AccountSettingsModal({ currentUser, onClose, onSaved, showToast, studio
         backdropFilter: 'blur(4px)',
         zIndex: 220,
         display: 'grid',
-        placeItems: 'center',
+        alignItems: 'safe center',
+        justifyItems: 'center',
+        overflowY: 'auto',
         padding: '1rem',
       }}
       role="dialog"
@@ -243,7 +249,7 @@ function AccountSettingsModal({ currentUser, onClose, onSaved, showToast, studio
           borderRadius: 20,
           padding: '1.4rem',
           width: 'min(640px, 100%)',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100dvh - 2rem)',
           overflowY: 'auto',
           display: 'grid',
           gap: '1.5rem',
@@ -616,7 +622,9 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
             backdropFilter: 'blur(4px)',
             zIndex: 200,
             display: 'grid',
-            placeItems: 'center',
+            alignItems: 'safe center',
+            justifyItems: 'center',
+            overflowY: 'auto',
             padding: '1rem',
           }}
           role="dialog"
@@ -637,6 +645,8 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               borderRadius: 20,
               padding: '2rem',
               width: 'min(520px, 100%)',
+              maxHeight: 'calc(100dvh - 2rem)',
+              overflowY: 'auto',
               display: 'grid',
               gap: '1.25rem',
             }}
