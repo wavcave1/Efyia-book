@@ -79,7 +79,9 @@ export default function BookingDetailModal({
         backdropFilter: 'blur(4px)',
         zIndex: 200,
         display: 'grid',
-        placeItems: 'center',
+        alignItems: 'safe center',
+        justifyItems: 'center',
+        overflowY: 'auto',
         padding: '1rem',
       }}
       role="dialog"
@@ -95,7 +97,7 @@ export default function BookingDetailModal({
           borderRadius: 20,
           padding: '2rem',
           width: 'min(720px, 100%)',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100dvh - 2rem)',
           overflowY: 'auto',
           display: 'grid',
           gap: '1.5rem',
