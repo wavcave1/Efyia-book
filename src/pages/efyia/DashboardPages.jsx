@@ -502,7 +502,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           onClose={() => setSelectedBooking(null)}
           canUploadFiles={false}
           currentUserId={currentUserId}
-          onAction={({ status, depositPaid, finalPaymentPaid, finalPaymentIntentId }) => {
+          onAction={({ status, depositPaid, finalPaymentPaid, finalPaymentIntentId, requiresCustomerAction }) => {
             const actions = [];
 
             if (status === 'COMPLETED' && selectedBooking?.studio?.slug) {
@@ -543,7 +543,12 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentPaid && finalPaymentIntentId) {
+            // "Pay Remaining Balance" is exposed ONLY when the backend has
+            // set requiresCustomerAction=true — i.e. off-session auto-charge
+            // failed, the saved card is missing/detached, or Stripe required
+            // customer authentication. In the happy path the booking flips
+            // straight to COMPLETED and this button never renders.
+            if (depositPaid && !finalPaymentPaid && requiresCustomerAction === true && finalPaymentIntentId) {
               actions.push(
                 <button
                   key="payment"
@@ -557,10 +562,10 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentPaid && !finalPaymentIntentId) {
+            if (depositPaid && !finalPaymentPaid && !requiresCustomerAction) {
               actions.push(
                 <div key="payment-pending" className="eyf-muted" style={{ fontSize: '0.88rem' }}>
-                  Final payment has not been requested by the studio yet.
+                  Final payment will be charged automatically when the studio marks this booking complete.
                 </div>
               );
             }
