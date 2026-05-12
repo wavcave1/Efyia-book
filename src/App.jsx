@@ -19,6 +19,7 @@ import PrivacyPage from './pages/efyia/PrivacyPage';
 import InviteAcceptPage from './pages/efyia/InviteAcceptPage';
 import WebsiteDashboard from './pages/efyia/WebsiteDashboard';
 import WebsiteEditorPage from './pages/efyia/WebsiteEditorPage';
+import VerifyEmailPage from './pages/efyia/VerifyEmailPage';
 
 export default function App() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
             />
             <Route path="login" element={<AuthPage mode="login" />} />
             <Route path="signup" element={<AuthPage mode="signup" />} />
+            <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route
               path="dashboard/client"
               element={

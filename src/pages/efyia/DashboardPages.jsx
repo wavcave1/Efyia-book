@@ -629,7 +629,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
           }}
           role="dialog"
           aria-modal="true"
-                  onClick={(e) => {
+          onClick={(e) => {
             if (e.target === e.currentTarget) {
               setFinalPaymentBooking(null);
               setFinalPaymentCheckout(null);
@@ -1345,7 +1345,6 @@ export function ClientDashboard() {
       setBookings(bkgs);
       setFavorites(studios.filter((s) => favoriteStudioIds.includes(s.id)));
 
-      // Check which studios the current user has already reviewed
       const completedStudioIds = [...new Set(
         bkgs
           .filter((b) => b.status === 'COMPLETED' && b.studio?.id)
@@ -1503,7 +1502,6 @@ export function StudioDashboard() {
           if (!localStorage.getItem(wizardKey) && !profile.richDescription?.trim()) {
             setShowWizard(true);
           }
-          // Load website data
           websiteApi.get(profile.id).then(setWebsiteData).catch(() => {});
         } else {
           const owned = studios.find(
@@ -1615,7 +1613,7 @@ export function StudioDashboard() {
             activeStudioId={activeStudioId}
             onSwitch={setActiveStudio}
           />
-                <SectionHeading
+          <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
           />
@@ -1767,7 +1765,6 @@ export function StudioDashboard() {
 
                   <EmailDomainManager studioId={studio?.id} />
 
-                  {/* Website Builder card */}
                   <div className="eyf-card eyf-stack">
                     <div className="eyf-row eyf-row--between">
                       <h3 style={{ margin: 0 }}>Website Builder</h3>
@@ -1792,7 +1789,6 @@ export function StudioDashboard() {
                     </Link>
                   </div>
 
-                  {/* Team card (owner only) */}
                   {canEditProfile ? (
                     <div className="eyf-card eyf-stack">
                       <h3 style={{ margin: 0 }}>Team</h3>
