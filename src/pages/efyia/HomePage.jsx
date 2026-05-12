@@ -125,12 +125,11 @@ export default function HomePage() {
           <h1
             ref={headingRef}
             className="eyf-home-hero__heading"
-            aria-label="Book your next session."
+            aria-label="Book your next session"
           >
-            <SplitChars text="Book your next" />
-            <br />
+            <SplitChars text="Book your next " />
             <span className="eyf-gradient-text" aria-hidden="true">
-              <SplitChars text=" session." />
+              <SplitChars text="session" />
             </span>
           </h1>
           <p ref={subRef} className="eyf-home-hero__sub">

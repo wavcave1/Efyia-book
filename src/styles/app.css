@@ -1415,7 +1415,7 @@ html { overflow-x: hidden; }
 }
 
 .eyf-home-hero__heading {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -3257,5 +3257,22 @@ img, video, iframe { max-width: 100%; }
 
 .gsap-char--space {
   width: 0.28em;
+}
+
+/* Prevent the browser from breaking a line inside a split-char gradient word.
+   Each char is inline-block so the browser can wrap between any two letters —
+   making the wrapper inline-block treats the whole word as one unbreakable unit. */
+.eyf-home-hero__heading .eyf-gradient-text {
+  display: inline-block;
+}
+
+/* background-clip:text on a parent doesn't penetrate display:inline-block
+   children, so each char inside a gradient wrapper gets the gradient applied
+   directly to itself instead. */
+.eyf-gradient-text .gsap-char {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--sage) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
