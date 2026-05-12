@@ -3243,3 +3243,19 @@ img, video, iframe { max-width: 100%; }
   }
 }
 
+/* ─── GSAP split-text characters ────────────────────────────────────────────
+   Each letter in the hero heading is wrapped in .gsap-char so GSAP can
+   target and stagger them individually. display:inline-block is required
+   for transform (rotateX / y) to work on inline elements.
+   will-change:transform hints the compositor to promote each letter to its
+   own layer, keeping the 3-D entrance smooth on lower-end devices.
+─────────────────────────────────────────────────────────────────────────── */
+.gsap-char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.gsap-char--space {
+  width: 0.28em;
+}
+
