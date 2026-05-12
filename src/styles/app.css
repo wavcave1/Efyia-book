@@ -516,6 +516,7 @@ html { overflow-x: hidden; }
   color: var(--text);
 }
 .eyf-studio-card__body { padding: 1.25rem; display: grid; gap: 1rem; }
+.eyf-studio-card__body .eyf-row--between .eyf-link-button { flex: 1; }
 .eyf-tags { flex-wrap: wrap; }
 .eyf-tag {
   padding: 0.35rem 0.7rem;
