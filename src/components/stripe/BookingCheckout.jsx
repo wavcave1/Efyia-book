@@ -62,8 +62,6 @@ boxShadow: '0 0 0 3px rgba(98,243,212,0.15)',
 '.Label': { color: '#6b8f85' },
 },
 },
-// Enable all available payment methods including Apple Pay, Google Pay, Cash App
-paymentMethodCreation: 'manual',
 }}
 >
 <CheckoutForm
@@ -95,37 +93,52 @@ if (!stripe || !elements) return;
 setProcessing(true);
 setErrorMessage(null);
 
-// Validate the payment element before confirming
-const { error: submitError } = await elements.submit();
-if (submitError) {
-  setErrorMessage(submitError.message);
-  onError?.(submitError.message);
-  setProcessing(false);
-  return;
-}
+try {
+  // Validate the payment element before confirming
+  const { error: submitError } = await elements.submit();
+  if (submitError) {
+    setErrorMessage(submitError.message);
+    onError?.(submitError.message);
+    setProcessing(false);
+    return;
+  }
 
-const { error, paymentIntent } = await stripe.confirmPayment({
-  elements,
-  redirect: 'if_required',
-  confirmParams: {
-    return_url: `${window.location.origin}/dashboard/client?booking=${bookingId}`,
-  },
-});
+  // Add timeout to prevent hanging indefinitely
+  let confirmPromise = stripe.confirmPayment({
+    elements,
+    redirect: 'if_required',
+    confirmParams: {
+      return_url: `${window.location.origin}/dashboard/client?booking=${bookingId}`,
+    },
+  });
 
-if (error) {
-  const message = error.message || 'Payment failed. Please try again.';
+  let confirmResult = await Promise.race([
+    confirmPromise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Payment confirmation timed out. Please try again.')), 30000)
+    ),
+  ]);
+
+  const { error, paymentIntent } = confirmResult;
+
+  if (error) {
+    const message = error.message || 'Payment failed. Please try again.';
+    setErrorMessage(message);
+    onError?.(message);
+    return;
+  }
+
+  // Payment succeeded or requires redirect
+  if (paymentIntent?.status === 'succeeded' || paymentIntent?.status === 'processing') {
+    onSuccess?.(paymentIntent.id);
+  }
+} catch (err) {
+  const message = err?.message || 'An error occurred during payment. Please try again.';
   setErrorMessage(message);
   onError?.(message);
+} finally {
   setProcessing(false);
-  return;
 }
-
-// Payment succeeded or requires redirect
-if (paymentIntent?.status === 'succeeded' || paymentIntent?.status === 'processing') {
-  onSuccess?.();
-}
-
-setProcessing(false);
 
 }
 

@@ -269,7 +269,7 @@ export const depositApi = {
     api.post(`/api/payments/final/${bookingId}/confirm`, { paymentIntentId }),
 };
 
-// ─── Saved card ─────────────────────────────────────────────────────────────────────────────────
+// ─── Saved card ───────────────────────────────────────────────────────────────
 export const savedCardApi = {
   get: () => api.get('/api/payments/saved-card'),
   createSetupIntent: (studioId) => api.post('/api/payments/setup-intent', studioId ? { studioId } : {}),

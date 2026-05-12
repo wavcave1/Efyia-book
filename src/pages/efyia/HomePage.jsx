@@ -3,6 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { studiosApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import { ErrorMessage, SectionHeading, Spinner, StudioCard } from '../../components/efyia/ui';
+import {
+  animateHeroHeading,
+  animateHeroContent,
+  initScrollAnimations,
+  initCardScrollAnimation,
+} from '../../lib/animations';
+
+// Renders each character of `text` as an inline-block span so GSAP can
+// target them individually for the stagger letter animation.
+function SplitChars({ text }) {
+  return text.split('').map((char, i) =>
+    char === ' '
+      ? <span key={i} className="gsap-char gsap-char--space" aria-hidden="true">&nbsp;</span>
+      : <span key={i} className="gsap-char">{char}</span>
+  );
+}
 
 const CATEGORIES = [
   { icon: '♪', label: 'Recording' },
@@ -30,6 +46,36 @@ export default function HomePage() {
   const [category, setCategory] = useState('');
 
   const locationRef = useRef(null);
+
+  // Animation refs
+  const headingRef = useRef(null);
+  const eyebrowRef = useRef(null);
+  const subRef = useRef(null);
+  const searchRef = useRef(null);
+  const citiesRef = useRef(null);
+
+  // Hero + scroll animations on mount
+  useEffect(() => {
+    const cleanupHeading = animateHeroHeading(headingRef.current);
+    const cleanupContent = animateHeroContent([
+      eyebrowRef.current,
+      subRef.current,
+      searchRef.current,
+      citiesRef.current,
+    ]);
+    const cleanupScroll = initScrollAnimations();
+    return () => {
+      cleanupHeading();
+      cleanupContent();
+      cleanupScroll();
+    };
+  }, []);
+
+  // Card grid animation fires after async studio data arrives
+  useEffect(() => {
+    if (!featured.length) return;
+    return initCardScrollAnimation();
+  }, [featured.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,16 +120,24 @@ export default function HomePage() {
         <div className="eyf-home-hero__overlay" aria-hidden="true" />
 
         <div className="eyf-home-hero__content">
-          <p className="eyf-home-hero__eyebrow">The <br /><span className="eyf-gradient-text"> #1</span> booking marketplace</p>
-          <h1 className="eyf-home-hero__heading">
-            Book your next<br /><span className="eyf-gradient-text"> session.</span>
+          <p ref={eyebrowRef} className="eyf-home-hero__eyebrow">The <br /><span className="eyf-gradient-text"> #1</span> booking marketplace</p>
+          {/* aria-label preserves accessible text while child spans are char-split */}
+          <h1
+            ref={headingRef}
+            className="eyf-home-hero__heading"
+            aria-label="Book your next session"
+          >
+            <SplitChars text="Book your next " />
+            <span className="eyf-gradient-text" aria-hidden="true">
+              <SplitChars text="session" />
+            </span>
           </h1>
-          <p className="eyf-home-hero__sub">
+          <p ref={subRef} className="eyf-home-hero__sub">
             Discover, compare, and book recording studios.
           </p>
 
           {/* Search bar */}
-          <div className="eyf-hero-search" role="search">
+          <div ref={searchRef} className="eyf-hero-search" role="search">
             <div className="eyf-hero-search__field">
               <label htmlFor="hero-location" className="eyf-hero-search__field-label">Where</label>
               <input
@@ -120,7 +174,7 @@ export default function HomePage() {
           </div>
 
           {/* Quick city chips */}
-          <div className="eyf-home-cities">
+          <div ref={citiesRef} className="eyf-home-cities">
             {CITIES.map((city) => (
               <button
                 key={city}
@@ -180,32 +234,7 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* ── How it works ──────────────────────────────────────────────────── */}
-        <section className="eyf-section eyf-how-it-works">
-          <SectionHeading
-            eyebrow="How it works"
-            title="Book in three steps"
-          />
-          <div className="eyf-how-steps">
-            <div className="eyf-how-step">
-              <div className="eyf-how-step__num">01</div>
-              <h4>Search &amp; filter</h4>
-              <p className="eyf-muted">Browse studios by city, session type, price, and rating to find the perfect fit.</p>
-            </div>
-            <div className="eyf-how-step">
-              <div className="eyf-how-step__num">02</div>
-              <h4>Compare &amp; save</h4>
-              <p className="eyf-muted">View detailed profiles, equipment lists, verified reviews, and portfolio samples.</p>
-            </div>
-            <div className="eyf-how-step">
-              <div className="eyf-how-step__num">03</div>
-              <h4>Book instantly</h4>
-              <p className="eyf-muted">Confirm your session and pay.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Featured studios ─────────────────────────────────────────────── */}
+{/* ── Featured studios ─────────────────────────────────────────────── */}
         <section className="eyf-section">
           <SectionHeading
             eyebrow="Featured studios"

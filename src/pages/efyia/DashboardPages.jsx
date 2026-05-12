@@ -440,6 +440,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
 
     setFinalPaymentError('');
     try {
+      // Confirm the payment with backend before closing modal
       await depositApi.confirmFinalPayment(finalPaymentBooking.id, paymentIntentId);
 
       const message = 'Final payment completed. Refreshing your bookings...';
@@ -514,6 +515,8 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               finalPaymentPaid,
               finalPaymentIntentId,
             } = payload;
+            // requiresCustomerAction may not be forwarded by BookingDetailModal;
+            // fall back to the selectedBooking object so the gate still works.
             const requiresCustomerAction =
               payload.requiresCustomerAction ?? selectedBooking?.requiresCustomerAction;
             const needsCustomerAction = requiresCustomerAction === true;
@@ -557,6 +560,11 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
+            // "Pay Remaining Balance" is exposed ONLY when the backend has
+            // set requiresCustomerAction=true — i.e. off-session auto-charge
+            // failed, the saved card is missing/detached, or Stripe required
+            // customer authentication. In the happy path the booking flips
+            // straight to COMPLETED and this button never renders.
             if (depositPaid && !finalPaymentPaid && needsCustomerAction && finalPaymentIntentId) {
               actions.push(
                 <button

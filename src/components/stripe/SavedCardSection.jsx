@@ -171,6 +171,7 @@ export default function SavedCardSection({ studioId, showToast }) {
       await fetchCard();
     } catch (err) {
       setIntentError(err.message || 'Failed to confirm card setup. Please try again.');
+      setProcessing?.(false);
     }
   };
 
