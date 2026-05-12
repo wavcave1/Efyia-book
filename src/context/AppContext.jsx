@@ -108,12 +108,9 @@ export function AppProvider({ children }) {
   }, []);
 
   const signup = useCallback(async ({ name, email, password, role }) => {
-    const { token, user } = await authApi.signup({ name, email, password, role });
-    localStorage.setItem('efyia_token', token);
-    setCurrentUser(user);
-    setFavoritesLoaded(false);
-    setToast('Account created. Welcome to Efyia Book.');
-    return user;
+    await authApi.signup({ name, email, password, role });
+    // Backend returns { message } — no JWT until email is verified.
+    // AuthPage handles the post-signup success UI.
   }, []);
 
   const logout = useCallback(() => {
