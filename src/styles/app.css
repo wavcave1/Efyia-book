@@ -217,7 +217,7 @@ html { overflow-x: hidden; }
   min-height: 44px;
   border-radius: 12px;
   border: 1px solid transparent;
-  padding: 0.7rem 1.1rem;
+  padding: 0.4rem 0.3rem;
   background: linear-gradient(135deg, var(--mint), var(--sage));
   color: var(--bg);
   font-weight: 700;
