@@ -19,6 +19,7 @@ import PrivacyPage from './pages/efyia/PrivacyPage';
 import InviteAcceptPage from './pages/efyia/InviteAcceptPage';
 import WebsiteDashboard from './pages/efyia/WebsiteDashboard';
 import WebsiteEditorPage from './pages/efyia/WebsiteEditorPage';
+import VerifyEmailPage from './pages/efyia/VerifyEmailPage';
 
 export default function App() {
   return (
@@ -29,6 +30,8 @@ export default function App() {
           <Route path="s/:slug" element={<StudioPublicPage />} />
           {/* Public invite acceptance page */}
           <Route path="accept-invite/:token" element={<InviteAcceptPage />} />
+          {/* Email verification page */}
+          <Route path="verify-email" element={<VerifyEmailPage />} />
           <Route
             path="admin"
             element={
