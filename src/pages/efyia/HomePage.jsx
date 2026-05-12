@@ -234,32 +234,7 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* ── How it works ──────────────────────────────────────────────────── */}
-        <section className="eyf-section eyf-how-it-works">
-          <SectionHeading
-            eyebrow="How it works"
-            title="Book in three steps"
-          />
-          <div className="eyf-how-steps">
-            <div className="eyf-how-step">
-              <div className="eyf-how-step__num">01</div>
-              <h4>Search &amp; filter</h4>
-              <p className="eyf-muted">Browse studios by city, session type, price, and rating to find the perfect fit.</p>
-            </div>
-            <div className="eyf-how-step">
-              <div className="eyf-how-step__num">02</div>
-              <h4>Compare &amp; save</h4>
-              <p className="eyf-muted">View detailed profiles, equipment lists, verified reviews, and portfolio samples.</p>
-            </div>
-            <div className="eyf-how-step">
-              <div className="eyf-how-step__num">03</div>
-              <h4>Book instantly</h4>
-              <p className="eyf-muted">Confirm your session and pay.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Featured studios ─────────────────────────────────────────────── */}
+{/* ── Featured studios ─────────────────────────────────────────────── */}
         <section className="eyf-section">
           <SectionHeading
             eyebrow="Featured studios"
