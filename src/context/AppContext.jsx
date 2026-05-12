@@ -158,8 +158,9 @@ export function AppProvider({ children }) {
     [studioMemberships, activeStudioId, currentUser],
   );
 
-  const canEditProfile = teamRole === 'OWNER' || (!teamRole && currentUser?.role === 'owner');
-  const canManageBookings = teamRole === 'OWNER' || teamRole === 'MANAGER' || (!teamRole && currentUser?.role === 'owner');
+  const isOwner = currentUser?.role === 'OWNER';
+  const canEditProfile = teamRole === 'OWNER' || (!teamRole && isOwner);
+  const canManageBookings = teamRole === 'OWNER' || teamRole === 'MANAGER' || (!teamRole && isOwner);
   const isReadOnly = teamRole === 'ENGINEER';
 
   const value = useMemo(
