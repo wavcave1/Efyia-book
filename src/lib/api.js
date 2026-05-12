@@ -51,14 +51,14 @@ export const api = {
   delete: (path) => request('DELETE', path),
 };
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────────────────────────
 export const authApi = {
   signup: (data) => api.post('/api/auth/signup', data),
   login: (data) => api.post('/api/auth/login', data),
   me: () => api.get('/api/auth/me'),
 };
 
-// ─── Studios ─────────────────────────────────────────────────────────────────
+// ─── Studios ──────────────────────────────────────────────────────────────────────────
 export const studiosApi = {
   list: (params = {}) => {
     const qs = new URLSearchParams(
@@ -73,15 +73,24 @@ export const studiosApi = {
   delete: (id) => api.delete(`/api/studios/${id}`),
 };
 
-// ─── Bookings ─────────────────────────────────────────────────────────────────
+// ─── Bookings ───────────────────────────────────────────────────────────────────────────
 export const bookingsApi = {
   list: () => api.get('/api/bookings'),
   getById: (id) => api.get(`/api/bookings/${id}`),
   create: (data) => api.post('/api/bookings', data),
-  updateStatus: (id, status) => api.patch(`/api/bookings/${id}/status`, { status }),
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/api/bookings/${id}/status`, { status });
+    const booking = response?.booking && typeof response.booking === 'object' ? response.booking : response;
+    return {
+      ...booking,
+      requiresManualPayment: response?.requiresManualPayment ?? booking?.requiresManualPayment ?? false,
+      finalPaymentDue: response?.finalPaymentDue ?? booking?.finalPaymentDue ?? null,
+      autoChargeAttempted: response?.autoChargeAttempted ?? booking?.autoChargeAttempted ?? false,
+    };
+  },
 };
 
-// ─── Reviews ─────────────────────────────────────────────────────────────────
+// ─── Reviews ───────────────────────────────────────────────────────────────────────────
 export const reviewsApi = {
   listByStudio: (studioId) => api.get(`/api/reviews?studioId=${studioId}`),
   create: (data) => api.post('/api/reviews', data),
@@ -89,14 +98,14 @@ export const reviewsApi = {
   delete: (id) => api.delete(`/api/reviews/${id}`),
 };
 
-// ─── Favorites ────────────────────────────────────────────────────────────────
+// ─── Favorites ──────────────────────────────────────────────────────────────────────────
 export const favoritesApi = {
   list: () => api.get('/api/favorites'),
   add: (studioId) => api.post('/api/favorites', { studioId }),
   remove: (studioId) => api.delete(`/api/favorites/${studioId}`),
 };
 
-// ─── Users ────────────────────────────────────────────────────────────────────
+// ─── Users ────────────────────────────────────────────────────────────────────────────────
 export const usersApi = {
   list: () => api.get('/api/users'),
   updateMe: (data) => api.patch('/api/users/me', data),
@@ -104,18 +113,18 @@ export const usersApi = {
   adminUpdate: (id, data) => api.patch(`/api/users/${id}`, data),
 };
 
-// ─── Public studio pages (no auth required) ───────────────────────────────────
+// ─── Public studio pages (no auth required) ───────────────────────────────────────────────
 export const publicApi = {
   getStudioBySlug: (slug) => api.get(`/api/public/studios/${slug}`),
 };
 
-// ─── Studio profile (owner-scoped branding) ───────────────────────────────────
+// ─── Studio profile (owner-scoped branding) ───────────────────────────────────────────────
 export const studioProfileApi = {
   get: (studioId) => api.get(`/api/studio/profile${studioId ? `?studioId=${studioId}` : ''}`),
   update: (data, studioId) => api.patch(`/api/studio/profile${studioId ? `?studioId=${studioId}` : ''}`, data),
 };
 
-// ─── Studio team (members + invites) ─────────────────────────────────────────
+// ─── Studio team (members + invites) ─────────────────────────────────────────────────────
 export const studioTeamApi = {
   list: (studioId) => api.get(`/api/studio/team${studioId ? `?studioId=${studioId}` : ''}`),
   invite: (email, role, studioId) => api.post('/api/studio/team/invite', { email, role, studioId }),
@@ -123,13 +132,13 @@ export const studioTeamApi = {
   remove: (memberId) => api.delete(`/api/studio/team/${memberId}`),
 };
 
-// ─── Invite accept (public) ───────────────────────────────────────────────────
+// ─── Invite accept (public) ───────────────────────────────────────────────────────────────────
 export const inviteApi = {
   getInvite: (token) => api.get(`/api/invites/${token}`),
   accept: (token, data) => api.post(`/api/invites/${token}/accept`, data),
 };
 
-// ─── Stripe Connect & Payments ───────────────────────────────────────────────
+// ─── Stripe Connect & Payments ──────────────────────────────────────────────────────────────
 export const stripeConnectApi = {
   onboard: (studioId) => api.post('/api/connect/onboard', { studioId }),
   refresh: (studioId) => api.post('/api/connect/refresh-link', { studioId }),
@@ -141,8 +150,7 @@ export const paymentsApi = {
   refund: (bookingId, reason) => api.post('/api/payments/refunds', { bookingId, reason }),
 };
 
-
-// ─── Admin (internal control plane) ──────────────────────────────────────────
+// ─── Admin (internal control plane) ──────────────────────────────────────────────────────────────
 export const adminApi = {
   dashboardSummary: () => api.get('/api/admin/dashboard'),
 
@@ -229,7 +237,7 @@ export const analyticsApi = {
   studio: () => api.get('/api/analytics/studio'),
 };
 
-// ─── Email domains & forwarding aliases ─────────────────────────────────────
+// ─── Email domains & forwarding aliases ─────────────────────────────────────────────────────
 export const emailDomainsApi = {
   listDomains: () => api.get('/api/email/domains'),
   getDomain: (domainId) => api.get(`/api/email/domains/${domainId}`),
@@ -257,9 +265,20 @@ export const depositApi = {
   payDeposit: (bookingId) => api.post('/api/payments/deposit/' + bookingId, {}),
   payFinal: (bookingId) => api.post('/api/payments/final/' + bookingId, {}),
   getFinalClientSecret: (bookingId) => api.get('/api/payments/final/' + bookingId + '/client-secret'),
+  confirmFinalPayment: (bookingId, paymentIntentId) =>
+    api.post(`/api/payments/final/${bookingId}/confirm`, { paymentIntentId }),
 };
 
-// ─── Website builder ──────────────────────────────────────────────────────────
+// ─── Saved card ─────────────────────────────────────────────────────────────────────────────────
+export const savedCardApi = {
+  get: () => api.get('/api/payments/saved-card'),
+  createSetupIntent: (studioId) => api.post('/api/payments/setup-intent', studioId ? { studioId } : {}),
+  confirmSetupIntent: (setupIntentId, studioId) =>
+    api.post('/api/payments/setup-intent/confirm', { setupIntentId, studioId }),
+  remove: () => api.delete('/api/payments/saved-card'),
+};
+
+// ─── Website builder ─────────────────────────────────────────────────────────────────────────────
 export const websiteApi = {
   get: (studioId) => api.get(`/api/website/${studioId}`),
   create: (studioId) => api.post('/api/website', { studioId }),
