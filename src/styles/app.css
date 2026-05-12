@@ -3259,3 +3259,13 @@ img, video, iframe { max-width: 100%; }
   width: 0.28em;
 }
 
+/* background-clip:text on a parent doesn't penetrate display:inline-block
+   children, so each char inside a gradient wrapper gets the gradient applied
+   directly to itself instead. */
+.eyf-gradient-text .gsap-char {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--sage) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
