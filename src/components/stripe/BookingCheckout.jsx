@@ -62,8 +62,6 @@ boxShadow: '0 0 0 3px rgba(98,243,212,0.15)',
 '.Label': { color: '#6b8f85' },
 },
 },
-// Enable all available payment methods including Apple Pay, Google Pay, Cash App
-paymentMethodCreation: 'manual',
 }}
 >
 <CheckoutForm
