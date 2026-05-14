@@ -20,6 +20,7 @@ import InviteAcceptPage from './pages/efyia/InviteAcceptPage';
 import WebsiteDashboard from './pages/efyia/WebsiteDashboard';
 import WebsiteEditorPage from './pages/efyia/WebsiteEditorPage';
 import VerifyEmailPage from './pages/efyia/VerifyEmailPage';
+import OAuthCallbackPage from './pages/efyia/OAuthCallbackPage';
 
 export default function App() {
   return (
@@ -32,6 +33,8 @@ export default function App() {
           <Route path="accept-invite/:token" element={<InviteAcceptPage />} />
           {/* Email verification page */}
           <Route path="verify-email" element={<VerifyEmailPage />} />
+          {/* OAuth callback — receives JWT token from backend redirect */}
+          <Route path="auth/callback" element={<OAuthCallbackPage />} />
           <Route
             path="admin"
             element={

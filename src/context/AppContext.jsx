@@ -116,6 +116,20 @@ export function AppProvider({ children }) {
     return user;
   }, []);
 
+  const oauthLogin = useCallback(async (token) => {
+    localStorage.setItem('efyia_token', token);
+    const user = await authApi.me();
+    setCurrentUser(user);
+    setFavoritesLoaded(false);
+    if (Array.isArray(user.studioMemberships) && user.studioMemberships.length) {
+      const firstId = user.studioMemberships[0].studioId;
+      setActiveStudioIdState(firstId);
+      localStorage.setItem('efyia_active_studio', firstId);
+    }
+    setToast(`Welcome, ${user.name}!`);
+    return user;
+  }, []);
+
   const logout = useCallback(() => {
     setCurrentUser(null);
     setToast('Logged out successfully.');
@@ -173,6 +187,7 @@ export function AppProvider({ children }) {
       favoriteStudioIds,
       login,
       signup,
+      oauthLogin,
       logout,
       toggleFavorite,
       studioMemberships,
@@ -184,7 +199,7 @@ export function AppProvider({ children }) {
       isReadOnly,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser, favoriteStudioIds, toast, showToast, reloadCurrentUser, login, signup, logout, toggleFavorite,
+    [currentUser, favoriteStudioIds, toast, showToast, reloadCurrentUser, login, signup, oauthLogin, logout, toggleFavorite,
       studioMemberships, activeStudioId, setActiveStudio, teamRole],
   );
 
