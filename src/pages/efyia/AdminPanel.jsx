@@ -1,15 +1,36 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { useAppContext } from '../../context/AppContext';
 import '../../styles/admin.css';
 
-const TABS = ['Dashboard', 'Accounts', 'Studios', 'Profiles', 'Permissions'];
+const TABS = ['Dashboard', 'Accounts', 'Studios', 'Profiles', 'Permissions', 'Revenue', 'Bookings'];
 const PAGE_SIZE = 8;
+const BOOKINGS_PAGE_SIZE = 20;
 
 function maskValue(value) {
   if (!value) return '—';
   return `•••• ${String(value).slice(-4)}`;
+}
+
+function formatCurrency(cents) {
+  if (!cents && cents !== 0) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+}
+
+const CONNECT_STATUS_COLOR = {
+  ACTIVE: '#22c55e',
+  PENDING: '#f59e0b',
+  NOT_CONNECTED: '#94a3b8',
+};
+
+function ConnectChip({ status }) {
+  const color = CONNECT_STATUS_COLOR[status] || '#94a3b8';
+  return (
+    <span style={{ display: 'inline-block', padding: '0.15rem 0.5rem', borderRadius: 9999, background: `${color}22`, color, fontSize: '0.75rem', fontWeight: 600 }}>
+      {status || '—'}
+    </span>
+  );
 }
 
 function ConfirmationModal({ open, title, description, confirmLabel = 'Confirm', onCancel, onConfirm }) {
@@ -165,8 +186,10 @@ export default function AdminPanel() {
   const [permissions, setPermissions] = useState([]);
   const [recentSignups, setRecentSignups] = useState([]);
   const [pendingOnboarding, setPendingOnboarding] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [search, setSearch] = useState('');
+  const [accountRoleFilter, setAccountRoleFilter] = useState('ALL');
+  const [search, setSearch] = useState('');  
   const [page, setPage] = useState(1);
   const [revealMap, setRevealMap] = useState({});
   const [toast, setToast] = useState('');
@@ -175,6 +198,20 @@ export default function AdminPanel() {
   const [createType, setCreateType] = useState('');
   const [formValues, setFormValues] = useState({});
   const [editStudio, setEditStudio] = useState(null);
+
+  // Revenue tab state
+  const [revenueStudios, setRevenueStudios] = useState([]);
+  const [revenueLoaded, setRevenueLoaded] = useState(false);
+  const [revenueLoading, setRevenueLoading] = useState(false);
+
+  // Bookings tab state
+  const [bookings, setBookings] = useState([]);
+  const [bookingsTotal, setBookingsTotal] = useState(0);
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const [bookingsPages, setBookingsPages] = useState(1);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('ALL');
+  const [cancelBookingTarget, setCancelBookingTarget] = useState(null);
 
   useEffect(() => {
     if (toast) {
@@ -201,13 +238,46 @@ export default function AdminPanel() {
       setPermissions(permissionsData.permissions || permissionsData || []);
       setRecentSignups(summary.recentSignups || []);
       setPendingOnboarding(summary.pendingOnboarding || []);
+      setDashboardData(summary);
       setLoading(false);
     });
 
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
+
+  // Lazy-load Revenue tab
+  useEffect(() => {
+    if (activeTab !== 'Revenue' || revenueLoaded || revenueLoading) return;
+    setRevenueLoading(true);
+    adminApi.getStudioRevenue().then((data) => {
+      setRevenueStudios(Array.isArray(data) ? data : (data.studios || []));
+      setRevenueLoaded(true);
+    }).catch(() => {
+      setRevenueStudios([]);
+      setRevenueLoaded(true);
+    }).finally(() => setRevenueLoading(false));
+  }, [activeTab, revenueLoaded, revenueLoading]);
+
+  // Lazy-load / re-fetch Bookings tab
+  const fetchBookings = useCallback(() => {
+    setBookingsLoading(true);
+    adminApi.listBookings({
+      page: bookingsPage,
+      limit: BOOKINGS_PAGE_SIZE,
+      status: bookingStatusFilter === 'ALL' ? undefined : bookingStatusFilter,
+    }).then((data) => {
+      setBookings(data.bookings || data || []);
+      setBookingsTotal(data.total || 0);
+      setBookingsPages(data.pages || Math.max(1, Math.ceil((data.total || 0) / BOOKINGS_PAGE_SIZE)));
+    }).catch(() => {
+      setBookings([]);
+    }).finally(() => setBookingsLoading(false));
+  }, [bookingsPage, bookingStatusFilter]);
+
+  useEffect(() => {
+    if (activeTab !== 'Bookings') return;
+    fetchBookings();
+  }, [activeTab, fetchBookings]);
 
   const normalized = useMemo(() => {
     const source = activeTab === 'Studios' ? studios : activeTab === 'Profiles' ? profiles : accounts;
@@ -215,11 +285,11 @@ export default function AdminPanel() {
       const text = JSON.stringify(row).toLowerCase();
       const matchesSearch = text.includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'ALL' || String(row.status || '').toUpperCase() === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesRole = activeTab !== 'Accounts' || accountRoleFilter === 'ALL' || String(row.role || '').toUpperCase() === accountRoleFilter;
+      return matchesSearch && matchesStatus && matchesRole;
     });
-
     return filtered;
-  }, [activeTab, accounts, studios, profiles, search, statusFilter]);
+  }, [activeTab, accounts, studios, profiles, search, statusFilter, accountRoleFilter]);
 
   const totalPages = Math.max(1, Math.ceil(normalized.length / PAGE_SIZE));
   const pagedRows = normalized.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -244,7 +314,11 @@ export default function AdminPanel() {
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, search, statusFilter]);
+  }, [activeTab, search, statusFilter, accountRoleFilter]);
+
+  useEffect(() => {
+    setBookingsPage(1);
+  }, [bookingStatusFilter]);
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
@@ -278,7 +352,6 @@ export default function AdminPanel() {
   const studioFields = [
     { name: 'name', label: 'Studio name', required: true },
     { name: 'ownerAccountId', label: 'Owner account ID', required: true },
-    
   ];
 
   const profileFields = [
@@ -424,32 +497,87 @@ export default function AdminPanel() {
     });
   };
 
-  const renderDashboard = () => (
-    <>
-      <div className="admin-grid-stats">
-        <div className="admin-stat"><strong>{stats.totalAccounts}</strong><span className="admin-subtle">Total accounts</span></div>
-        <div className="admin-stat"><strong>{stats.totalStudios}</strong><span className="admin-subtle">Total studios</span></div>
-        <div className="admin-stat"><strong>{stats.totalProfiles}</strong><span className="admin-subtle">Total profiles</span></div>
-        <div className="admin-stat"><strong>{stats.recentSignups}</strong><span className="admin-subtle">Recent signups</span></div>
-        <div className="admin-stat"><strong>{stats.pendingOnboarding}</strong><span className="admin-subtle">Pending onboarding</span></div>
-      </div>
+  const handleCancelBooking = (booking) => {
+    setCancelBookingTarget(booking);
+  };
 
-      <div className="admin-panel">
-        <h3>Recent signups</h3>
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead><tr><th>Name</th><th>Email</th><th>Signup date</th><th>Status</th></tr></thead>
-            <tbody>
-              {recentSignups.map((item) => (
-                <tr key={item.id}><td>{item.name}</td><td>{item.email}</td><td>{item.signupDate}</td><td>{item.status}</td></tr>
-              ))}
-              {recentSignups.length === 0 ? <tr><td colSpan={4}>No recent signups.</td></tr> : null}
-            </tbody>
-          </table>
+  const confirmCancelBooking = async () => {
+    if (!cancelBookingTarget) return;
+    try {
+      await adminApi.updateBooking(cancelBookingTarget.id, { status: 'CANCELLED' });
+      setBookings((prev) => prev.map((b) => b.id === cancelBookingTarget.id ? { ...b, status: 'CANCELLED' } : b));
+      setToast('Booking cancelled.');
+    } catch (err) {
+      setToast(err.message || 'Could not cancel booking.');
+    } finally {
+      setCancelBookingTarget(null);
+    }
+  };
+
+  const renderDashboard = () => {
+    const connectBreakdown = dashboardData?.connectStatusBreakdown || [];
+    return (
+      <>
+        <div className="admin-grid-stats">
+          <div className="admin-stat"><strong>{stats.totalAccounts}</strong><span className="admin-subtle">Total accounts</span></div>
+          <div className="admin-stat"><strong>{stats.totalStudios}</strong><span className="admin-subtle">Total studios</span></div>
+          <div className="admin-stat"><strong>{stats.totalProfiles}</strong><span className="admin-subtle">Total profiles</span></div>
+          <div className="admin-stat"><strong>{stats.recentSignups}</strong><span className="admin-subtle">Recent signups</span></div>
+          <div className="admin-stat"><strong>{stats.pendingOnboarding}</strong><span className="admin-subtle">Pending onboarding</span></div>
         </div>
-      </div>
-    </>
-  );
+
+        <div className="admin-grid-stats" style={{ marginTop: '0.75rem' }}>
+          <div className="admin-stat">
+            <strong>{dashboardData?.confirmedBookings ?? '—'}</strong>
+            <span className="admin-subtle">Confirmed bookings</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{dashboardData?.completedBookings ?? '—'}</strong>
+            <span className="admin-subtle">Completed bookings</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{dashboardData?.newBookingsThisWeek ?? '—'}</strong>
+            <span className="admin-subtle">New this week</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{formatCurrency(dashboardData?.totalPlatformFee)}</strong>
+            <span className="admin-subtle">Platform fee (all-time)</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{formatCurrency(dashboardData?.platformFeeLastThirtyDays)}</strong>
+            <span className="admin-subtle">Platform fee (30 days)</span>
+          </div>
+        </div>
+
+        {connectBreakdown.length > 0 ? (
+          <div className="admin-panel" style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span className="admin-subtle" style={{ marginRight: '0.5rem' }}>Stripe Connect:</span>
+            {connectBreakdown.map((entry) => (
+              <span key={entry.stripeConnectStatus} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                <ConnectChip status={entry.stripeConnectStatus} />
+                <span className="admin-subtle">{entry._count?.stripeConnectStatus ?? entry.count}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="admin-panel">
+          <h3>Recent signups</h3>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Signup date</th><th>Status</th></tr></thead>
+              <tbody>
+                {recentSignups.map((item) => (
+                  <tr key={item.id}><td>{item.name}</td><td>{item.email}</td><td>{item.signupDate}</td><td>{item.status}</td></tr>
+                ))}
+                {recentSignups.length === 0 ? <tr><td colSpan={4}>No recent signups.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>
+    );
+  };
 
   const renderAccounts = () => (
     <div className="admin-panel">
@@ -461,13 +589,19 @@ export default function AdminPanel() {
           <option value="SUSPENDED">Suspended</option>
           <option value="PENDING">Pending</option>
         </select>
+        <select value={accountRoleFilter} onChange={(e) => setAccountRoleFilter(e.target.value)}>
+          <option value="ALL">All roles</option>
+          <option value="ADMIN">Admin</option>
+          <option value="OWNER">Owner</option>
+          <option value="CLIENT">Client</option>
+        </select>
         <button type="button" className="admin-btn admin-btn-primary" onClick={() => setCreateType('account')}>+ Manual onboard</button>
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Name</th><th>Contact</th><th>Payment</th><th>Tax ID</th><th>Status</th><th>Signup</th><th>Actions</th>
+              <th>Name</th><th>Contact</th><th>Payment</th><th>Tax ID</th><th>Status</th><th>Signup</th><th>Bookings</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -505,6 +639,7 @@ export default function AdminPanel() {
                 </td>
                 <td>{account.status}</td>
                 <td>{account.signupDate || account.createdAt}</td>
+                <td className="admin-subtle">{account._count?.bookings ?? '—'}</td>
                 <td>
                   <div className="admin-actions">
                     {account.role?.toLowerCase() !== 'admin' && (account._count?.studios || 0) === 0 ? (
@@ -529,7 +664,7 @@ export default function AdminPanel() {
               </tr>
               );
             })}
-            {pagedRows.length === 0 ? <tr><td colSpan={7}>No accounts match this filter.</td></tr> : null}
+            {pagedRows.length === 0 ? <tr><td colSpan={8}>No accounts match this filter.</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -726,6 +861,134 @@ export default function AdminPanel() {
     </div>
   );
 
+  const renderRevenue = () => (
+    <div className="admin-panel">
+      <h3>Studio revenue</h3>
+      <p className="admin-subtle">Per-studio booking totals from completed transactions, sorted by revenue.</p>
+      {revenueLoading ? <p className="admin-subtle">Loading...</p> : (
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Studio</th>
+                <th>Owner</th>
+                <th>Connect Status</th>
+                <th>Bookings</th>
+                <th>Total Revenue</th>
+                <th>Platform Fee</th>
+                <th>Verified</th>
+              </tr>
+            </thead>
+            <tbody>
+              {revenueStudios.map((studio) => (
+                <tr key={studio.id}>
+                  <td>
+                    <strong>{studio.name}</strong>
+                    {studio.slug ? <div className="admin-subtle">/studios/{studio.slug}</div> : null}
+                  </td>
+                  <td>
+                    {studio.owner?.name || '—'}
+                    <div className="admin-subtle">{studio.owner?.email}</div>
+                  </td>
+                  <td><ConnectChip status={studio.stripeConnectStatus} /></td>
+                  <td className="admin-subtle">{studio._count?.bookings ?? 0}</td>
+                  <td>{formatCurrency(studio.totalRevenue)}</td>
+                  <td>{formatCurrency(studio.totalPlatformFee)}</td>
+                  <td>{studio.verified ? <span style={{ color: '#22c55e' }}>✓</span> : <span className="admin-subtle">—</span>}</td>
+                </tr>
+              ))}
+              {revenueStudios.length === 0 ? (
+                <tr><td colSpan={7}>No revenue data available.</td></tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderBookings = () => (
+    <div className="admin-panel">
+      <div className="admin-toolbar">
+        <select value={bookingStatusFilter} onChange={(e) => setBookingStatusFilter(e.target.value)}>
+          <option value="ALL">All statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="CONFIRMED">Confirmed</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+        <span className="admin-subtle">{bookingsTotal} total</span>
+      </div>
+      {bookingsLoading ? <p className="admin-subtle">Loading...</p> : (
+        <>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Studio</th>
+                  <th>Client</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td className="admin-subtle">#{booking.id}</td>
+                    <td>
+                      {booking.studio?.name || '—'}
+                      {booking.studio?.slug ? <div className="admin-subtle">/studios/{booking.studio.slug}</div> : null}
+                    </td>
+                    <td>
+                      {booking.user?.name || '—'}
+                      <div className="admin-subtle">{booking.user?.email}</div>
+                    </td>
+                    <td>
+                      <span style={{
+                        color: booking.status === 'CONFIRMED' ? '#22c55e'
+                          : booking.status === 'CANCELLED' ? '#ef4444'
+                          : booking.status === 'COMPLETED' ? '#3b82f6'
+                          : '#94a3b8',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                      }}>
+                        {booking.status}
+                      </span>
+                    </td>
+                    <td>{formatCurrency(booking._sum?.amount ?? booking.totalAmount)}</td>
+                    <td className="admin-subtle">
+                      {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : '—'}
+                    </td>
+                    <td>
+                      {booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' ? (
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn-danger"
+                          onClick={() => handleCancelBooking(booking)}
+                        >
+                          Cancel
+                        </button>
+                      ) : <span className="admin-subtle">—</span>}
+                    </td>
+                  </tr>
+                ))}
+                {bookings.length === 0 ? <tr><td colSpan={7}>No bookings found.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+          <div className="admin-pager">
+            <button type="button" className="admin-btn" disabled={bookingsPage <= 1} onClick={() => setBookingsPage((v) => v - 1)}>Prev</button>
+            <span className="admin-subtle">Page {bookingsPage} / {bookingsPages}</span>
+            <button type="button" className="admin-btn" disabled={bookingsPage >= bookingsPages} onClick={() => setBookingsPage((v) => v + 1)}>Next</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -758,6 +1021,8 @@ export default function AdminPanel() {
         {!loading && activeTab === 'Studios' ? renderStudios() : null}
         {!loading && activeTab === 'Profiles' ? renderProfiles() : null}
         {!loading && activeTab === 'Permissions' ? renderPermissions() : null}
+        {!loading && activeTab === 'Revenue' ? renderRevenue() : null}
+        {!loading && activeTab === 'Bookings' ? renderBookings() : null}
       </main>
 
       {editStudio ? (
@@ -773,6 +1038,15 @@ export default function AdminPanel() {
           onClose={() => setEditStudio(null)}
         />
       ) : null}
+
+      <ConfirmationModal
+        open={Boolean(cancelBookingTarget)}
+        title={`Cancel booking #${cancelBookingTarget?.id}?`}
+        description="This will set the booking status to CANCELLED. This action is audit logged."
+        confirmLabel="Cancel booking"
+        onCancel={() => setCancelBookingTarget(null)}
+        onConfirm={confirmCancelBooking}
+      />
 
       <ConfirmationModal
         open={Boolean(confirmAction)}
