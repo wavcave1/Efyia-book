@@ -23,7 +23,7 @@ export default function OAuthCallbackPage() {
 
     oauthLogin(token)
       .then((user) => {
-        const roleMap = { ADMIN: '/admin', OWNER: '/dashboard/studio', CLIENT: '/dashboard/client' };
+        const roleMap = { ADMIN: '/dashboard/admin', OWNER: '/dashboard/studio', CLIENT: '/dashboard/client' };
         navigate(roleMap[user.role] || '/', { replace: true });
       })
       .catch(() => {
