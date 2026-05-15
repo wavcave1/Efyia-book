@@ -130,9 +130,12 @@ export default function FileList({ bookingId, canUpload, currentUserId }) {
           Upload session files to share with your client.
         </p>
       ) : (
-        <p className="eyf-muted" style={{ margin: 0, fontSize: '0.85rem' }}>
-          No files have been shared yet.
-        </p>
+        <div style={{ display: 'grid', gap: '0.25rem' }}>
+          <p className="eyf-muted" style={{ margin: 0, fontSize: '0.85rem' }}>No session files shared yet.</p>
+          <p className="eyf-muted" style={{ margin: 0, fontSize: '0.78rem', opacity: 0.75 }}>
+            The studio will upload recordings and session assets here once your booking is confirmed.
+          </p>
+        </div>
       )}
     </div>
   );

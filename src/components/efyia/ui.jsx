@@ -43,12 +43,47 @@ return (
 );
 }
 
-export function EmptyState({ title, description, action }) {
+export function EmptyState({ title, description, action, icon, hint }) {
 return (
 <div className="eyf-card eyf-empty">
-<h3>{title}</h3>
-{description ? <p className="eyf-muted">{description}</p> : null}
-{action}
+{icon ? <div className="eyf-empty__icon" aria-hidden="true">{icon}</div> : null}
+<h3 className="eyf-empty__title">{title}</h3>
+{description ? <p className="eyf-empty__desc">{description}</p> : null}
+{hint ? <p className="eyf-empty__hint">{hint}</p> : null}
+{action ? <div className="eyf-empty__action">{action}</div> : null}
+</div>
+);
+}
+
+export function SkeletonBookingRow() {
+return (
+<div className="eyf-card eyf-booking-card" style={{ pointerEvents: 'none' }} aria-hidden="true">
+<div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+<div style={{ flex: 1, display: 'grid', gap: '0.5rem' }}>
+<div className="eyf-skeleton eyf-skeleton--heading" />
+<div className="eyf-skeleton eyf-skeleton--text" style={{ width: '65%' }} />
+</div>
+<div className="eyf-skeleton eyf-skeleton--text" style={{ width: '4rem', flexShrink: 0 }} />
+</div>
+</div>
+);
+}
+
+export function SkeletonStatGrid() {
+return (
+<div className="eyf-stats-grid" aria-hidden="true">
+{[0,1,2,3].map((i) => <div key={i} className="eyf-card eyf-skeleton eyf-skeleton--stat" />)}
+</div>
+);
+}
+
+export function SkeletonGallery() {
+return (
+<div style={{ display: 'grid', gap: '0.75rem' }} aria-hidden="true">
+<div className="eyf-skeleton eyf-skeleton--image" />
+<div style={{ display: 'flex', gap: '0.5rem' }}>
+{[0,1,2].map((i) => <div key={i} className="eyf-skeleton" style={{ flex: 1, height: '4rem', borderRadius: 8 }} />)}
+</div>
 </div>
 );
 }

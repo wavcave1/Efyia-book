@@ -11,6 +11,8 @@ import {
   SectionHeading,
   Spinner,
   StudioCard,
+  SkeletonBookingRow,
+  SkeletonStatGrid,
 } from '../../components/efyia/ui';
 import ProfileSetupWizard from '../../components/studio/ProfileSetupWizard';
 import StudioStripeOnboarding from '../../components/stripe/StudioStripeOnboarding';
@@ -422,8 +424,11 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   if (!bookings.length) {
     return (
       <EmptyState
+        icon="🎵"
         title="No bookings yet"
-        description="Your confirmed bookings will appear here."
+        description="Browse the marketplace and book your first studio session."
+        hint="After your studio confirms, your booking will appear here."
+        action={<Link to="/discover" className="eyf-button">Find a studio</Link>}
       />
     );
   }
@@ -779,12 +784,15 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
         </div>
 
         {/* Booking Cards */}
-        {activeBookings.length === 0 ? (
-          <EmptyState
-            title={`No ${activeTab} bookings`}
-            description={`Check back soon for new ${activeTab} bookings.`}
-          />
-        ) : (
+        {activeBookings.length === 0 ? (() => {
+          const clientTabEmpty = {
+            upcoming: { icon: '📅', title: 'No upcoming sessions', description: 'Booked sessions will appear here once confirmed.', hint: 'Browse studios to book your next session.', action: <Link to="/discover" className="eyf-button eyf-button--ghost eyf-button--sm">Find a studio</Link> },
+            completed: { icon: '✓', title: 'No completed sessions yet', description: 'Completed bookings will appear here.', hint: null, action: null },
+            cancelled: { icon: null, title: 'No cancelled bookings', description: "Looks like everything's running smoothly.", hint: null, action: null },
+          };
+          const c = clientTabEmpty[activeTab] || clientTabEmpty.upcoming;
+          return <EmptyState icon={c.icon} title={c.title} description={c.description} hint={c.hint} action={c.action} />;
+        })() : (
           <div className="eyf-stack" style={{ gap: '0.75rem' }}>
             {activeBookings.map((booking) => {
               const showFinalPaymentAction =
@@ -794,13 +802,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               return (
                 <article
                   key={booking.id}
-                  className="eyf-card"
-                  style={{
-                    padding: '1.25rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    border: '1px solid var(--border)',
-                  }}
+                  className="eyf-card eyf-booking-card"
                   onClick={() => setSelectedBooking(booking)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') setSelectedBooking(booking);
@@ -828,6 +830,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
                           PAID
                         </span>
                       )}
+                      <span className="eyf-card-arrow" aria-hidden="true">›</span>
                     </div>
                   </div>
 
@@ -868,10 +871,6 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
                       </button>
                     </div>
                   ) : null}
-
-                  <p style={{ margin: '0.75rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
-                    Click to view details
-                  </p>
                 </article>
               );
             })}
@@ -902,8 +901,10 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
   if (!bookings.length) {
     return (
       <EmptyState
+        icon="📋"
         title="No bookings yet"
-        description="Booking requests will appear here."
+        description="Booking requests from clients will appear here."
+        hint="Make sure your availability is set so clients can book."
       />
     );
   }
@@ -1165,23 +1166,21 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
         </div>
 
         {/* Booking Cards Grid */}
-        {activeBookings.length === 0 ? (
-          <EmptyState
-            title={`No ${activeTab} bookings`}
-            description={`Check back soon for new ${activeTab} booking requests.`}
-          />
-        ) : (
+        {activeBookings.length === 0 ? (() => {
+          const ownerTabEmpty = {
+            pending:   { icon: '⏳', title: 'No pending requests', description: 'New booking requests will appear here for your approval.', hint: 'Make sure your availability is set so clients can book.' },
+            confirmed: { icon: '✓', title: 'No confirmed bookings', description: 'Confirmed sessions will appear here.', hint: null },
+            completed: { icon: '🎵', title: 'No completed sessions yet', description: 'Completed bookings will appear here.', hint: null },
+            cancelled: { icon: null, title: 'No cancelled bookings', description: 'No bookings have been cancelled.', hint: null },
+          };
+          const c = ownerTabEmpty[activeTab] || ownerTabEmpty.pending;
+          return <EmptyState icon={c.icon} title={c.title} description={c.description} hint={c.hint} />;
+        })() : (
           <div className="eyf-stack" style={{ gap: '0.75rem' }}>
             {activeBookings.map((booking) => (
               <article
                 key={booking.id}
-                className="eyf-card"
-                style={{
-                  padding: '1.25rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  border: '1px solid var(--border)',
-                }}
+                className="eyf-card eyf-booking-card"
                 onClick={() => setSelectedBooking(booking)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') setSelectedBooking(booking);
@@ -1208,11 +1207,9 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                         PAID
                       </span>
                     )}
+                    <span className="eyf-card-arrow" aria-hidden="true">›</span>
                   </div>
                 </div>
-                <p style={{ margin: '0.75rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
-                  Click to view details
-                </p>
               </article>
             ))}
           </div>
@@ -1261,12 +1258,14 @@ function CompletionWidget({ studio, onSetupClick }) {
 
   if (pct === 100) {
     return (
-      <div className="eyf-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-        <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--sage)' }}>100%</span>
+      <div className="eyf-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', padding: 'var(--card-padding, 1.25rem)' }}>
+        <div>
+          <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--sage)', display: 'block', lineHeight: 1 }}>100%</span>
+          <span className="eyf-muted" style={{ fontSize: 'var(--text-xs, 0.75rem)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Profile complete</span>
+        </div>
         <button
           type="button"
-          className="eyf-button eyf-button--ghost"
-          style={{ minHeight: 'unset', padding: '0.35rem 0.85rem', fontSize: '0.875rem' }}
+          className="eyf-button eyf-button--ghost eyf-button--sm"
           onClick={onSetupClick}
         >
           Edit profile
@@ -1275,17 +1274,22 @@ function CompletionWidget({ studio, onSetupClick }) {
     );
   }
 
+  const remaining = checklist.filter((item) => !item.done);
+  const showOnlyRemaining = pct >= 60 && remaining.length <= 4;
+  const displayList = showOnlyRemaining ? remaining : checklist;
+
   return (
     <div className="eyf-card eyf-stack">
       <div className="eyf-row eyf-row--between">
-        <h3 style={{ margin: 0 }}>Profile completion</h3>
-        <span
-          style={{
-            fontSize: '0.875rem',
-            fontWeight: 700,
-            color: 'var(--muted)',
-          }}
-        >
+        <div>
+          <h3 style={{ margin: 0 }}>Profile completion</h3>
+          {showOnlyRemaining && remaining.length > 0 ? (
+            <p className="eyf-muted" style={{ margin: '0.2rem 0 0', fontSize: 'var(--text-xs, 0.75rem)' }}>
+              {remaining.length} step{remaining.length !== 1 ? 's' : ''} left
+            </p>
+          ) : null}
+        </div>
+        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--muted)' }}>
           {pct}%
         </span>
       </div>
@@ -1296,7 +1300,7 @@ function CompletionWidget({ studio, onSetupClick }) {
         </div>
 
         <div className="eyf-completion-checklist">
-          {checklist.map((item) => (
+          {displayList.map((item) => (
             <div
               key={item.label}
               className={`eyf-completion-item${item.done ? ' is-done' : ''}`}
@@ -1314,7 +1318,7 @@ function CompletionWidget({ studio, onSetupClick }) {
         style={{ justifySelf: 'start' }}
         onClick={onSetupClick}
       >
-        Complete setup
+        {pct >= 60 ? 'Finish setup' : 'Complete setup'}
       </button>
     </div>
   );
@@ -1331,6 +1335,9 @@ export function ClientDashboard() {
   const [error, setError] = useState(null);
   const [reviewedStudioIds, setReviewedStudioIds] = useState(new Set());
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(
+    () => !localStorage.getItem('efyia_client_welcomed')
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -1417,24 +1424,54 @@ export function ClientDashboard() {
         <section className="eyf-section eyf-stack">
           <SectionHeading
             eyebrow="Client dashboard"
-            title={`Welcome back, ${currentUser?.name}`}
+            title={`Welcome back, ${currentUser?.name?.split(' ')[0] ?? currentUser?.name}`}
+            action={
+              <button
+                type="button"
+                className="eyf-button eyf-button--ghost eyf-button--sm"
+                onClick={() => setShowAccountSettings(true)}
+              >
+                Account settings
+              </button>
+            }
           />
-          
-          <button
-            type="button"
-            className="eyf-button eyf-button--secondary"
-            style={{ width: 'fit-content' }}
-            onClick={() => setShowAccountSettings(true)}
-          >
-            Account settings
-          </button>
+
+          {/* One-time welcome banner for new users */}
+          {showWelcomeBanner && !loading && bookings.length === 0 ? (
+            <div className="eyf-onboarding-banner" role="complementary" aria-label="Getting started">
+              <div className="eyf-onboarding-banner__body">
+                <strong className="eyf-onboarding-banner__title">Welcome to Efyia Book</strong>
+                <p className="eyf-onboarding-banner__sub">Here's how to get started:</p>
+                <ol className="eyf-onboarding-banner__list">
+                  <li>Browse studios on the <Link to="/discover">Discover page</Link></li>
+                  <li>Pick a date, time, and session type</li>
+                  <li>Confirm your booking — studio will approve within 24 hrs</li>
+                </ol>
+              </div>
+              <div className="eyf-onboarding-banner__dismiss">
+                <button
+                  type="button"
+                  className="eyf-button eyf-button--ghost eyf-button--sm"
+                  onClick={() => {
+                    localStorage.setItem('efyia_client_welcomed', '1');
+                    setShowWelcomeBanner(false);
+                  }}
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {loading ? (
-            <Spinner />
+            <div className="eyf-stack" style={{ gap: '0.75rem' }}>
+              {[0, 1, 2].map((i) => <SkeletonBookingRow key={i} />)}
+            </div>
           ) : error ? (
             <ErrorMessage message={error} onRetry={fetchData} />
           ) : (
             <>
-              <h3>Your bookings</h3>
+              <h3 style={{ margin: '0.5rem 0 0' }}>Your bookings</h3>
               <ClientBookingRows
                 bookings={bookings}
                 onCancel={handleCancel}
@@ -1461,6 +1498,10 @@ export function ClientDashboard() {
                     ))}
                   </div>
                 </>
+              ) : bookings.length > 0 ? (
+                <p className="eyf-muted" style={{ margin: 0, fontSize: 'var(--text-xs, 0.75rem)' }}>
+                  Tip: Save studios using the ♡ button on any studio card for quick access here.
+                </p>
               ) : null}
             </>
           )}
@@ -1588,6 +1629,8 @@ export function StudioDashboard() {
     .reduce((sum, b) => sum + (b.subtotal || 0), 0);
 
   const pendingCount = bookings.filter((b) => b.status === 'PENDING').length;
+  const completionPct = studio ? calcCompletion(studio).pct : 0;
+  const [showSetupNudge, setShowSetupNudge] = useState(true);
 
   return (
     <>
@@ -1615,70 +1658,98 @@ export function StudioDashboard() {
             activeStudioId={activeStudioId}
             onSwitch={setActiveStudio}
           />
-                <SectionHeading
+          <SectionHeading
             eyebrow="Studio dashboard"
             title={studio ? `Manage ${studio.name}` : 'Studio dashboard'}
+            description={!loading && pendingCount > 0
+              ? `${pendingCount} booking${pendingCount !== 1 ? 's' : ''} awaiting your confirmation.`
+              : null}
+            action={
+              <button
+                type="button"
+                className="eyf-button eyf-button--ghost eyf-button--sm"
+                onClick={() => setShowAccountSettings(true)}
+              >
+                Account settings
+              </button>
+            }
           />
-          
-          <button
-            type="button"
-            className="eyf-button eyf-button--secondary"
-            style={{ width: 'fit-content' }}
-            onClick={() => setShowAccountSettings(true)}
-          >
-            Account settings
-          </button>
+
           {loading ? (
-            <Spinner />
+            <div className="eyf-stack" style={{ gap: '0.75rem' }}>
+              <SkeletonStatGrid />
+              {[0, 1, 2].map((i) => <SkeletonBookingRow key={i} />)}
+            </div>
           ) : error ? (
             <ErrorMessage message={error} onRetry={fetchData} />
           ) : (
             <>
+              {/* Setup nudge for owners with low completion who've dismissed the wizard */}
+              {studio && completionPct < 40 && showSetupNudge ? (
+                <div className="eyf-onboarding-banner" role="complementary">
+                  <div className="eyf-onboarding-banner__body">
+                    <strong className="eyf-onboarding-banner__title">Finish setting up your studio</strong>
+                    <p className="eyf-onboarding-banner__sub">
+                      Your profile is {completionPct}% complete. A complete profile attracts more bookings.
+                    </p>
+                    <div>
+                      <button
+                        type="button"
+                        className="eyf-button eyf-button--sm"
+                        onClick={() => setShowWizard(true)}
+                      >
+                        Continue setup
+                      </button>
+                    </div>
+                  </div>
+                  <div className="eyf-onboarding-banner__dismiss">
+                    <button
+                      type="button"
+                      className="eyf-button eyf-button--ghost eyf-button--sm"
+                      onClick={() => setShowSetupNudge(false)}
+                    >
+                      Later
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="eyf-stats-grid">
-                <div className="eyf-card">
-                  <strong>{bookings.length}</strong>
-                  <span>Total bookings</span>
+                <div className="eyf-card eyf-stat-card">
+                  <span className="eyf-stat-card__value">{bookings.length}</span>
+                  <span className="eyf-stat-card__label">Total bookings</span>
                 </div>
-                <div className="eyf-card">
-                  <strong style={pendingCount > 0 ? { color: '#fbbf24' } : {}}>
+                <div className="eyf-card eyf-stat-card">
+                  <span className={`eyf-stat-card__value${pendingCount > 0 ? ' eyf-stat-card__value--alert' : ''}`}>
                     {pendingCount}
-                  </strong>
-                  <span>Awaiting confirmation</span>
+                  </span>
+                  <span className="eyf-stat-card__label">Awaiting confirmation</span>
                 </div>
-                <div className="eyf-card">
-                  <strong>${revenue.toFixed(0)}</strong>
-                  <span>Revenue</span>
+                <div className="eyf-card eyf-stat-card">
+                  <span className="eyf-stat-card__value">${revenue.toFixed(0)}</span>
+                  <span className="eyf-stat-card__label">Revenue</span>
                 </div>
-                <div className="eyf-card">
-                  <strong>{studio?.rating || '—'}</strong>
-                  <span>Rating</span>
+                <div className="eyf-card eyf-stat-card">
+                  <span className="eyf-stat-card__value">{studio?.rating || '—'}</span>
+                  <span className="eyf-stat-card__label">Rating</span>
                 </div>
               </div>
 
               {pendingCount > 0 ? (
-                <div
-                  style={{
-                    background: 'rgba(251,191,36,0.08)',
-                    border: '1px solid rgba(251,191,36,0.3)',
-                    borderRadius: 14,
-                    padding: '1rem 1.25rem',
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  <strong style={{ color: '#fbbf24' }}>
-                    ⏳ {pendingCount} booking{pendingCount !== 1 ? 's' : ''} waiting for your confirmation
-                  </strong>
-                  <p style={{ margin: '0.25rem 0 0', color: 'var(--muted)' }}>
-                    Review and confirm below to lock in your client's session.
+                <div className="eyf-alert-banner eyf-alert-banner--amber" role="alert">
+                  <p className="eyf-alert-banner__heading">
+                    {pendingCount} booking{pendingCount !== 1 ? 's' : ''} waiting for your confirmation
                   </p>
+                  <p>Review and confirm below to lock in your client's session.</p>
                 </div>
               ) : null}
 
-              <h3>Bookings</h3>
+              <h3 style={{ margin: '0.5rem 0 0' }}>Bookings</h3>
               <OwnerBookingRows bookings={bookings} onStatusChange={handleStatusChange} currentUserId={currentUser?.id} showToast={showToast} />
 
               {studio ? (
                 <>
+                  <p className="eyf-dashboard-section-label">Profile &amp; Growth</p>
                   <StudioStripeOnboarding
                     studioId={studio.id}
                     studioName={studio.name}
@@ -1765,6 +1836,7 @@ export function StudioDashboard() {
                     />
                   </div>
 
+                  <p className="eyf-dashboard-section-label">Tools</p>
                   <EmailDomainManager studioId={studio?.id} />
 
                   {/* Website Builder card */}
