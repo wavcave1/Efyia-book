@@ -187,6 +187,11 @@ export default function BookingDetailModal({
                 <strong style={{ color: 'var(--mint)', fontSize: '1.1rem' }}>${calculateRemainingBalance().toFixed(2)}</strong>
               </div>
             ) : null}
+            {booking.depositAmount && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' ? (
+              <p className="eyf-muted" style={{ margin: 0, fontSize: '0.8rem' }}>
+                Your card on file will be charged the remaining balance when the studio marks the session complete.
+              </p>
+            ) : null}
           </div>
         </div>
 

@@ -94,7 +94,7 @@ function getStudioSessionTypeOptions(studio) {
   return explicitSessionTypes;
 }
 
-// ─── Cancellation Policy Modal ────────────────────────────────────────────────
+// ─── Cancellation Policy Modal ────────────────────────────────────────────────────
 function CancellationPolicyModal({ policy, studioName, onAgree, onDecline }) {
   return (
     <div
@@ -201,7 +201,7 @@ function CancellationPolicyModal({ policy, studioName, onAgree, onDecline }) {
   );
 }
 
-// ─── Cancel Booking Modal ─────────────────────────────────────────────────────
+// ─── Cancel Booking Modal ───────────────────────────────────────────────────────
 function CancelBookingModal({
   booking,
   studioName,
@@ -281,7 +281,7 @@ function CancelBookingModal({
   );
 }
 
-// ─── Main BookingPage ─────────────────────────────────────────────────────────
+// ─── Main BookingPage ─────────────────────────────────────────────────────────────────
 export default function BookingPage() {
   const { studioId } = useParams();
   const { showToast } = useAppContext();
@@ -1051,7 +1051,7 @@ export default function BookingPage() {
                     }}
                   >
                     {isDepositPayment
-                      ? `Your deposit of $${depositAmount.toFixed(2)} has been secured. The studio will request your remaining balance ($${remainingBalance.toFixed(2)}) when ready to finalize your booking.`
+                      ? `Your deposit of $${depositAmount.toFixed(2)} has been secured. Your card on file will be charged the remaining balance when the studio marks the session complete.`
                       : 'Your booking is Pending. The studio will confirm and you\'ll see the update in your dashboard.'}
                   </p>
                 </div>
