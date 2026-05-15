@@ -421,6 +421,31 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
 
+  useEffect(() => {
+    if (!bookings.length) return;
+    const params = new URLSearchParams(window.location.search);
+    const payBookingId = params.get('pay');
+    if (!payBookingId) return;
+    const target = bookings.find((b) => String(b.id) === payBookingId);
+    if (!target?.finalPaymentIntentId || isFinalPaymentPaid(target)) return;
+    window.history.replaceState({}, '', window.location.pathname);
+    setProcessingFinalPayment(true);
+    setFinalPaymentError('');
+    setFinalPaymentSuccess('');
+    setFinalPaymentCheckout(null);
+    depositApi.getFinalClientSecret(target.id)
+      .then((paymentIntent) => {
+        setFinalPaymentCheckout({ ...paymentIntent, booking: target });
+        setFinalPaymentBooking(target);
+      })
+      .catch((err) => {
+        setFinalPaymentError(err.message || 'Unable to load final payment.');
+      })
+      .finally(() => {
+        setProcessingFinalPayment(false);
+      });
+  }, [bookings]);
+
   if (!bookings.length) {
     return (
       <EmptyState
@@ -570,7 +595,7 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
             // failed, the saved card is missing/detached, or Stripe required
             // customer authentication. In the happy path the booking flips
             // straight to COMPLETED and this button never renders.
-            if (depositPaid && !finalPaymentPaid && needsCustomerAction && finalPaymentIntentId) {
+            if (depositPaid && !finalPaymentPaid && finalPaymentIntentId) {
               actions.push(
                 <button
                   key="payment"
@@ -584,10 +609,10 @@ function ClientBookingRows({ bookings, onCancel, currentUserId, reviewedStudioId
               );
             }
 
-            if (depositPaid && !finalPaymentPaid && !needsCustomerAction) {
+            if (depositPaid && !finalPaymentPaid && !finalPaymentIntentId) {
               actions.push(
                 <div key="payment-pending" className="eyf-muted" style={{ fontSize: '0.88rem' }}>
-                  Final payment will be charged automatically when the studio marks this booking complete.
+                  Your studio will send you a payment link when your session is complete.
                 </div>
               );
             }
@@ -927,7 +952,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
     setFinalPaymentLoading(bookingId);
     try {
       await depositApi.payFinal(bookingId);
-      showToast?.('Final payment requested from client.');
+      showToast?.('Payment link sent to client.');
       window.location.reload();
     } catch (err) {
       showToast?.(getStatusUpdateErrorMessage(err));
@@ -1038,7 +1063,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                     Final payment required{getFinalPaymentDueAmount(selectedBooking) > 0 ? ` · $${getFinalPaymentDueAmount(selectedBooking).toFixed(2)} due` : ''}
                   </span>
                   <p className="eyf-muted" style={{ margin: 0, fontSize: '0.85rem' }}>
-                    {getManualPaymentNotice(selectedBooking)}
+                    A payment link has been sent to the customer.
                   </p>
                   <button
                     type="button"
@@ -1046,7 +1071,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                     onClick={() => handleRequestFinalPayment(selectedBooking.id)}
                     disabled={finalPaymentLoading === selectedBooking.id || statusUpdating}
                   >
-                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Complete Payment'}
+                    {finalPaymentLoading === selectedBooking.id ? 'Sending...' : 'Resend Payment Link'}
                   </button>
                 </div>
               );
@@ -1091,7 +1116,7 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                     onClick={() => handleRequestFinalPayment(selectedBooking.id)}
                     disabled={finalPaymentLoading === selectedBooking.id}
                   >
-                    {finalPaymentLoading === selectedBooking.id ? 'Requesting...' : 'Request Final Payment'}
+                    {finalPaymentLoading === selectedBooking.id ? 'Sending...' : 'Send Final Payment Link'}
                   </button>
                 );
               }
@@ -1114,8 +1139,8 @@ function OwnerBookingRows({ bookings, onStatusChange, currentUserId, showToast }
                     setSelectedBooking(null);
                     setConfirmAction({ booking: selectedBooking, action: 'COMPLETED' });
                   }}
-                  disabled={statusUpdating}
-                  title={hasUnpaidFinalPayment && !finalPaymentIntentId ? 'Request final payment from customer before completing' : ''}
+                  disabled={statusUpdating || Boolean(hasUnpaidFinalPayment)}
+                  title={hasUnpaidFinalPayment ? 'Send the customer a payment link and wait for them to pay before completing' : ''}
                 >
                   {statusUpdating ? 'Updating…' : 'Mark Complete'}
                 </button>,
